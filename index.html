@@ -984,13 +984,7 @@
         mostrarProductos();
         actualizarSelectoresProductos();
       });
-    });setTimeout(function() {
-  if(adminPasswordCache) {
-    alert('Contraseña cargada correctamente.');
-  } else {
-    alert('ERROR: No se pudo cargar la contraseña desde Firestore. adminPasswordCache es null.');
-  }
-}, 5000);
+    });
   </script>
 </body>
 </html>
