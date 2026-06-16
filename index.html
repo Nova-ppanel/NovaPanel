@@ -377,7 +377,6 @@
   </div>
 
   <script>
-    // Configuración de Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyBsYxEHoS9ta6efEYfAKKOa82r_g4LEbmg",
       authDomain: "novapanelsocios-2152c.firebaseapp.com",
@@ -556,7 +555,7 @@
       for(var i=0;i<vendedores.length;i++) {
         var v = vendedores[i];
         var vtas = getVentasPorVendedor(v.usuario);
-        html += '<div class="card"><h3 style="color:#a78bfa;margin-bottom:0.2rem;">'+v.nombre+'</h3><p style="font-size:0.65rem;">👤 '+v.usuario+'</p><p style="font-size:0.8rem;color:#4ade80;">💎 Saldo: $'+(v.saldo||0).toFixed(2)+'</p><p style="font-size:0.6rem;color:#9a8db8;">Ventas: $'+vtas.toFixed(2)+'</p></div>';
+        html += '<div class="card"><h3 style="color:#a78bfa;margin-bottom:0.2rem;">'+v.nombre+'</h3><p style="font-size:0.65rem;">👤 '+v.usuario+'</p><p style="font-size:0.8rem;color:#4ade80;">💎 Saldo: $'+(v.saldo||0).toFixed(2)+'</p><p style="font-size:0.6rem;color:#9a8db8;">Ventas: $'+vtas.toFixed(2)+'</p><button class="btn btn-danger btn-xs" style="margin-top:0.3rem;" onclick="eliminarVendedor(\''+v.uid+'\',\''+v.usuario+'\')">🗑 Eliminar</button></div>';
       }
       $('listaVendedores').innerHTML = html || '<p style="color:#9a8db8;">No hay vendedores aún.</p>';
       var sel = $('selectVendedor');
@@ -566,6 +565,18 @@
         opt.value = vendedores[i].usuario;
         opt.textContent = vendedores[i].nombre + ' ($'+(vendedores[i].saldo||0).toFixed(2)+')';
         sel.appendChild(opt);
+      }
+    }
+    
+    async function eliminarVendedor(uid, usuario) {
+      if(!confirm('¿Eliminar a '+usuario+'? Esta acción no se puede deshacer.')) return;
+      try {
+        await db.collection('vendedores').doc(uid).delete();
+        vendedores = vendedores.filter(function(v){ return v.uid !== uid; });
+        renderVendedores();
+        alert('✅ Vendedor eliminado.');
+      } catch(e) {
+        alert('❌ Error al eliminar.');
       }
     }
     
@@ -735,14 +746,12 @@
       var p = $('passwordInput').value.trim();
       if(!u || !p) { alert('Completá todos los campos.'); return; }
       
-      // Admin local
       if(u === 'admin') {
         if(!adminExists()) { alert('Panel no configurado.'); return; }
         if(p === getAdminPassword()) { user={tipo:'admin'}; updateUI(); return; }
         alert('Credenciales inválidas'); return;
       }
       
-      // Vendedor Firebase
       auth.signInWithEmailAndPassword(u+'@novapanel.com', p)
       .then(function(result) {
         var vend = vendedores.find(function(v){ return v.usuario===u; });
@@ -947,7 +956,6 @@
     $('selectVentaDur').addEventListener('change', updatePrecioEst);
     $('cantVenta').addEventListener('input', updatePrecioEst);
     
-    // INICIO
     cargarDatosFirestore().then(function() {
       auth.onAuthStateChanged(function(firebaseUser) {
         if(firebaseUser && !user) {
