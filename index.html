@@ -162,6 +162,21 @@
     .comision-box { margin:0.5rem 0;padding:0.6rem;background:rgba(239,68,68,0.1);border:1px solid #ef4444;border-radius:0.6rem; }
     .metodos-info { background: rgba(139,92,246,0.08); border: 1px solid #352850; padding: 0.4rem 0.6rem; border-radius: 0.5rem; margin-bottom: 0.5rem; font-size: 0.6rem; }
     .metodos-info p { margin: 0.15rem 0; color: #c4b5fd; }
+    #registroSection {
+      margin-top: 1rem;
+      padding-top: 0.8rem;
+      border-top: 1px solid #352850;
+    }
+    .link-btn {
+      background: none;
+      border: none;
+      color: #a78bfa;
+      cursor: pointer;
+      font-size: 0.6rem;
+      text-decoration: underline;
+      padding: 0;
+      margin-top: 0.5rem;
+    }
     @media (max-width: 768px) {
       .topbar-admin { padding: 0.2rem 0.5rem; }
       .nav-item { padding: 0.15rem 0.3rem; font-size: 0.55rem; }
@@ -202,11 +217,28 @@
     <main class="main" id="mainContent">
       <div class="page active" id="pageLogin">
         <div class="card" style="max-width:350px;margin:3rem auto;text-align:center;">
-          <h2 style="font-family:'Orbitron',sans-serif;margin-bottom:0.8rem;font-size:1.1rem;background:linear-gradient(135deg,#ddd6fe,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">🔐 ACCESO</h2>
+          <h2 style="font-family:'Orbitron',sans-serif;margin-bottom:0.8rem;font-size:1.1rem;background:linear-gradient(135deg,#ddd6fe,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;" id="loginTitle">🔐 ACCESO</h2>
           <div id="loginMsg" style="color:#fca5a5;font-size:0.65rem;margin-bottom:0.5rem;display:none;"></div>
-          <div class="input-group"><label>Usuario</label><input type="text" id="usuarioInput" placeholder="Usuario"></div>
-          <div class="input-group"><label>Contraseña</label><input type="password" id="passwordInput" placeholder="••••"></div>
-          <button class="btn" id="loginBtn" style="width:100%;margin-top:0.4rem;">INGRESAR</button>
+          
+          <!-- FORMULARIO DE LOGIN -->
+          <div id="formLogin">
+            <div class="input-group"><label>Usuario</label><input type="text" id="usuarioInput" placeholder="Usuario"></div>
+            <div class="input-group"><label>Contraseña</label><input type="password" id="passwordInput" placeholder="••••"></div>
+            <button class="btn" id="loginBtn" style="width:100%;margin-top:0.4rem;">INGRESAR</button>
+            <button class="link-btn" id="mostrarRegistroBtn">¿No tenés cuenta? Registrate</button>
+          </div>
+          
+          <!-- FORMULARIO DE REGISTRO -->
+          <div id="formRegistro" style="display:none;">
+            <p style="color:#fbbf24;font-size:0.65rem;margin-bottom:0.5rem;">📝 Registro de vendedor</p>
+            <div class="input-group"><label>Usuario</label><input type="text" id="regUsuarioInput" placeholder="Elegí un usuario"></div>
+            <div class="input-group"><label>Contraseña</label><input type="password" id="regPasswordInput" placeholder="Elegí una contraseña"></div>
+            <div class="input-group"><label>Nombre</label><input type="text" id="regNombreInput" placeholder="Tu nombre completo"></div>
+            <button class="btn btn-success" id="registroBtn" style="width:100%;margin-top:0.4rem;">REGISTRARSE</button>
+            <p id="regMsg" style="font-size:0.55rem;margin-top:0.3rem;"></p>
+            <button class="link-btn" id="volverLoginBtn">Volver al inicio</button>
+          </div>
+          
           <p style="margin-top:0.5rem;color:#9a8db8;font-size:0.6rem;">Nova Panel - Sistema de Gestión</p>
         </div>
       </div>
@@ -364,7 +396,6 @@
     var WAN = '5491154141893';
     var imagenDataURL = null;
     
-    // Token secreto partido (no se lee completo)
     var _t1 = "wo";
     var _t2 = "rd";
     var TOKEN = _t1 + _t2;
@@ -519,6 +550,8 @@
       if($('seccionBackup')) $('seccionBackup').style.display = esAdmin ? 'block' : 'none';
       if(!logged) { 
         showPage('login'); 
+        $('formLogin').style.display = 'block';
+        $('formRegistro').style.display = 'none';
         if(adminExists()) {
           $('loginMsg').style.display = 'none';
         } else {
@@ -833,6 +866,56 @@
         $('comisionInfo').style.display = 'none';
       }
     }
+    
+    // REGISTRO DE VENDEDOR
+    $('mostrarRegistroBtn').onclick = function() {
+      $('formLogin').style.display = 'none';
+      $('formRegistro').style.display = 'block';
+      $('loginMsg').style.display = 'none';
+    };
+    
+    $('volverLoginBtn').onclick = function() {
+      $('formRegistro').style.display = 'none';
+      $('formLogin').style.display = 'block';
+      $('regMsg').textContent = '';
+    };
+    
+    $('registroBtn').onclick = function() {
+      var u = $('regUsuarioInput').value.trim().toLowerCase();
+      var p = $('regPasswordInput').value.trim();
+      var n = $('regNombreInput').value.trim();
+      
+      if(!u || !p || !n) {
+        $('regMsg').textContent = '❌ Completá todos los campos.';
+        $('regMsg').style.color = '#fca5a5';
+        return;
+      }
+      if(u === 'admin') {
+        $('regMsg').textContent = '❌ Ese usuario no está permitido.';
+        $('regMsg').style.color = '#fca5a5';
+        return;
+      }
+      if(vendedores.find(function(v){ return v.usuario === u; })) {
+        $('regMsg').textContent = '❌ Ese usuario ya existe.';
+        $('regMsg').style.color = '#fca5a5';
+        return;
+      }
+      
+      vendedores.push({usuario: u, password: p, nombre: n, saldo: 0, acreditaciones: []});
+      save();
+      
+      $('regMsg').textContent = '✅ Registro exitoso. Ya podés iniciar sesión.';
+      $('regMsg').style.color = '#4ade80';
+      $('regUsuarioInput').value = '';
+      $('regPasswordInput').value = '';
+      $('regNombreInput').value = '';
+      
+      setTimeout(function() {
+        $('formRegistro').style.display = 'none';
+        $('formLogin').style.display = 'block';
+        $('regMsg').textContent = '';
+      }, 2000);
+    };
     
     function login() { 
       var u = $('usuarioInput').value.trim().toLowerCase(); 
