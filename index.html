@@ -200,10 +200,24 @@
     </div>
 
     <main class="main" id="mainContent">
+      <!-- PANTALLA DE CONFIGURACIÓN INICIAL (sin código secreto visible) -->
+      <div class="page" id="pageSetup">
+        <div class="card" style="max-width:350px;margin:3rem auto;text-align:center;">
+          <h2 style="font-family:'Orbitron',sans-serif;margin-bottom:0.8rem;font-size:1.1rem;background:linear-gradient(135deg,#ddd6fe,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">⚡ CONFIGURACIÓN INICIAL</h2>
+          <p style="color:#9a8db8;font-size:0.7rem;margin-bottom:1rem;">Creá tu cuenta de administrador</p>
+          <div class="input-group"><label>Usuario admin</label><input type="text" id="setupUsuario" placeholder="admin" value="admin"></div>
+          <div class="input-group"><label>Contraseña</label><input type="password" id="setupPassword" placeholder="Tu contraseña segura"></div>
+          <div class="input-group"><label>Repetir contraseña</label><input type="password" id="setupPassword2" placeholder="Repetí tu contraseña"></div>
+          <button class="btn btn-success" id="setupBtn" style="width:100%;margin-top:0.5rem;">CREAR ADMINISTRADOR</button>
+          <p style="font-size:0.5rem;color:#9a8db8;margin-top:0.5rem;">Solo vos podés crear la cuenta de admin.</p>
+        </div>
+      </div>
+
+      <!-- LOGIN -->
       <div class="page active" id="pageLogin">
         <div class="card" style="max-width:350px;margin:3rem auto;text-align:center;">
           <h2 style="font-family:'Orbitron',sans-serif;margin-bottom:0.8rem;font-size:1.1rem;background:linear-gradient(135deg,#ddd6fe,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">🔐 ACCESO</h2>
-          <div class="input-group"><label>Usuario</label><input type="text" id="usuarioInput" placeholder="admin"></div>
+          <div class="input-group"><label>Usuario</label><input type="text" id="usuarioInput" placeholder="Usuario"></div>
           <div class="input-group"><label>Contraseña</label><input type="password" id="passwordInput" placeholder="••••"></div>
           <button class="btn" id="loginBtn" style="width:100%;margin-top:0.4rem;">INGRESAR</button>
           <p style="margin-top:0.5rem;color:#9a8db8;font-size:0.6rem;">Nova Panel - Sistema de Gestión</p>
@@ -363,11 +377,12 @@
     var WAN = '5491154141893';
     var imagenDataURL = null;
     
-    var DEFAULT_ADMIN_PASS = 'admin123';
-    
-    // CORREGIDO: Solo usa la contraseña guardada, nunca la de fábrica después de cambiarla
     function getAdminPassword() {
-      return localStorage.getItem('novapanel_admin_pass') || DEFAULT_ADMIN_PASS;
+      return localStorage.getItem('novapanel_admin_pass');
+    }
+    
+    function adminExists() {
+      return localStorage.getItem('novapanel_admin_pass') !== null;
     }
     
     var productos = [
@@ -413,8 +428,24 @@
       }catch(e){}
       
       if(vendedores.length === 0) {
-        vendedores = [{usuario:"vendedor1",password:"pass1",nombre:"Carlos Pérez",saldo:300,acreditaciones:[{monto:300,fecha:new Date('2024-01-01').toLocaleString()}]}];
+        vendedores = [{usuario:"vendedor1",password:"pass1",nombre:"Vendedor Demo",saldo:300,acreditaciones:[{monto:300,fecha:new Date('2024-01-01').toLocaleString()}]}];
         save();
+      }
+    }
+    
+    function migrarDatosAntiguos() {
+      if(localStorage.getItem('novapanel_v')) return;
+      var clavesViejas = ['gamervault_v','gvfinal11_v','gvfinal10_v','gvfinal9_v','gvfinal8_v','gvfinal7_v','gvfinal6_v','gvfinal5_v','gvfinal4_v','gvfinal3_v','gvfinal2_v'];
+      for(var i=0; i<clavesViejas.length; i++) {
+        if(localStorage.getItem(clavesViejas[i])) {
+          localStorage.setItem('novapanel_v', localStorage.getItem(clavesViejas[i]));
+          localStorage.setItem('novapanel_p', localStorage.getItem(clavesViejas[i].replace('_v','_p')));
+          localStorage.setItem('novapanel_k', localStorage.getItem(clavesViejas[i].replace('_v','_k')));
+          localStorage.setItem('novapanel_h', localStorage.getItem(clavesViejas[i].replace('_v','_h')));
+          if(localStorage.getItem(clavesViejas[i].replace('_v','_mc'))) localStorage.setItem('novapanel_mc', localStorage.getItem(clavesViejas[i].replace('_v','_mc')));
+          if(localStorage.getItem('gamervault_admin_pass')) localStorage.setItem('novapanel_admin_pass', localStorage.getItem('gamervault_admin_pass'));
+          return;
+        }
       }
     }
     
@@ -437,7 +468,7 @@
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      alert('✅ Datos exportados correctamente. Guardá el archivo en un lugar seguro.');
+      alert('✅ Datos exportados correctamente.');
     }
     
     function importarDatos(event) {
@@ -447,42 +478,21 @@
       reader.onload = function(e) {
         try {
           var datos = JSON.parse(e.target.result);
-          if(!datos.vendedores && !datos.productos) {
-            alert('❌ El archivo no es válido. No se encontraron datos.');
-            return;
-          }
-          if(confirm('¿Estás seguro de importar estos datos? Se reemplazarán todos los datos actuales.\n\nBackup creado el: '+(datos.fechaExportacion||'Desconocida'))) {
+          if(!datos.vendedores && !datos.productos) { alert('❌ Archivo no válido.'); return; }
+          if(confirm('¿Importar datos? Se reemplazarán los actuales.\n\nBackup: '+(datos.fechaExportacion||'Desconocida'))) {
             if(datos.vendedores) { vendedores = datos.vendedores; localStorage.setItem('novapanel_v', JSON.stringify(datos.vendedores)); }
             if(datos.productos) { productos = datos.productos; localStorage.setItem('novapanel_p', JSON.stringify(datos.productos)); }
             if(datos.keys) { keys = datos.keys; localStorage.setItem('novapanel_k', JSON.stringify(datos.keys)); }
             if(datos.ventas) { ventas = datos.ventas; localStorage.setItem('novapanel_h', JSON.stringify(datos.ventas)); }
             if(datos.metodosCobro) { metodosCobro = datos.metodosCobro; localStorage.setItem('novapanel_mc', JSON.stringify(datos.metodosCobro)); }
             if(datos.adminPass) { localStorage.setItem('novapanel_admin_pass', datos.adminPass); }
-            alert('✅ Datos importados correctamente. La página se actualizará.');
+            alert('✅ Datos importados. La página se actualizará.');
             location.reload();
           }
-        } catch(err) {
-          alert('❌ Error al leer el archivo. Asegurate de que sea un archivo JSON válido.');
-        }
+        } catch(err) { alert('❌ Error al leer el archivo.'); }
       };
       reader.readAsText(file);
       event.target.value = '';
-    }
-    
-    function migrarDatosAntiguos() {
-      if(localStorage.getItem('novapanel_v')) return;
-      var clavesViejas = ['gamervault_v','gvfinal11_v','gvfinal10_v','gvfinal9_v','gvfinal8_v','gvfinal7_v','gvfinal6_v','gvfinal5_v','gvfinal4_v','gvfinal3_v','gvfinal2_v'];
-      for(var i=0; i<clavesViejas.length; i++) {
-        if(localStorage.getItem(clavesViejas[i])) {
-          localStorage.setItem('novapanel_v', localStorage.getItem(clavesViejas[i]));
-          localStorage.setItem('novapanel_p', localStorage.getItem(clavesViejas[i].replace('_v','_p')));
-          localStorage.setItem('novapanel_k', localStorage.getItem(clavesViejas[i].replace('_v','_k')));
-          localStorage.setItem('novapanel_h', localStorage.getItem(clavesViejas[i].replace('_v','_h')));
-          if(localStorage.getItem(clavesViejas[i].replace('_v','_mc'))) localStorage.setItem('novapanel_mc', localStorage.getItem(clavesViejas[i].replace('_v','_mc')));
-          if(localStorage.getItem('gamervault_admin_pass')) localStorage.setItem('novapanel_admin_pass', localStorage.getItem('gamervault_admin_pass'));
-          return;
-        }
-      }
     }
     
     function calcVenc(k) { if(!k.fechaCreacion) return null; var m = {'1 dia':1,'3 dias':3,'7 dias':7,'10 dias':10,'30 dias':30}; var fc = new Date(k.fechaCreacion); fc.setDate(fc.getDate()+(m[k.duracion]||0)); return fc; }
@@ -507,6 +517,14 @@
     }
 
     function updateUI() {
+      if(!adminExists()) {
+        showPage('setup');
+        $('topbarAdmin').classList.add('hidden');
+        $('headerVendedor').classList.add('hidden');
+        return;
+      }
+      
+      $('pageSetup').classList.add('hidden');
       var logged = !!user;
       var esAdmin = user && user.tipo==='admin';
       $('topbarAdmin').classList.toggle('hidden',!esAdmin);
@@ -730,7 +748,20 @@
       }
     }
     
-    // CORREGIDO: Solo acepta la contraseña guardada
+    function setupAdmin() {
+      var pass = $('setupPassword').value.trim();
+      var pass2 = $('setupPassword2').value.trim();
+      
+      if(!pass) return alert('Ingresá una contraseña');
+      if(pass !== pass2) return alert('Las contraseñas no coinciden');
+      if(pass.length < 4) return alert('La contraseña debe tener al menos 4 caracteres');
+      
+      localStorage.setItem('novapanel_admin_pass', pass);
+      alert('✅ Administrador creado correctamente. Ahora iniciá sesión con admin / tu contraseña.');
+      $('pageSetup').classList.add('hidden');
+      $('pageLogin').classList.add('active');
+    }
+    
     function login() { 
       var u = $('usuarioInput').value.trim().toLowerCase(); 
       var p = $('passwordInput').value.trim();
@@ -761,7 +792,7 @@
       localStorage.setItem('novapanel_admin_pass', passNueva);
       $('passActual').value = '';
       $('passNueva').value = '';
-      alert('✅ Contraseña cambiada correctamente. Ahora usá tu nueva contraseña para ingresar.');
+      alert('✅ Contraseña cambiada correctamente.');
     }
     
     function irWhatsApp() {
@@ -776,7 +807,7 @@
       if(moneda==='USDT' && metodosCobro.wallet) datosPago += '\n₿ Wallet USDT TRC20: '+metodosCobro.wallet;
       var mensaje = encodeURIComponent('💎 *SOLICITUD DE RECARGA - NOVA PANEL*\n\n👤 Vendedor: '+(user.nombre||user.usuario)+'\n💰 Monto: $'+monto.toFixed(2)+' USD\n💱 Pagaré en: '+monedaTexto+datosPago+'\n'+(nota?'📝 Nota: '+nota+'\n':'')+'\nPor favor, indíquenme los pasos a seguir. ¡Gracias!');
       window.open('https://wa.me/'+WAN+'?text='+mensaje,'_blank');
-      setTimeout(function() { alert('📱 Se abrió WhatsApp.\n\n⚠️ IMPORTANTE: Enviá tu comprobante de pago manualmente por el chat de WhatsApp.'); }, 800);
+      setTimeout(function() { alert('📱 Se abrió WhatsApp.\n\n⚠️ IMPORTANTE: Enviá tu comprobante de pago manualmente.'); }, 800);
     }
     
     function irWhatsAppRetiro() {
@@ -795,6 +826,7 @@
       window.open('https://wa.me/' + WAN + '?text=' + mensaje, '_blank');
     }
     
+    $('setupBtn').onclick = setupAdmin;
     $('loginBtn').onclick = login;
     $('passwordInput').addEventListener('keypress', function(e){ if(e.key==='Enter') login(); });
     $('logoutAdminBtn').onclick = logout;
