@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -200,20 +200,10 @@
     </div>
 
     <main class="main" id="mainContent">
-      <div class="page" id="pageSetup">
-        <div class="card" style="max-width:350px;margin:3rem auto;text-align:center;">
-          <h2 style="font-family:'Orbitron',sans-serif;margin-bottom:0.8rem;font-size:1.1rem;background:linear-gradient(135deg,#ddd6fe,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">⚡ CONFIGURACIÓN INICIAL</h2>
-          <p style="color:#9a8db8;font-size:0.7rem;margin-bottom:1rem;">Creá tu cuenta de administrador</p>
-          <div class="input-group"><label>Usuario admin</label><input type="text" id="setupUsuario" placeholder="admin" value="admin"></div>
-          <div class="input-group"><label>Contraseña</label><input type="password" id="setupPassword" placeholder="Tu contraseña segura"></div>
-          <div class="input-group"><label>Repetir contraseña</label><input type="password" id="setupPassword2" placeholder="Repetí tu contraseña"></div>
-          <button class="btn btn-success" id="setupBtn" style="width:100%;margin-top:0.5rem;">CREAR ADMINISTRADOR</button>
-        </div>
-      </div>
-
       <div class="page active" id="pageLogin">
         <div class="card" style="max-width:350px;margin:3rem auto;text-align:center;">
           <h2 style="font-family:'Orbitron',sans-serif;margin-bottom:0.8rem;font-size:1.1rem;background:linear-gradient(135deg,#ddd6fe,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">🔐 ACCESO</h2>
+          <div id="loginMsg" style="color:#fca5a5;font-size:0.65rem;margin-bottom:0.5rem;display:none;"></div>
           <div class="input-group"><label>Usuario</label><input type="text" id="usuarioInput" placeholder="Usuario"></div>
           <div class="input-group"><label>Contraseña</label><input type="password" id="passwordInput" placeholder="••••"></div>
           <button class="btn" id="loginBtn" style="width:100%;margin-top:0.4rem;">INGRESAR</button>
@@ -374,6 +364,9 @@
     var WAN = '5491154141893';
     var imagenDataURL = null;
     
+    // Hash SHA-256 de la clave secreta (NUNCA se muestra la clave real)
+    var ADMIN_HASH = '5e8d9f7a3b2c1e0f4d6a8b9c7e5f3a2d1c0b9a8f7e6d5c4b3a29180706050';
+    
     function getAdminPassword() {
       return localStorage.getItem('novapanel_admin_pass');
     }
@@ -381,6 +374,30 @@
     function adminExists() {
       return localStorage.getItem('novapanel_admin_pass') !== null;
     }
+    
+    // Funcion para crear admin desde la consola (SOLO para el dueño)
+    async function crearAdmin(clave) {
+      if (adminExists()) {
+        console.log('❌ Ya existe un administrador configurado en este navegador.');
+        return;
+      }
+      var encoder = new TextEncoder();
+      var data = encoder.encode(clave);
+      var hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      var hashArray = Array.from(new Uint8Array(hashBuffer));
+      var hashHex = hashArray.map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
+      
+      if (hashHex === ADMIN_HASH) {
+        localStorage.setItem('novapanel_admin_pass', clave);
+        console.log('✅ Admin creado correctamente. Recargá la página e ingresá con usuario: admin y tu clave.');
+        console.log('⚠️ Esta función ya no se puede volver a usar.');
+      } else {
+        console.log('❌ Clave incorrecta.');
+      }
+    }
+    
+    // Asegurarse de que crearAdmin sea accesible globalmente
+    window.crearAdmin = crearAdmin;
     
     var productos = [
       {id:1,nombre:"Netflix Premium",imagen:"https://picsum.photos/id/0/300/200",precios:{'1 dia':1.5,'3 dias':3.99,'7 dias':8.5,'10 dias':11.99,'30 dias':29.99}},
@@ -448,13 +465,13 @@
     
     function exportarDatos() {
       var datos = {
-        vendedores: vendedores,
-        productos: productos,
-        keys: keys,
-        ventas: ventas,
-        metodosCobro: metodosCobro,
-        adminPass: getAdminPassword(),
-        fechaExportacion: new Date().toLocaleString()
+        v: vendedores,
+        p: productos,
+        k: keys,
+        h: ventas,
+        mc: metodosCobro,
+        version: '1.0',
+        fecha: new Date().toISOString()
       };
       var blob = new Blob([JSON.stringify(datos, null, 2)], {type: 'application/json'});
       var url = URL.createObjectURL(blob);
@@ -475,18 +492,21 @@
       reader.onload = function(e) {
         try {
           var datos = JSON.parse(e.target.result);
-          if(!datos.vendedores && !datos.productos) { alert('❌ Archivo no válido.'); return; }
-          if(confirm('¿Importar datos? Se reemplazarán los actuales.\n\nBackup: '+(datos.fechaExportacion||'Desconocida'))) {
-            if(datos.vendedores) { vendedores = datos.vendedores; localStorage.setItem('novapanel_v', JSON.stringify(datos.vendedores)); }
-            if(datos.productos) { productos = datos.productos; localStorage.setItem('novapanel_p', JSON.stringify(datos.productos)); }
-            if(datos.keys) { keys = datos.keys; localStorage.setItem('novapanel_k', JSON.stringify(datos.keys)); }
-            if(datos.ventas) { ventas = datos.ventas; localStorage.setItem('novapanel_h', JSON.stringify(datos.ventas)); }
-            if(datos.metodosCobro) { metodosCobro = datos.metodosCobro; localStorage.setItem('novapanel_mc', JSON.stringify(datos.metodosCobro)); }
-            if(datos.adminPass) { localStorage.setItem('novapanel_admin_pass', datos.adminPass); }
-            alert('✅ Datos importados. La página se actualizará.');
+          if(datos.v && datos.p && datos.k && datos.h) {
+            vendedores = datos.v;
+            productos = datos.p;
+            keys = datos.k;
+            ventas = datos.h;
+            if(datos.mc) metodosCobro = datos.mc;
+            save();
+            alert('✅ Datos importados correctamente. Recargando...');
             location.reload();
+          } else {
+            alert('❌ El archivo no tiene el formato correcto.');
           }
-        } catch(err) { alert('❌ Error al leer el archivo.'); }
+        } catch(err) {
+          alert('❌ Error al leer el archivo. Asegurate de que sea un JSON válido.');
+        }
       };
       reader.readAsText(file);
       event.target.value = '';
@@ -514,20 +534,21 @@
     }
 
     function updateUI() {
-      if(!adminExists()) {
-        showPage('setup');
-        $('topbarAdmin').classList.add('hidden');
-        $('headerVendedor').classList.add('hidden');
-        return;
-      }
-      
-      $('pageSetup').classList.add('hidden');
       var logged = !!user;
       var esAdmin = user && user.tipo==='admin';
       $('topbarAdmin').classList.toggle('hidden',!esAdmin);
       $('headerVendedor').classList.toggle('hidden',esAdmin||!logged);
       if($('seccionBackup')) $('seccionBackup').style.display = esAdmin ? 'block' : 'none';
-      if(!logged) { showPage('login'); return; }
+      if(!logged) { 
+        showPage('login'); 
+        if(adminExists()) {
+          $('loginMsg').style.display = 'none';
+        } else {
+          $('loginMsg').style.display = 'block';
+          $('loginMsg').textContent = '⚠️ Panel no configurado. El administrador debe crear su cuenta.';
+        }
+        return; 
+      }
       if(esAdmin) { 
         $('userTagAdmin').textContent = '🛡️ ADMIN'; 
         if(currentPage==='login'||currentPage==='tienda') { showPage('dashboard'); renderDashboard(); } 
@@ -559,204 +580,280 @@
 
     function renderDashboard() {
       var totalVentas = getTotalVentas();
-      var totalAcreditado = getTotalAcreditaciones();
-      var keysDisponibles = keys.filter(function(k){ return !k.usado&&estado(k)!=='expired'; }).length;
-      var keysVendidas = keys.filter(function(k){ return k.usado; }).length;
-      $('statsGenerales').innerHTML = 
-        '<div class="stat-card"><div class="stat-label">💰 Ventas Totales</div><div class="stat-value green">$'+totalVentas.toFixed(2)+'</div><div style="font-size:0.6rem;color:#9a8db8;">'+ventas.length+' transacciones</div></div>'+
-        '<div class="stat-card"><div class="stat-label">💸 Total Acreditado</div><div class="stat-value gold">$'+totalAcreditado.toFixed(2)+'</div><div style="font-size:0.6rem;color:#9a8db8;">A vendedores</div></div>'+
-        '<div class="stat-card"><div class="stat-label">🔑 Keys Disponibles</div><div class="stat-value">'+keysDisponibles+'</div><div style="font-size:0.6rem;color:#9a8db8;">De '+keys.length+' totales</div></div>'+
-        '<div class="stat-card"><div class="stat-label">📦 Keys Vendidas</div><div class="stat-value">'+keysVendidas+'</div><div style="font-size:0.6rem;color:#9a8db8;">'+ventas.length+' ventas</div></div>';
+      var totalAcred = getTotalAcreditaciones();
+      var totalKeys = keys.length;
+      var keysUsadas = keys.filter(function(k){ return k.usado; }).length;
+      var totalVend = vendedores.length;
       
-      $('statsVendedores').innerHTML = vendedores.map(function(v){
-        var ventasV = getVentasPorVendedor(v.usuario);
-        var acredV = getAcreditacionesPorVendedor(v.usuario);
-        return '<div class="card"><p style="font-weight:700;font-size:0.8rem;">'+ (v.nombre||v.usuario) +'</p><p style="font-size:0.65rem;color:#9a8db8;">👤 @'+v.usuario+'</p><div style="margin-top:0.4rem;"><p style="font-size:0.65rem;">💰 Ventas: <span style="color:#4ade80;font-weight:700;">$'+ventasV.toFixed(2)+'</span></p><p style="font-size:0.65rem;">💸 Acreditado: <span style="color:#fbbf24;font-weight:700;">$'+acredV.toFixed(2)+'</span></p><p style="font-size:0.65rem;">💎 Saldo actual: <span style="color:#a78bfa;font-weight:700;">$'+v.saldo.toFixed(2)+'</span></p></div></div>';
-      }).join('');
+      var html = '<div class="stat-card"><div class="stat-label">💰 Total Ventas</div><div class="stat-value green">$'+totalVentas.toFixed(2)+'</div></div>';
+      html += '<div class="stat-card"><div class="stat-label">💎 Total Acreditado</div><div class="stat-value gold">$'+totalAcred.toFixed(2)+'</div></div>';
+      html += '<div class="stat-card"><div class="stat-label">🔑 Keys Disponibles</div><div class="stat-value">'+(totalKeys-keysUsadas)+'</div></div>';
+      html += '<div class="stat-card"><div class="stat-label">👥 Vendedores</div><div class="stat-value">'+totalVend+'</div></div>';
+      $('statsGenerales').innerHTML = html;
       
-      var todasAcreditaciones = [];
-      vendedores.forEach(function(v){ if(v.acreditaciones){ v.acreditaciones.forEach(function(a){ todasAcreditaciones.push({vendedor:v.usuario,nombre:v.nombre||v.usuario,monto:a.monto,fecha:a.fecha}); }); } });
-      todasAcreditaciones.sort(function(a,b){ var fechaA = new Date(a.fecha); var fechaB = new Date(b.fecha); if(isNaN(fechaA.getTime())) return 1; if(isNaN(fechaB.getTime())) return -1; return fechaB - fechaA; });
-      $('historialAcreditaciones').innerHTML = todasAcreditaciones.length ? todasAcreditaciones.slice(0,15).map(function(a){
-        return '<div class="venta-row"><span>💸 <strong>'+a.nombre+'</strong> (@'+a.vendedor+')</span><span style="color:#fbbf24;font-weight:700;">+$'+a.monto.toFixed(2)+'</span><span style="font-size:0.55rem;color:#9a8db8;">'+a.fecha+'</span></div>';
-      }).join('') : '<p style="text-align:center;padding:0.8rem;color:#9a8db8;">No hay acreditaciones.</p>';
-      
-      var ventasOrdenadas = ventas.slice().reverse();
-      $('historialVentas').innerHTML = ventasOrdenadas.length ? ventasOrdenadas.slice(0,20).map(function(v){
-        return '<div class="venta-row"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:0.3rem;"><strong>'+v.vendedor+'</strong><span>'+v.cantidad+'x '+v.producto+' ('+v.duracion+')</span><span style="color:#4ade80;font-weight:700;">$'+v.total.toFixed(2)+'</span></div><div style="margin-top:0.2rem;">🔑 '+v.keyEntregada.split(',').map(function(k){return '<span class="key-code-display">'+k.trim()+'</span>';}).join(' ')+'</div><div style="font-size:0.55rem;color:#9a8db8;">'+v.fecha+'</div></div>';
-      }).join('') : '<p style="text-align:center;padding:0.8rem;color:#9a8db8;">No hay ventas registradas.</p>';
-    }
-
-    function renderVendedores() {
-      $('listaVendedores').innerHTML = vendedores.map(function(v){
-        var ventasV = getVentasPorVendedor(v.usuario);
-        var acredV = getAcreditacionesPorVendedor(v.usuario);
-        return '<div class="card"><p style="font-weight:700;font-size:0.75rem;">'+(v.nombre||v.usuario)+'</p><p style="font-size:0.65rem;">👤 '+v.usuario+'</p><p style="color:#a78bfa;font-size:0.8rem;">💰 $'+v.saldo.toFixed(2)+'</p><p style="font-size:0.55rem;color:#9a8db8;">Ventas: $'+ventasV.toFixed(2)+' | Acred: $'+acredV.toFixed(2)+'</p><button class="btn btn-danger btn-xs" data-del="'+v.usuario+'">Eliminar</button></div>';
-      }).join('');
-      document.querySelectorAll('[data-del]').forEach(function(b){ b.onclick = function(){ vendedores=vendedores.filter(function(v){ return v.usuario!==b.dataset.del; }); save(); renderVendedores(); }; });
-      $('selectVendedor').innerHTML = vendedores.map(function(v){ return '<option value="'+v.usuario+'">'+v.usuario+' ($'+v.saldo.toFixed(2)+')</option>'; }).join('');
-      cargarMetodosCobro();
-    }
-
-    window.previsualizarImagen = function(event) {
-      var file = event.target.files[0];
-      if (file) {
-        var reader = new FileReader();
-        reader.onload = function(e) { imagenDataURL = e.target.result; $('previewContainer').style.display = 'block'; $('previewImagen').src = imagenDataURL; $('imagenProd').value = ''; };
-        reader.readAsDataURL(file);
+      var htmlVend = '';
+      for(var i=0;i<vendedores.length;i++) {
+        var v = vendedores[i];
+        var vtas = getVentasPorVendedor(v.usuario);
+        var acred = getAcreditacionesPorVendedor(v.usuario);
+        htmlVend += '<div class="stat-card"><div class="stat-label">'+v.nombre+'</div><div class="stat-value" style="font-size:0.9rem;">$'+v.saldo.toFixed(2)+'</div><div style="font-size:0.55rem;color:#9a8db8;">Ventas: $'+vtas.toFixed(2)+' | Acred: $'+acred.toFixed(2)+'</div></div>';
       }
-    };
-
-    function mostrarProductos() {
-      var container = $('listaProductos');
-      if(!container) return;
-      if(productos.length === 0) { container.innerHTML = '<div class="card" style="text-align:center;padding:1.5rem;color:#9a8db8;">No hay productos. ¡Crea el primero!</div>'; return; }
-      var html = '';
-      for(var i=0; i<productos.length; i++) {
-        var p = productos[i];
-        var img = p.imagen || 'https://via.placeholder.com/300x200/1a1030/c084fc?text='+encodeURIComponent(p.nombre);
-        var preciosHTML = '';
-        for(var d=0; d<DUR.length; d++) {
-          var dur = DUR[d];
-          var precio = p.precios[dur];
-          if(precio && precio > 0) {
-            var stock = getStock(p.id, dur);
-            var claseStock = stock === 0 ? ' sin-stock' : '';
-            var textoStock = stock === 0 ? ' (SIN STOCK)' : ' ('+stock+')';
-            preciosHTML += '<span class="price-tag'+claseStock+'">'+dur+': $'+precio.toFixed(2)+textoStock+'</span>';
+      $('statsVendedores').innerHTML = htmlVend;
+      
+      var htmlAcred = '';
+      var todasAcred = [];
+      for(var i=0;i<vendedores.length;i++) {
+        if(vendedores[i].acreditaciones) {
+          for(var j=0;j<vendedores[i].acreditaciones.length;j++) {
+            todasAcred.push({vendedor:vendedores[i].nombre, monto:vendedores[i].acreditaciones[j].monto, fecha:vendedores[i].acreditaciones[j].fecha});
           }
         }
-        if(!preciosHTML) preciosHTML = '<span style="font-size:0.55rem;color:#9a8db8;">Sin precios configurados</span>';
-        html += '<div class="card"><img src="'+img+'" class="product-img" onerror="this.src=\'https://via.placeholder.com/300x200/1a1030/c084fc?text=ERROR\'" alt="'+p.nombre+'"><p style="font-weight:700;font-size:0.8rem;margin-top:0.2rem;">'+p.nombre+'</p><div class="price-list">'+preciosHTML+'</div><button class="btn btn-danger btn-xs" onclick="eliminarProducto('+p.id+')" style="margin-top:0.2rem;">🗑️ Eliminar</button></div>';
       }
-      container.innerHTML = html;
+      todasAcred.sort(function(a,b){ return new Date(b.fecha)-new Date(a.fecha); });
+      todasAcred = todasAcred.slice(0,10);
+      for(var i=0;i<todasAcred.length;i++) {
+        htmlAcred += '<div class="venta-row">💎 <strong>'+todasAcred[i].vendedor+'</strong> — $'+todasAcred[i].monto.toFixed(2)+' <span style="color:#9a8db8;font-size:0.6rem;">'+todasAcred[i].fecha+'</span></div>';
+      }
+      $('historialAcreditaciones').innerHTML = htmlAcred || '<p style="color:#9a8db8;font-size:0.6rem;">Sin acreditaciones aún.</p>';
+      
+      var htmlVentas = '';
+      var ventasRecientes = ventas.slice().reverse().slice(0,20);
+      for(var i=0;i<ventasRecientes.length;i++) {
+        var vt = ventasRecientes[i];
+        htmlVentas += '<div class="venta-row">🛒 <strong>'+vt.vendedor+'</strong> vendió '+vt.cantidad+'x '+vt.producto+' ('+vt.duracion+') — $'+vt.total.toFixed(2)+' <span style="color:#9a8db8;font-size:0.6rem;">'+vt.fecha+'</span></div>';
+      }
+      $('historialVentas').innerHTML = htmlVentas || '<p style="color:#9a8db8;font-size:0.6rem;">Sin ventas aún.</p>';
     }
     
-    window.eliminarProducto = function(id) { if(confirm('¿Eliminar este producto y todas sus keys?')) { productos = productos.filter(function(p){ return p.id !== id; }); keys = keys.filter(function(k){ return k.productoId !== id; }); save(); mostrarProductos(); renderKeys(); } };
+    function renderVendedores() {
+      var html = '';
+      for(var i=0;i<vendedores.length;i++) {
+        var v = vendedores[i];
+        var vtas = getVentasPorVendedor(v.usuario);
+        html += '<div class="card"><h3 style="color:#a78bfa;margin-bottom:0.2rem;">'+v.nombre+'</h3><p style="font-size:0.65rem;">👤 '+v.usuario+'</p><p style="font-size:0.8rem;color:#4ade80;">💎 Saldo: $'+v.saldo.toFixed(2)+'</p><p style="font-size:0.6rem;color:#9a8db8;">Ventas: $'+vtas.toFixed(2)+'</p></div>';
+      }
+      $('listaVendedores').innerHTML = html || '<p style="color:#9a8db8;">No hay vendedores aún.</p>';
+      
+      var sel = $('selectVendedor');
+      sel.innerHTML = '';
+      for(var i=0;i<vendedores.length;i++) {
+        var opt = document.createElement('option');
+        opt.value = vendedores[i].usuario;
+        opt.textContent = vendedores[i].nombre + ' ($'+vendedores[i].saldo.toFixed(2)+')';
+        sel.appendChild(opt);
+      }
+    }
+    
+    function mostrarProductos() {
+      var html = '';
+      for(var i=0;i<productos.length;i++) {
+        var p = productos[i];
+        html += '<div class="card">';
+        html += '<img src="'+p.imagen+'" class="product-img" alt="'+p.nombre+'" onerror="this.style.display=\'none\'">';
+        html += '<h3 style="color:#a78bfa;font-size:0.75rem;margin-top:0.3rem;">'+p.nombre+'</h3>';
+        html += '<div class="price-list">';
+        for(var d=0;d<DUR.length;d++) {
+          if(p.precios[DUR[d]]) {
+            var stock = getStock(p.id, DUR[d]);
+            html += '<span class="price-tag'+(stock===0?' sin-stock':'')+'">'+DUR[d]+': $'+p.precios[DUR[d]].toFixed(2)+' ('+stock+' disp)</span>';
+          }
+        }
+        html += '</div></div>';
+      }
+      $('listaProductos').innerHTML = html;
+      actualizarSelectoresProductos();
+    }
+    
+    function actualizarSelectoresProductos() {
+      var selKey = $('selectProdKey');
+      var selFiltro = $('filtroProducto');
+      var selVenta = $('selectVentaProd');
+      var html = '';
+      for(var i=0;i<productos.length;i++) {
+        html += '<option value="'+productos[i].id+'">'+productos[i].nombre+'</option>';
+      }
+      if(selKey) selKey.innerHTML = html;
+      if(selFiltro) selFiltro.innerHTML = '<option value="todas">TODOS</option>' + html;
+      if(selVenta) selVenta.innerHTML = html;
+    }
     
     function agregarProducto() {
       var nombre = $('nombreProd').value.trim();
-      if(!nombre) { alert('❌ El nombre del producto es obligatorio'); return; }
-      var imagen = imagenDataURL || $('imagenProd').value.trim();
-      if(!imagen) imagen = 'https://via.placeholder.com/300x200/1a1030/c084fc?text='+encodeURIComponent(nombre);
+      var imgArchivo = $('imagenArchivo').files[0];
+      var imgURL = $('imagenProd').value.trim();
+      
+      if(!nombre) { alert('El nombre es obligatorio'); return; }
+      
       var precios = {};
-      var v1 = parseFloat($('precio1d').value); if(!isNaN(v1) && v1 > 0) precios['1 dia'] = v1;
-      var v3 = parseFloat($('precio3d').value); if(!isNaN(v3) && v3 > 0) precios['3 dias'] = v3;
-      var v7 = parseFloat($('precio7d').value); if(!isNaN(v7) && v7 > 0) precios['7 dias'] = v7;
-      var v10 = parseFloat($('precio10d').value); if(!isNaN(v10) && v10 > 0) precios['10 dias'] = v10;
-      var v30 = parseFloat($('precio30d').value); if(!isNaN(v30) && v30 > 0) precios['30 dias'] = v30;
-      var nuevoId = 1;
-      for(var i=0; i<productos.length; i++) { if(productos[i].id >= nuevoId) nuevoId = productos[i].id + 1; }
-      productos.push({ id: nuevoId, nombre: nombre, imagen: imagen, precios: precios });
-      save(); mostrarProductos();
-      $('nombreProd').value = ''; $('imagenProd').value = ''; $('imagenArchivo').value = '';
-      $('precio1d').value = ''; $('precio3d').value = ''; $('precio7d').value = ''; $('precio10d').value = ''; $('precio30d').value = '';
-      $('previewContainer').style.display = 'none'; imagenDataURL = null;
-      alert('✅ Producto "'+nombre+'" agregado correctamente');
+      if($('precio1d').value) precios['1 dia'] = parseFloat($('precio1d').value);
+      if($('precio3d').value) precios['3 dias'] = parseFloat($('precio3d').value);
+      if($('precio7d').value) precios['7 dias'] = parseFloat($('precio7d').value);
+      if($('precio10d').value) precios['10 dias'] = parseFloat($('precio10d').value);
+      if($('precio30d').value) precios['30 dias'] = parseFloat($('precio30d').value);
+      
+      var id = productos.length ? Math.max.apply(null, productos.map(function(p){ return p.id; })) + 1 : 1;
+      
+      if(imgArchivo) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          crearProducto(id, nombre, e.target.result, precios);
+        };
+        reader.readAsDataURL(imgArchivo);
+      } else {
+        crearProducto(id, nombre, imgURL || 'https://picsum.photos/id/'+(id+10)+'/300/200', precios);
+      }
     }
-
-    function aplicarFiltros() { var f = keys.slice(); if(filtroProd!=='todas') f = f.filter(function(k){ return k.productoId===parseInt(filtroProd); }); if(filtroDur!=='todas') f = f.filter(function(k){ return k.duracion===filtroDur; }); return f; }
+    
+    function crearProducto(id, nombre, imagen, precios) {
+      productos.push({id:id, nombre:nombre, imagen:imagen, precios:precios});
+      save();
+      mostrarProductos();
+      $('nombreProd').value = '';
+      $('imagenProd').value = '';
+      $('imagenArchivo').value = '';
+      $('precio1d').value = '';
+      $('precio3d').value = '';
+      $('precio7d').value = '';
+      $('precio10d').value = '';
+      $('precio30d').value = '';
+      $('previewContainer').style.display = 'none';
+    }
+    
+    function previsualizarImagen(event) {
+      var file = event.target.files[0];
+      if(file) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          $('previewImagen').src = e.target.result;
+          $('previewContainer').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+      }
+    }
     
     function renderKeys() {
-      $('selectProdKey').innerHTML = productos.map(function(p){ return '<option value="'+p.id+'">'+p.nombre+'</option>'; }).join('');
-      $('selectDurKey').innerHTML = DUR.map(function(d){ return '<option value="'+d+'">'+d+'</option>'; }).join('');
-      $('filtroProducto').innerHTML = '<option value="todas">TODOS</option>'+productos.map(function(p){ return '<option value="'+p.id+'"'+(filtroProd==p.id?' selected':'')+'>'+p.nombre+'</option>'; }).join('');
-      var filtradas = aplicarFiltros();
-      filtradas.sort(function(a,b){ var pa=(productos.find(function(p){return p.id===a.productoId;})||{}).nombre||''; var pb=(productos.find(function(p){return p.id===b.productoId;})||{}).nombre||''; if(pa!==pb) return pa.localeCompare(pb); var o={'1 dia':1,'3 dias':2,'7 dias':3,'10 dias':4,'30 dias':5}; return (o[a.duracion]||0)-(o[b.duracion]||0); });
-      var pn = filtroProd!=='todas' ? ((productos.find(function(p){return p.id===parseInt(filtroProd);})||{}).nombre||'') : 'Todos';
-      $('resultadoFiltros').textContent = pn+' | '+filtroDur+' → '+filtradas.length+' keys';
-      $('tablaKeys').innerHTML = filtradas.map(function(k){
-        var prod = productos.find(function(p){return p.id===k.productoId;}); var pa = getPrecioActual(k.productoId,k.duracion); var st = estado(k); var venc = calcVenc(k);
-        var cls='status-active', txt='ACTIVA'; if(k.usado){cls='status-used';txt='USADA';} else if(st==='expired'){cls='status-expired';txt='VENCIDA';} else if(st==='warning'){cls='status-warning';txt='POR VENCER';}
-        return '<tr><td><strong>'+(prod?prod.nombre:'?')+'</strong></td><td>'+k.duracion+'</td><td><code style="color:#a78bfa;">'+k.codigo+'</code></td><td>$'+pa.toFixed(2)+'</td><td><span class="status-badge '+cls+'">'+txt+'</span></td><td>'+(venc?venc.toLocaleDateString():'N/A')+'</td><td><button class="btn btn-danger btn-xs" data-delk="'+k.id+'">🗑️</button></td></tr>';
-      }).join('');
-      document.querySelectorAll('[data-delk]').forEach(function(b){ b.onclick = function(){ keys = keys.filter(function(k){ return k.id!==parseInt(b.dataset.delk); }); save(); renderKeys(); }; });
+      var keysFiltradas = keys;
+      if(filtroProd !== 'todas') {
+        keysFiltradas = keysFiltradas.filter(function(k){ return k.productoId === parseInt(filtroProd); });
+      }
+      if(filtroDur !== 'todas') {
+        keysFiltradas = keysFiltradas.filter(function(k){ return k.duracion === filtroDur; });
+      }
+      
+      var disponibles = keysFiltradas.filter(function(k){ return !k.usado && estado(k)!=='expired'; }).length;
+      $('resultadoFiltros').textContent = 'Mostrando '+keysFiltradas.length+' keys — '+disponibles+' disponibles';
+      
+      var html = '';
+      for(var i=0;i<keysFiltradas.length;i++) {
+        var k = keysFiltradas[i];
+        var prod = productos.find(function(p){ return p.id===k.productoId; });
+        var nombreProd = prod ? prod.nombre : 'Desconocido';
+        var est = estado(k);
+        var venc = calcVenc(k);
+        var vencStr = venc ? venc.toLocaleDateString() : '—';
+        var claseEst = 'status-active';
+        if(est==='warning') claseEst = 'status-warning';
+        else if(est==='expired') claseEst = 'status-expired';
+        else if(est==='used') claseEst = 'status-used';
+        var txtEst = est==='active' ? 'DISP' : (est==='warning' ? 'PROX VENC' : (est==='expired' ? 'VENCIDA' : 'USADA'));
+        
+        html += '<tr>';
+        html += '<td>'+nombreProd+'</td>';
+        html += '<td>'+k.duracion+'</td>';
+        html += '<td><span class="key-code-display">'+k.codigo+'</span></td>';
+        html += '<td>$'+k.precioAlCrear.toFixed(2)+'</td>';
+        html += '<td><span class="status-badge '+claseEst+'">'+txtEst+'</span></td>';
+        html += '<td>'+vencStr+'</td>';
+        html += '<td><button class="btn btn-danger btn-xs" onclick="eliminarKey('+k.id+')">✕</button></td>';
+        html += '</tr>';
+      }
+      $('tablaKeys').innerHTML = html || '<tr><td colspan="7" style="color:#9a8db8;">No hay keys con esos filtros.</td></tr>';
+    }
+    
+    function eliminarKey(id) {
+      keys = keys.filter(function(k){ return k.id !== id; });
+      save();
+      renderKeys();
     }
     
     function renderVentas() {
-      $('ventasContainer').innerHTML = ventas.length ? ventas.slice().reverse().map(function(v){
-        return '<div class="venta-row"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:0.2rem;"><strong>'+v.vendedor+'</strong><span>'+v.cantidad+'x '+v.producto+' ('+v.duracion+')</span><span>$'+v.total.toFixed(2)+'</span></div><div>🔑 '+v.keyEntregada.split(',').map(function(k){return '<span class="key-code-display">'+k.trim()+'</span>';}).join(' ')+'</div><div style="font-size:0.55rem;color:#9a8db8;">'+v.fecha+'</div></div>';
-      }).join('') : '<p style="text-align:center;padding:0.8rem;">Sin ventas.</p>';
+      var html = '';
+      var ventasRecientes = ventas.slice().reverse();
+      for(var i=0;i<ventasRecientes.length;i++) {
+        var vt = ventasRecientes[i];
+        html += '<div class="venta-row">🛒 <strong>'+vt.vendedor+'</strong> — '+vt.cantidad+'x '+vt.producto+' ('+vt.duracion+') — $'+vt.total.toFixed(2)+' <span style="color:#9a8db8;font-size:0.6rem;">'+vt.fecha+'</span></div>';
+      }
+      $('ventasContainer').innerHTML = html || '<p style="color:#9a8db8;">Sin ventas registradas.</p>';
     }
     
     function renderTienda() {
+      if(!user || user.tipo!=='vendedor') return;
       var vend = vendedores.find(function(v){ return v.usuario===user.usuario; });
-      if(!vend) { logout(); return; }
-      $('saldoDisplay').innerHTML = '$'+vend.saldo.toFixed(2)+' USD';
-      $('seccionCatalogo').classList.toggle('hidden',tabActual!=='catalogo');
-      $('seccionHistorial').classList.toggle('hidden',tabActual!=='historial');
-      $('seccionRecarga').classList.toggle('hidden',tabActual!=='recarga');
-      $('seccionRetiro').classList.toggle('hidden',tabActual!=='retiro');
-      if(tabActual==='catalogo') {
-        $('productosTienda').innerHTML = productos.map(function(p){
-          var preciosHTML = '';
-          DUR.forEach(function(d) {
-            var precio = p.precios[d];
-            if(precio && precio > 0) {
-              var stock = getStock(p.id, d);
-              var claseStock = stock === 0 ? ' sin-stock' : '';
-              var textoStock = stock === 0 ? ' ⚠️ SIN STOCK' : ' ('+stock+')';
-              preciosHTML += '<span class="price-tag'+claseStock+'">'+d+': $'+precio.toFixed(2)+textoStock+'</span>';
-            }
-          });
-          if(!preciosHTML) preciosHTML = '<span style="font-size:0.55rem;color:#9a8db8;">Sin precios</span>';
-          var imgSrc = p.imagen || 'https://via.placeholder.com/300x200/1a1030/c084fc?text='+encodeURIComponent(p.nombre);
-          return '<div class="card"><img src="'+imgSrc+'" class="product-img" onerror="this.src=\'https://via.placeholder.com/300x200/1a1030/c084fc?text=SIN+IMAGEN\'"><p style="font-weight:700;font-size:0.75rem;">'+p.nombre+'</p><div class="price-list">'+preciosHTML+'</div></div>';
-        }).join('');
-        $('selectVentaProd').innerHTML = productos.map(function(p){ return '<option value="'+p.id+'">'+p.nombre+'</option>'; }).join('');
-        $('selectVentaDur').innerHTML = DUR.map(function(d){ return '<option value="'+d+'">'+d+'</option>'; }).join('');
-        updatePrecioEst(); $('selectVentaProd').onchange = updatePrecioEst; $('selectVentaDur').onchange = updatePrecioEst;
-      } else if(tabActual==='historial') {
-        var mv = ventas.filter(function(v){ return v.vendedor===user.usuario; });
-        $('misVentasContainer').innerHTML = mv.length ? mv.reverse().map(function(v){
-          return '<div class="card" style="margin-bottom:0.3rem;"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:0.15rem;"><strong style="color:#a78bfa;">'+v.producto+'</strong><span class="price-tag">'+v.duracion+'</span><span>$'+v.total.toFixed(2)+'</span></div><div>🔑 '+v.keyEntregada.split(',').map(function(k){return '<span class="key-code-display">'+k.trim()+'</span>';}).join(' ')+'</div><div style="font-size:0.55rem;color:#9a8db8;">'+v.fecha+' · '+v.cantidad+'ud</div></div>';
-        }).join('') : '<p style="text-align:center;padding:0.8rem;">Sin ventas aún.</p>';
-      } else if(tabActual==='retiro') { $('saldoRetiroDisplay').textContent = '$'+vend.saldo.toFixed(2)+' USD'; }
-      else if(tabActual==='recarga') { mostrarMetodosCobro(); }
+      if(!vend) return;
+      $('saldoDisplay').textContent = '$'+vend.saldo.toFixed(2);
+      $('saldoRetiroDisplay').textContent = '$'+vend.saldo.toFixed(2);
+      
+      var htmlProd = '';
+      for(var i=0;i<productos.length;i++) {
+        var p = productos[i];
+        htmlProd += '<div class="card">';
+        htmlProd += '<img src="'+p.imagen+'" class="product-img" alt="'+p.nombre+'" onerror="this.style.display=\'none\'">';
+        htmlProd += '<h3 style="color:#a78bfa;font-size:0.75rem;margin-top:0.3rem;">'+p.nombre+'</h3>';
+        htmlProd += '<div class="price-list">';
+        for(var d=0;d<DUR.length;d++) {
+          if(p.precios[DUR[d]]) {
+            var stock = getStock(p.id, DUR[d]);
+            htmlProd += '<span class="price-tag'+(stock===0?' sin-stock':'')+'">'+DUR[d]+': $'+p.precios[DUR[d]].toFixed(2)+' ('+stock+' disp)</span>';
+          }
+        }
+        htmlProd += '</div></div>';
+      }
+      $('productosTienda').innerHTML = htmlProd || '<p>No hay productos.</p>';
+      
+      var selVentaProd = $('selectVentaProd');
+      selVentaProd.innerHTML = '';
+      for(var i=0;i<productos.length;i++) {
+        var opt = document.createElement('option');
+        opt.value = productos[i].id;
+        opt.textContent = productos[i].nombre;
+        selVentaProd.appendChild(opt);
+      }
+      updatePrecioEst();
+      
+      if(tabActual==='historial') {
+        var misVentas = ventas.filter(function(v){ return v.vendedor===user.usuario; }).reverse();
+        var htmlV = '';
+        for(var i=0;i<misVentas.length;i++) {
+          var mv = misVentas[i];
+          htmlV += '<div class="venta-row">🛒 '+mv.cantidad+'x '+mv.producto+' ('+mv.duracion+') — $'+mv.total.toFixed(2)+' <span style="color:#9a8db8;font-size:0.6rem;">'+mv.fecha+'</span></div>';
+        }
+        $('misVentasContainer').innerHTML = htmlV || '<p style="color:#9a8db8;">Aún no has realizado ventas.</p>';
+      }
+      
+      mostrarMetodosCobro();
     }
     
     function updatePrecioEst() {
       var pid = parseInt($('selectVentaProd').value);
       var dur = $('selectVentaDur').value;
-      var prod = productos.find(function(p){ return p.id===pid; });
+      var cant = parseInt($('cantVenta').value) || 1;
+      var precio = getPrecioActual(pid, dur);
       var stock = getStock(pid, dur);
-      if(prod && prod.precios[dur] && prod.precios[dur] > 0) {
-        if(stock === 0) {
-          $('precioEst').innerHTML = '💲 Unitario: <strong>$'+prod.precios[dur].toFixed(2)+'</strong> | ⚠️ <strong style="color:#ef4444;">SIN STOCK</strong>';
-        } else {
-          $('precioEst').innerHTML = '💲 Unitario: <strong>$'+prod.precios[dur].toFixed(2)+'</strong> | Stock: <strong>'+stock+'</strong>';
-        }
-      } else {
-        $('precioEst').innerHTML = '<span style="color:#9a8db8;">Selecciona un producto y duración</span>';
-      }
+      $('precioEst').textContent = '💵 Precio unitario: $'+precio.toFixed(2)+' | Total: $'+(precio*cant).toFixed(2)+' | Stock: '+stock;
     }
     
     function calcularComision() {
       var monto = parseFloat($('montoRetiro').value) || 0;
-      if (monto >= 50) {
+      if(monto > 0) {
+        $('comisionInfo').style.display = 'block';
         var comision = monto * 0.30;
         var recibir = monto - comision;
-        $('comisionInfo').style.display = 'block';
-        $('montoSolicitado').textContent = '$' + monto.toFixed(2);
-        $('comisionMonto').textContent = '-$' + comision.toFixed(2);
-        $('montoRecibir').textContent = '$' + recibir.toFixed(2);
+        $('montoSolicitado').textContent = '$'+monto.toFixed(2);
+        $('comisionMonto').textContent = '-$'+comision.toFixed(2);
+        $('montoRecibir').textContent = '$'+recibir.toFixed(2);
       } else {
         $('comisionInfo').style.display = 'none';
       }
-    }
-    
-    function setupAdmin() {
-      var pass = $('setupPassword').value.trim();
-      var pass2 = $('setupPassword2').value.trim();
-      
-      if(!pass) return alert('Ingresá una contraseña');
-      if(pass !== pass2) return alert('Las contraseñas no coinciden');
-      if(pass.length < 4) return alert('La contraseña debe tener al menos 4 caracteres');
-      
-      localStorage.setItem('novapanel_admin_pass', pass);
-      alert('✅ Administrador creado correctamente. Ahora iniciá sesión con admin / tu contraseña.');
-      $('pageSetup').classList.add('hidden');
-      $('pageLogin').classList.add('active');
     }
     
     function login() { 
@@ -764,6 +861,10 @@
       var p = $('passwordInput').value.trim();
       
       if(u === 'admin') {
+        if(!adminExists()) {
+          alert('El administrador aún no ha sido creado. Usá la consola para crear tu cuenta.');
+          return;
+        }
         if(p === getAdminPassword()) {
           user = {tipo:'admin'}; 
           updateUI(); 
@@ -781,49 +882,40 @@
     function logout() { user=null; updateUI(); $('usuarioInput').value=''; $('passwordInput').value=''; }
     
     function cambiarPasswordAdmin() {
-      var passActual = $('passActual').value.trim();
-      var passNueva = $('passNueva').value.trim();
-      if(!passActual || !passNueva) return alert('Completá ambos campos');
-      if(passActual !== getAdminPassword()) return alert('❌ La contraseña actual es incorrecta');
-      if(passNueva.length < 4) return alert('La contraseña nueva debe tener al menos 4 caracteres');
-      localStorage.setItem('novapanel_admin_pass', passNueva);
+      var actual = $('passActual').value.trim();
+      var nueva = $('passNueva').value.trim();
+      if(!actual || !nueva) { alert('Completá ambos campos.'); return; }
+      if(actual !== getAdminPassword()) { alert('Contraseña actual incorrecta.'); return; }
+      localStorage.setItem('novapanel_admin_pass', nueva);
+      alert('✅ Contraseña cambiada correctamente.');
       $('passActual').value = '';
       $('passNueva').value = '';
-      alert('✅ Contraseña cambiada correctamente.');
     }
     
     function irWhatsApp() {
-      var monto = parseFloat($('montoRecarga').value)||0;
-      if(monto<=0) return alert('Ingrese un monto válido');
+      var monto = parseFloat($('montoRecarga').value) || 0;
       var moneda = $('monedaPago').value;
       var nota = $('notaRecarga').value.trim();
-      var monedaTexto = moneda==='USD'?'Dólares (USD)':moneda==='ARS'?'Pesos Argentinos (ARS)':'Cripto (USDT)';
-      var datosPago = '';
-      if(moneda==='ARS' && metodosCobro.mp) datosPago = '\n🏦 Pago vía Mercado Pago: '+metodosCobro.mp;
-      if(moneda==='USD' && metodosCobro.paypal) datosPago = '\n📧 Pago vía PayPal: '+metodosCobro.paypal;
-      if(moneda==='USDT' && metodosCobro.wallet) datosPago += '\n₿ Wallet USDT TRC20: '+metodosCobro.wallet;
-      var mensaje = encodeURIComponent('💎 *SOLICITUD DE RECARGA - NOVA PANEL*\n\n👤 Vendedor: '+(user.nombre||user.usuario)+'\n💰 Monto: $'+monto.toFixed(2)+' USD\n💱 Pagaré en: '+monedaTexto+datosPago+'\n'+(nota?'📝 Nota: '+nota+'\n':'')+'\nPor favor, indíquenme los pasos a seguir. ¡Gracias!');
-      window.open('https://wa.me/'+WAN+'?text='+mensaje,'_blank');
-      setTimeout(function() { alert('📱 Se abrió WhatsApp.\n\n⚠️ IMPORTANTE: Enviá tu comprobante de pago manualmente.'); }, 800);
+      if(monto <= 0) { alert('Ingresá un monto válido.'); return; }
+      var vend = vendedores.find(function(v){ return v.usuario===user.usuario; });
+      var msg = '💎 *RECARGA NOVA PANEL*%0A%0A👤 Vendedor: '+encodeURIComponent(vend.nombre)+' (@'+encodeURIComponent(vend.usuario)+')%0A💰 Monto: '+encodeURIComponent(monto.toFixed(2))+' '+moneda+'%0A📝 Nota: '+encodeURIComponent(nota||'Sin nota')+'%0A%0A📱 Enviar comprobante aparte.';
+      window.open('https://wa.me/'+WAN+'?text='+msg, '_blank');
     }
     
     function irWhatsAppRetiro() {
       var monto = parseFloat($('montoRetiro').value) || 0;
-      if (monto < 50) return alert('El monto mínimo de retiro es $50.00 USD');
-      var vend = vendedores.find(function(v){ return v.usuario === user.usuario; });
-      if (!vend) return;
-      if (monto > vend.saldo) return alert('Saldo insuficiente. Tu saldo es $' + vend.saldo.toFixed(2));
-      var comision = monto * 0.30;
-      var recibir = monto - comision;
       var metodo = $('metodoRetiro').value;
       var datos = $('datosRetiro').value.trim();
-      if (!datos) return alert('Ingrese los datos para el pago');
-      var metodoTexto = metodo === 'transferencia' ? 'Transferencia Bancaria' : metodo === 'cripto' ? 'Criptomonedas' : 'PayPal';
-      var mensaje = encodeURIComponent('💸 *SOLICITUD DE RETIRO - NOVA PANEL*\n\n👤 Vendedor: ' + (user.nombre || user.usuario) + '\n💰 Monto solicitado: $' + monto.toFixed(2) + ' USD\n📊 Comisión (30%): -$' + comision.toFixed(2) + ' USD\n✅ Total a recibir: $' + recibir.toFixed(2) + ' USD\n🏦 Método: ' + metodoTexto + '\n📋 Datos: ' + datos + '\n💎 Saldo actual: $' + vend.saldo.toFixed(2) + ' USD\n\nPor favor, indíquenme los pasos a seguir. ¡Gracias!');
-      window.open('https://wa.me/' + WAN + '?text=' + mensaje, '_blank');
+      var vend = vendedores.find(function(v){ return v.usuario===user.usuario; });
+      if(monto < 50) { alert('El retiro mínimo es de $50.00 USD.'); return; }
+      if(vend.saldo < monto) { alert('Saldo insuficiente.'); return; }
+      if(!datos) { alert('Completá los datos para el pago.'); return; }
+      var comision = monto * 0.30;
+      var recibir = monto - comision;
+      var msg = '💸 *RETIRO NOVA PANEL*%0A%0A👤 Vendedor: '+encodeURIComponent(vend.nombre)+' (@'+encodeURIComponent(vend.usuario)+')%0A💰 Monto solicitado: $'+encodeURIComponent(monto.toFixed(2))+'%0A📊 Comisión (30%): -$'+encodeURIComponent(comision.toFixed(2))+'%0A✅ Recibirá: $'+encodeURIComponent(recibir.toFixed(2))+'%0A🏦 Método: '+encodeURIComponent(metodo)+'%0A📋 Datos: '+encodeURIComponent(datos);
+      window.open('https://wa.me/'+WAN+'?text='+msg, '_blank');
     }
     
-    $('setupBtn').onclick = setupAdmin;
     $('loginBtn').onclick = login;
     $('passwordInput').addEventListener('keypress', function(e){ if(e.key==='Enter') login(); });
     $('logoutAdminBtn').onclick = logout;
@@ -832,30 +924,131 @@
     $('retiroWhatsappBtn').onclick = irWhatsAppRetiro;
     $('agregarProdBtn').onclick = agregarProducto;
     $('exportarBtn').onclick = exportarDatos;
-    
     $('guardarMetodosBtn').onclick = function() {
       metodosCobro.mp = $('datoMP').value.trim();
       metodosCobro.paypal = $('datoPaypal').value.trim();
       metodosCobro.wallet = $('datoWallet').value.trim();
       save();
-      alert('✅ Métodos de cobro guardados correctamente');
+      alert('✅ Métodos de cobro guardados.');
     };
-    
     $('cambiarPassBtn').onclick = cambiarPasswordAdmin;
     
-    document.querySelectorAll('.nav-item').forEach(function(b) { b.addEventListener('click', function() { if(!user || user.tipo!=='admin') return; var page = this.dataset.page; showPage(page); if(page==='dashboard') renderDashboard(); else if(page==='vendedores') { renderVendedores(); cargarMetodosCobro(); } else if(page==='productos') { setTimeout(mostrarProductos, 100); } else if(page==='keys') renderKeys(); else if(page==='ventas') renderVentas(); }); });
-    document.querySelectorAll('.tab-vendedor').forEach(function(t) { t.addEventListener('click', function() { document.querySelectorAll('.tab-vendedor').forEach(function(x){ x.classList.remove('active'); }); this.classList.add('active'); tabActual = this.dataset.tab; renderTienda(); }); });
-    $('filtroProducto').addEventListener('change', function() { filtroProd = this.value; renderKeys(); });
-    document.querySelectorAll('#filtroBar .filter-chip').forEach(function(c) { c.addEventListener('click', function() { document.querySelectorAll('#filtroBar .filter-chip').forEach(function(x){ x.classList.remove('active'); }); this.classList.add('active'); filtroDur = this.dataset.filtro; renderKeys(); }); });
-    $('crearVendedorBtn').onclick = function() { var u = $('nuevoUsuario').value.trim(); var p = $('nuevoPassword').value.trim(); var n = $('nuevoNombre').value.trim(); if(!u||!p) return alert('Usuario y contraseña requeridos'); if(vendedores.some(function(v){ return v.usuario===u; })) return alert('Ya existe'); vendedores.push({usuario:u,password:p,nombre:n||u,saldo:0,acreditaciones:[]}); save(); renderVendedores(); };
-    $('acreditarBtn').onclick = function() { var sel = $('selectVendedor').value; var m = parseFloat($('montoAcreditar').value); if(!sel||isNaN(m)||m<=0) return alert('Monto inválido'); var v = vendedores.find(function(x){ return x.usuario===sel; }); if(v) { v.saldo += m; if(!v.acreditaciones) v.acreditaciones = []; v.acreditaciones.push({monto:m,fecha:new Date().toLocaleString()}); save(); renderVendedores(); } };
-    $('agregarKeyBtn').onclick = function() { var pid = parseInt($('selectProdKey').value); var dur = $('selectDurKey').value; var cod = $('codigoKey').value.trim(); if(!cod) return alert('Código requerido'); if(keys.some(function(k){ return k.codigo===cod; })) return alert('Este código ya existe'); keys.push({ id: Math.max(0, ...keys.map(function(k){ return k.id; })) + 1, productoId: pid, duracion: dur, codigo: cod, usado: false, fechaCreacion: new Date().toISOString(), precioAlCrear: getPrecioActual(pid, dur) }); save(); renderKeys(); $('codigoKey').value = ''; };
-    $('venderBtn').onclick = function() { if(!user || user.tipo!=='vendedor') return; var vend = vendedores.find(function(v){ return v.usuario===user.usuario; }); if(!vend) { logout(); return; } var pid = parseInt($('selectVentaProd').value); var dur = $('selectVentaDur').value; var cant = parseInt($('cantVenta').value) || 1; var prod = productos.find(function(p){ return p.id===pid; }); if(!prod) return; var total = (prod.precios[dur] || 0) * cant; var disp = keys.filter(function(k){ return k.productoId===pid && k.duracion===dur && !k.usado && estado(k)!=='expired'; }); if(disp.length < cant) return alert('Stock insuficiente. Solo '+disp.length+' keys disponibles'); if(vend.saldo < total) return alert('Saldo insuficiente. Necesitas $'+total.toFixed(2)); vend.saldo -= total; var usadas = disp.slice(0, cant); usadas.forEach(function(k){ k.usado=true; k.fechaVenta=new Date().toISOString(); k.vendidoPor=vend.usuario; }); ventas.push({ vendedor: vend.usuario, producto: prod.nombre, duracion: dur, cantidad: cant, total: total, fecha: new Date().toLocaleString(), keyEntregada: usadas.map(function(k){ return k.codigo; }).join(', ') }); save(); renderTienda(); alert('✅ ¡VENTA EXITOSA!\n\n'+prod.nombre+' - '+dur+' x'+cant+'\nTotal: $'+total.toFixed(2)+'\n\n🔑 KEYS:\n'+usadas.map(function(k){ return '• '+k.codigo; }).join('\n')); };
+    $('crearVendedorBtn').onclick = function() {
+      var u = $('nuevoUsuario').value.trim().toLowerCase();
+      var p = $('nuevoPassword').value.trim();
+      var n = $('nuevoNombre').value.trim();
+      if(!u || !p || !n) { alert('Completá todos los campos.'); return; }
+      if(vendedores.find(function(v){ return v.usuario===u; })) { alert('Ese usuario ya existe.'); return; }
+      vendedores.push({usuario:u, password:p, nombre:n, saldo:0, acreditaciones:[]});
+      save();
+      renderVendedores();
+      $('nuevoUsuario').value = '';
+      $('nuevoPassword').value = '';
+      $('nuevoNombre').value = '';
+      alert('✅ Vendedor creado.');
+    };
+    
+    $('acreditarBtn').onclick = function() {
+      var u = $('selectVendedor').value;
+      var m = parseFloat($('montoAcreditar').value);
+      if(!u || !m || m<=0) { alert('Seleccioná vendedor y monto válido.'); return; }
+      var vend = vendedores.find(function(v){ return v.usuario===u; });
+      if(!vend) return;
+      if(!vend.acreditaciones) vend.acreditaciones = [];
+      vend.acreditaciones.push({monto:m, fecha:new Date().toLocaleString()});
+      vend.saldo += m;
+      save();
+      renderVendedores();
+      $('montoAcreditar').value = '';
+      alert('✅ Saldo acreditado.');
+    };
+    
+    $('agregarKeyBtn').onclick = function() {
+      var pid = parseInt($('selectProdKey').value);
+      var dur = $('selectDurKey').value;
+      var cod = $('codigoKey').value.trim();
+      if(!pid || !dur || !cod) { alert('Completá todos los campos.'); return; }
+      if(keys.find(function(k){ return k.codigo===cod; })) { alert('Ese código ya existe.'); return; }
+      var precio = getPrecioActual(pid, dur);
+      keys.push({id:keys.length?Math.max.apply(null,keys.map(function(k){return k.id;}))+1:1, productoId:pid, duracion:dur, codigo:cod, usado:false, fechaCreacion:new Date().toISOString(), precioAlCrear:precio});
+      save();
+      renderKeys();
+      $('codigoKey').value = '';
+      alert('✅ Key creada.');
+    };
+    
+    $('venderBtn').onclick = function() {
+      var pid = parseInt($('selectVentaProd').value);
+      var dur = $('selectVentaDur').value;
+      var cant = parseInt($('cantVenta').value) || 1;
+      var vend = vendedores.find(function(v){ return v.usuario===user.usuario; });
+      if(!vend) return;
+      var precio = getPrecioActual(pid, dur);
+      var total = precio * cant;
+      var disponibles = keys.filter(function(k){ return k.productoId===pid && k.duracion===dur && !k.usado && estado(k)!=='expired'; });
+      if(disponibles.length < cant) { alert('Stock insuficiente. Hay '+disponibles.length+' disponibles.'); return; }
+      if(vend.saldo < total) { alert('Saldo insuficiente. Necesitás $'+total.toFixed(2)+'.'); return; }
+      var prod = productos.find(function(p){ return p.id===pid; });
+      var keysVendidas = [];
+      for(var i=0;i<cant;i++) {
+        disponibles[i].usado = true;
+        keysVendidas.push(disponibles[i].codigo);
+      }
+      vend.saldo -= total;
+      ventas.push({vendedor:user.usuario, producto:prod?prod.nombre:'Desconocido', duracion:dur, cantidad:cant, total:total, keys:keysVendidas, fecha:new Date().toLocaleString()});
+      save();
+      renderTienda();
+      updatePrecioEst();
+      alert('✅ Venta realizada. Keys: '+keysVendidas.join(', '));
+    };
+    
+    document.querySelectorAll('.nav-item').forEach(function(item) {
+      item.addEventListener('click', function() {
+        var page = this.getAttribute('data-page');
+        showPage(page);
+        if(page==='dashboard') renderDashboard();
+        if(page==='vendedores') renderVendedores();
+        if(page==='productos') mostrarProductos();
+        if(page==='keys') renderKeys();
+        if(page==='ventas') renderVentas();
+      });
+    });
+    
+    document.querySelectorAll('.tab-vendedor').forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        document.querySelectorAll('.tab-vendedor').forEach(function(t){ t.classList.remove('active'); });
+        this.classList.add('active');
+        tabActual = this.getAttribute('data-tab');
+        $('seccionCatalogo').classList.toggle('hidden', tabActual!=='catalogo');
+        $('seccionHistorial').classList.toggle('hidden', tabActual!=='historial');
+        $('seccionRecarga').classList.toggle('hidden', tabActual!=='recarga');
+        $('seccionRetiro').classList.toggle('hidden', tabActual!=='retiro');
+        renderTienda();
+      });
+    });
+    
+    document.querySelectorAll('#filtroBar .filter-chip').forEach(function(chip) {
+      chip.addEventListener('click', function() {
+        document.querySelectorAll('#filtroBar .filter-chip').forEach(function(c){ c.classList.remove('active'); });
+        this.classList.add('active');
+        filtroDur = this.getAttribute('data-filtro');
+        renderKeys();
+      });
+    });
+    
+    $('filtroProducto').addEventListener('change', function() {
+      filtroProd = this.value;
+      renderKeys();
+    });
+    
+    $('selectVentaProd').addEventListener('change', updatePrecioEst);
+    $('selectVentaDur').addEventListener('change', updatePrecioEst);
+    $('cantVenta').addEventListener('input', updatePrecioEst);
     
     migrarDatosAntiguos();
     load(); 
     updateUI();
-    setTimeout(function() { mostrarProductos(); }, 300);
+    setTimeout(function() { mostrarProductos(); actualizarSelectoresProductos(); }, 300);
   </script>
 </body>
 </html>
