@@ -162,6 +162,11 @@
     .comision-box { margin:0.5rem 0;padding:0.6rem;background:rgba(239,68,68,0.1);border:1px solid #ef4444;border-radius:0.6rem; }
     .metodos-info { background: rgba(139,92,246,0.08); border: 1px solid #352850; padding: 0.4rem 0.6rem; border-radius: 0.5rem; margin-bottom: 0.5rem; font-size: 0.6rem; }
     .metodos-info p { margin: 0.15rem 0; color: #c4b5fd; }
+    .logo-touch {
+      user-select: none;
+      -webkit-user-select: none;
+      cursor: pointer;
+    }
     @media (max-width: 768px) {
       .topbar-admin { padding: 0.2rem 0.5rem; }
       .nav-item { padding: 0.15rem 0.3rem; font-size: 0.55rem; }
@@ -202,11 +207,22 @@
     <main class="main" id="mainContent">
       <div class="page active" id="pageLogin">
         <div class="card" style="max-width:350px;margin:3rem auto;text-align:center;">
-          <h2 style="font-family:'Orbitron',sans-serif;margin-bottom:0.8rem;font-size:1.1rem;background:linear-gradient(135deg,#ddd6fe,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">🔐 ACCESO</h2>
+          <h2 class="logo-touch" id="loginLogo" style="font-family:'Orbitron',sans-serif;margin-bottom:0.8rem;font-size:1.1rem;background:linear-gradient(135deg,#ddd6fe,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">🔐 ACCESO</h2>
           <div id="loginMsg" style="color:#fca5a5;font-size:0.65rem;margin-bottom:0.5rem;display:none;"></div>
           <div class="input-group"><label>Usuario</label><input type="text" id="usuarioInput" placeholder="Usuario"></div>
           <div class="input-group"><label>Contraseña</label><input type="password" id="passwordInput" placeholder="••••"></div>
           <button class="btn" id="loginBtn" style="width:100%;margin-top:0.4rem;">INGRESAR</button>
+          
+          <div id="setupAdminSection" style="display:none;margin-top:1rem;padding-top:0.8rem;border-top:1px solid #352850;">
+            <p style="color:#fbbf24;font-size:0.65rem;margin-bottom:0.5rem;">🛡️ Configuración inicial de administrador</p>
+            <div class="input-group">
+              <label>Clave secreta</label>
+              <input type="password" id="claveSetupInput" placeholder="Ingresá la clave secreta">
+            </div>
+            <button class="btn btn-success" id="setupAdminBtn" style="width:100%;">CREAR ADMIN</button>
+            <p id="setupMsg" style="font-size:0.55rem;margin-top:0.3rem;"></p>
+          </div>
+          
           <p style="margin-top:0.5rem;color:#9a8db8;font-size:0.6rem;">Nova Panel - Sistema de Gestión</p>
         </div>
       </div>
@@ -364,7 +380,7 @@
     var WAN = '5491154141893';
     var imagenDataURL = null;
     
-    // Hash SHA-256 de la clave secreta (NUNCA se muestra la clave real)
+    // Hash SHA-256 de la clave secreta - SOLO para configuracion inicial
     var ADMIN_HASH = '5e8d9f7a3b2c1e0f4d6a8b9c7e5f3a2d1c0b9a8f7e6d5c4b3a29180706050';
     
     function getAdminPassword() {
@@ -375,29 +391,18 @@
       return localStorage.getItem('novapanel_admin_pass') !== null;
     }
     
-    // Funcion para crear admin desde la consola (SOLO para el dueño)
-    async function crearAdmin(clave) {
-      if (adminExists()) {
-        console.log('❌ Ya existe un administrador configurado en este navegador.');
-        return;
-      }
+    function setupDone() {
+      return localStorage.getItem('novapanel_setup_done') === 'true';
+    }
+    
+    async function validarClaveSecreta(clave) {
       var encoder = new TextEncoder();
       var data = encoder.encode(clave);
       var hashBuffer = await crypto.subtle.digest('SHA-256', data);
       var hashArray = Array.from(new Uint8Array(hashBuffer));
       var hashHex = hashArray.map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
-      
-      if (hashHex === ADMIN_HASH) {
-        localStorage.setItem('novapanel_admin_pass', clave);
-        console.log('✅ Admin creado correctamente. Recargá la página e ingresá con usuario: admin y tu clave.');
-        console.log('⚠️ Esta función ya no se puede volver a usar.');
-      } else {
-        console.log('❌ Clave incorrecta.');
-      }
+      return hashHex === ADMIN_HASH;
     }
-    
-    // Asegurarse de que crearAdmin sea accesible globalmente
-    window.crearAdmin = crearAdmin;
     
     var productos = [
       {id:1,nombre:"Netflix Premium",imagen:"https://picsum.photos/id/0/300/200",precios:{'1 dia':1.5,'3 dias':3.99,'7 dias':8.5,'10 dias':11.99,'30 dias':29.99}},
@@ -457,7 +462,10 @@
           localStorage.setItem('novapanel_k', localStorage.getItem(clavesViejas[i].replace('_v','_k')));
           localStorage.setItem('novapanel_h', localStorage.getItem(clavesViejas[i].replace('_v','_h')));
           if(localStorage.getItem(clavesViejas[i].replace('_v','_mc'))) localStorage.setItem('novapanel_mc', localStorage.getItem(clavesViejas[i].replace('_v','_mc')));
-          if(localStorage.getItem('gamervault_admin_pass')) localStorage.setItem('novapanel_admin_pass', localStorage.getItem('gamervault_admin_pass'));
+          if(localStorage.getItem('gamervault_admin_pass')) {
+            localStorage.setItem('novapanel_admin_pass', localStorage.getItem('gamervault_admin_pass'));
+            localStorage.setItem('novapanel_setup_done', 'true');
+          }
           return;
         }
       }
@@ -862,7 +870,7 @@
       
       if(u === 'admin') {
         if(!adminExists()) {
-          alert('El administrador aún no ha sido creado. Usá la consola para crear tu cuenta.');
+          alert('El administrador aún no ha sido creado.');
           return;
         }
         if(p === getAdminPassword()) {
@@ -915,6 +923,54 @@
       var msg = '💸 *RETIRO NOVA PANEL*%0A%0A👤 Vendedor: '+encodeURIComponent(vend.nombre)+' (@'+encodeURIComponent(vend.usuario)+')%0A💰 Monto solicitado: $'+encodeURIComponent(monto.toFixed(2))+'%0A📊 Comisión (30%): -$'+encodeURIComponent(comision.toFixed(2))+'%0A✅ Recibirá: $'+encodeURIComponent(recibir.toFixed(2))+'%0A🏦 Método: '+encodeURIComponent(metodo)+'%0A📋 Datos: '+encodeURIComponent(datos);
       window.open('https://wa.me/'+WAN+'?text='+msg, '_blank');
     }
+    
+    // Evento: mantener presionado el logo 5 segundos para mostrar configuracion de admin
+    var pressTimer = null;
+    var logoElement = $('loginLogo');
+    if(logoElement) {
+      logoElement.addEventListener('touchstart', function(e) {
+        if(setupDone() || adminExists()) return;
+        pressTimer = setTimeout(function() {
+          $('setupAdminSection').style.display = 'block';
+        }, 5000);
+      });
+      logoElement.addEventListener('touchend', function() {
+        if(pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+      });
+      logoElement.addEventListener('mousedown', function(e) {
+        if(setupDone() || adminExists()) return;
+        pressTimer = setTimeout(function() {
+          $('setupAdminSection').style.display = 'block';
+        }, 5000);
+      });
+      logoElement.addEventListener('mouseup', function() {
+        if(pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+      });
+    }
+    
+    // Boton de creacion de admin
+    $('setupAdminBtn').onclick = async function() {
+      var clave = $('claveSetupInput').value.trim();
+      if(!clave) {
+        $('setupMsg').textContent = '❌ Ingresá la clave secreta.';
+        $('setupMsg').style.color = '#fca5a5';
+        return;
+      }
+      if(await validarClaveSecreta(clave)) {
+        localStorage.setItem('novapanel_admin_pass', clave);
+        localStorage.setItem('novapanel_setup_done', 'true');
+        $('setupMsg').textContent = '✅ Admin creado. Recargá la página e ingresá con usuario: admin y tu clave.';
+        $('setupMsg').style.color = '#4ade80';
+        $('claveSetupInput').value = '';
+        // Ocultar seccion para siempre en este dispositivo
+        setTimeout(function() {
+          $('setupAdminSection').style.display = 'none';
+        }, 2000);
+      } else {
+        $('setupMsg').textContent = '❌ Clave incorrecta.';
+        $('setupMsg').style.color = '#fca5a5';
+      }
+    };
     
     $('loginBtn').onclick = login;
     $('passwordInput').addEventListener('keypress', function(e){ if(e.key==='Enter') login(); });
