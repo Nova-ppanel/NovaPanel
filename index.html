@@ -278,7 +278,7 @@
   
   <div class="card" style="margin-bottom:0.8rem;">
     <h3 style="color:#a78bfa;margin-bottom:0.5rem;font-size:0.8rem;">🔒 Cambiar Contraseña Admin</h3>
-    <p style="font-size:0.6rem;color:#9a8db8;margin-bottom:0.5rem;">Cambia tu contraseña de administrador. Se guardará solo en tu navegador.</p>
+    <p style="font-size:0.6rem;color:#9a8db8;margin-bottom:0.5rem;">Cambia tu contraseña de administrador. Se guarda en la nube.</p>
     <div class="grid-2">
       <div class="input-group"><label>Contraseña actual</label><input type="password" id="passActual" placeholder="Contraseña actual"></div>
       <div class="input-group"><label>Contraseña nueva</label><input type="password" id="passNueva" placeholder="Contraseña nueva"></div>
@@ -403,6 +403,7 @@
   
   var productos = [], vendedores = [], metodosCobro = { mp: '', paypal: '', wallet: '' }, keys = [], ventas = [];
   var user = null, currentPage = 'dashboard', filtroDur = 'todas', filtroProd = 'todas', tabActual = 'catalogo';
+  var adminPasswordCache = null;
   
   function $(id) { return document.getElementById(id); }
   
@@ -421,6 +422,15 @@
     ventas = []; snapH.forEach(function(d) { ventas.push(d.data()); });
     var snapMC = await db.collection('config').doc('metodosCobro').get();
     if(snapMC.exists) metodosCobro = snapMC.data();
+    
+    try {
+      var snapAdmin = await db.collection('config').doc('admin').get();
+      if(snapAdmin.exists) {
+        adminPasswordCache = snapAdmin.data().password;
+      }
+    } catch(e) {
+      adminPasswordCache = null;
+    }
   }
   
   async function guardarProductos() { for(var i=0;i<productos.length;i++) await db.collection('productos').doc(productos[i].id).set(productos[i]); }
@@ -428,8 +438,8 @@
   async function guardarVentas() { for(var i=0;i<ventas.length;i++) await db.collection('ventas').add(ventas[i]); }
   async function guardarMetodosCobro() { await db.collection('config').doc('metodosCobro').set(metodosCobro); }
   
-  function getAdminPassword() { return localStorage.getItem('novapanel_admin_pass'); }
-  function adminExists() { return localStorage.getItem('novapanel_admin_pass') !== null; }
+  function getAdminPassword() { return adminPasswordCache; }
+  function adminExists() { return adminPasswordCache !== null && adminPasswordCache !== undefined; }
   
   function calcVenc(k) { if(!k.fechaCreacion) return null; var m = {'1 dia':1,'3 dias':3,'7 dias':7,'10 dias':10,'30 dias':30}; var fc = new Date(k.fechaCreacion); fc.setDate(fc.getDate()+(m[k.duracion]||0)); return fc; }
   function estado(k) { if(k.usado) return 'used'; var v = calcVenc(k); if(!v) return 'active'; var d = Math.ceil((v-new Date())/(86400000)); if(d<0) return 'expired'; if(d<=2) return 'warning'; return 'active'; }
@@ -554,7 +564,7 @@
   }
   
   async function eliminarVendedor(uid, usuario) {
-    if(!confirm('¿Eliminar a '+usuario+'? Esta acción no se puede deshacer.')) return;
+    if(!confirm('¿Eliminar a '+usuario+'?')) return;
     await db.collection('vendedores').doc(uid).delete();
     vendedores = vendedores.filter(function(v){ return v.uid !== uid; });
     renderVendedores();
@@ -720,8 +730,7 @@
       $('montoRecibir').textContent = '$'+(monto-comision).toFixed(2);
     } else { $('comisionInfo').style.display = 'none'; }
   }
-    // AUTENTICACION
-    $('loginBtn').onclick = function() {
+    $('loginBtn').onclick = async function() {
       var u = $('usuarioInput').value.trim().toLowerCase();
       var p = $('passwordInput').value.trim();
       if(!u || !p) { alert('Completá todos los campos.'); return; }
@@ -766,12 +775,13 @@
     
     function logout() { auth.signOut().catch(function(){}); user=null; updateUI(); $('usuarioInput').value=''; $('passwordInput').value=''; }
     
-    function cambiarPasswordAdmin() {
+    async function cambiarPasswordAdmin() {
       var actual = $('passActual').value.trim();
       var nueva = $('passNueva').value.trim();
       if(!actual||!nueva) { alert('Completá ambos campos.'); return; }
       if(actual !== getAdminPassword()) { alert('Contraseña actual incorrecta.'); return; }
-      localStorage.setItem('novapanel_admin_pass', nueva);
+      await db.collection('config').doc('admin').set({password: nueva});
+      adminPasswordCache = nueva;
       alert('✅ Contraseña cambiada correctamente.');
       $('passActual').value='';$('passNueva').value='';
     }
@@ -974,7 +984,13 @@
         mostrarProductos();
         actualizarSelectoresProductos();
       });
-    });
+    });setTimeout(function() {
+  if(adminPasswordCache) {
+    alert('Contraseña cargada correctamente.');
+  } else {
+    alert('ERROR: No se pudo cargar la contraseña desde Firestore. adminPasswordCache es null.');
+  }
+}, 5000);
   </script>
 </body>
 </html>
