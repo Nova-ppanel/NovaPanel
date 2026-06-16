@@ -833,7 +833,63 @@
     $('recargarWhatsappBtn').onclick = irWhatsApp;
     $('retiroWhatsappBtn').onclick = irWhatsAppRetiro;
     $('agregarProdBtn').onclick = agregarProducto;
-    $('exportarBtn').onclick = function() { alert('Exportar no disponible en Firebase. Usá la consola de Firestore.'); };
+    
+    // EXPORTAR DATOS
+    $('exportarBtn').onclick = async function() {
+      var datos = {
+        v: vendedores,
+        p: productos,
+        k: keys,
+        h: ventas,
+        mc: metodosCobro,
+        version: '2.0',
+        fecha: new Date().toISOString()
+      };
+      var blob = new Blob([JSON.stringify(datos, null, 2)], {type: 'application/json'});
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'novapanel_backup_' + new Date().toISOString().slice(0,10) + '.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      alert('✅ Datos exportados correctamente.');
+    };
+    
+    // IMPORTAR DATOS
+    function importarDatos(event) {
+      var file = event.target.files[0];
+      if(!file) return;
+      var reader = new FileReader();
+      reader.onload = async function(e) {
+        try {
+          var datos = JSON.parse(e.target.result);
+          if(datos.v && datos.p && datos.k && datos.h) {
+            if(!confirm('¿Importar datos? Esto reemplazará los datos actuales.')) return;
+            vendedores = datos.v;
+            productos = datos.p;
+            keys = datos.k;
+            ventas = datos.h;
+            if(datos.mc) metodosCobro = datos.mc;
+            for(var i=0;i<productos.length;i++) await db.collection('productos').doc(productos[i].id).set(productos[i]);
+            for(var i=0;i<vendedores.length;i++) await db.collection('vendedores').doc(vendedores[i].uid).set(vendedores[i]);
+            for(var i=0;i<keys.length;i++) await db.collection('keys').doc(keys[i].id).set(keys[i]);
+            for(var i=0;i<ventas.length;i++) await db.collection('ventas').add(ventas[i]);
+            await guardarMetodosCobro();
+            alert('✅ Datos importados correctamente. Recargando...');
+            location.reload();
+          } else {
+            alert('❌ El archivo no tiene el formato correcto.');
+          }
+        } catch(err) {
+          alert('❌ Error al leer el archivo.');
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+    
     $('guardarMetodosBtn').onclick = async function() {
       metodosCobro.mp=$('datoMP').value.trim(); metodosCobro.paypal=$('datoPaypal').value.trim(); metodosCobro.wallet=$('datoWallet').value.trim();
       await guardarMetodosCobro();
