@@ -9,7 +9,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <style>
-    :roothtml += '<tr><td>'+nombreProd+'</td><td>'+k.duracion+'</td><td><span class="key-code-display">'+k.codigo+'</span></td><td>$'+k.precioAlCrear.toFixed(2)+'</td><td><span class="status-badge '+claseEst+'">'+txtEst+'</span></td><td>—</td><td><button class="btn btn-danger btn-xs" onclick="eliminarKey(\''+k.id+'\')">✕</button></td></tr>'; {
+    :root {
       --bg-deep: #020107;
       --bg-card: #0b0818;
       --bg-input: #0a0716;
@@ -40,62 +40,20 @@
     }
     .bg-particles { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
     .particle { position: absolute; border-radius: 50%; animation: floatUp linear infinite; opacity: 0; }
-    @keyframes floatUp {
-      0% { transform: translateY(100vh) scale(0); opacity: 0; }
-      10% { opacity: 0.6; }
-      90% { opacity: 0.6; }
-      100% { transform: translateY(-100px) scale(1.5); opacity: 0; }
-    }
-    .grid-bg {
-      position: fixed; inset: 0; z-index: 0; pointer-events: none;
-      background-image: linear-gradient(rgba(139,92,246,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(139,92,246,0.04) 1px, transparent 1px);
-      background-size: 50px 50px; animation: gridMove 20s linear infinite;
-    }
+    @keyframes floatUp { 0% { transform: translateY(100vh) scale(0); opacity: 0; } 10% { opacity: 0.6; } 90% { opacity: 0.6; } 100% { transform: translateY(-100px) scale(1.5); opacity: 0; } }
+    .grid-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; background-image: linear-gradient(rgba(139,92,246,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(139,92,246,0.04) 1px, transparent 1px); background-size: 50px 50px; animation: gridMove 20s linear infinite; }
     @keyframes gridMove { 0% { transform: translate(0, 0); } 100% { transform: translate(50px, 50px); } }
-    .neon-lines {
-      position: fixed; inset: 0; z-index: 0; pointer-events: none;
-      background: radial-gradient(ellipse at 20% 30%, rgba(139,92,246,0.06) 0%, transparent 50%), radial-gradient(ellipse at 80% 60%, rgba(109,40,217,0.05) 0%, transparent 50%), radial-gradient(ellipse at 50% 80%, rgba(167,139,250,0.04) 0%, transparent 40%);
-      animation: neonPulse 6s ease-in-out infinite alternate;
-    }
+    .neon-lines { position: fixed; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(ellipse at 20% 30%, rgba(139,92,246,0.06) 0%, transparent 50%), radial-gradient(ellipse at 80% 60%, rgba(109,40,217,0.05) 0%, transparent 50%), radial-gradient(ellipse at 50% 80%, rgba(167,139,250,0.04) 0%, transparent 40%); animation: neonPulse 6s ease-in-out infinite alternate; }
     @keyframes neonPulse { 0% { opacity: 0.7; } 100% { opacity: 1; } }
     .app { position: relative; z-index: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-    
-    .topbar-admin {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0.5rem 0.8rem; background: rgba(10,5,20,0.98);
-      border-bottom: 1px solid #352850; z-index: 15;
-      backdrop-filter: blur(25px); flex-wrap: wrap; gap: 0.5rem;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-    }
-    .topbar-admin .logo {
-      font-family: 'Orbitron', sans-serif; font-size: 0.9rem; font-weight: 800;
-      background: linear-gradient(135deg, #ddd6fe, #a78bfa, #8b5cf6);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 1px;
-    }
-    .nav-horizontal {
-      display: flex; gap: 0.3rem; flex-wrap: wrap;
-      background: rgba(15,8,30,0.6); padding: 0.3rem;
-      border-radius: 1rem; border: 1px solid #352850;
-    }
-    .nav-item {
-      display: flex; align-items: center; gap: 0.2rem;
-      padding: 0.4rem 0.7rem; border-radius: 0.8rem;
-      cursor: pointer; font-weight: 600; font-size: 0.7rem;
-      color: #c4b5fd; transition: all 0.3s;
-      border: 1px solid transparent; background: transparent;
-      white-space: nowrap;
-    }
+    .topbar-admin { display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0.8rem; background: rgba(10,5,20,0.98); border-bottom: 1px solid #352850; z-index: 15; backdrop-filter: blur(25px); flex-wrap: wrap; gap: 0.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+    .topbar-admin .logo { font-family: 'Orbitron', sans-serif; font-size: 0.9rem; font-weight: 800; background: linear-gradient(135deg, #ddd6fe, #a78bfa, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 1px; }
+    .nav-horizontal { display: flex; gap: 0.3rem; flex-wrap: wrap; background: rgba(15,8,30,0.6); padding: 0.3rem; border-radius: 1rem; border: 1px solid #352850; }
+    .nav-item { display: flex; align-items: center; gap: 0.2rem; padding: 0.4rem 0.7rem; border-radius: 0.8rem; cursor: pointer; font-weight: 600; font-size: 0.7rem; color: #c4b5fd; transition: all 0.3s; border: 1px solid transparent; background: transparent; white-space: nowrap; }
     .nav-item:hover { background: rgba(139,92,246,0.2); border-color: rgba(139,92,246,0.5); color: #fff; box-shadow: 0 0 10px rgba(139,92,246,0.3); }
     .nav-item.active { background: #8b5cf6; color: #fff; border-color: #a78bfa; box-shadow: 0 0 15px rgba(139,92,246,0.5); font-weight: 700; }
     .user-tag { background: rgba(139,92,246,0.15); border: 1px solid rgba(139,92,246,0.3); padding: 0.3rem 0.6rem; border-radius: 1rem; font-weight: 600; color: #c4b5fd; font-size: 0.7rem; }
-    .btn {
-      background: rgba(20,10,45,0.6); border: 1.5px solid #8b5cf6;
-      color: #c4b5fd; font-weight: 600; font-size: 0.7rem;
-      padding: 0.4rem 0.8rem; border-radius: 1.2rem;
-      cursor: pointer; transition: all 0.3s;
-      display: inline-flex; align-items: center; justify-content: center;
-      gap: 0.2rem; text-transform: uppercase;
-    }
+    .btn { background: rgba(20,10,45,0.6); border: 1.5px solid #8b5cf6; color: #c4b5fd; font-weight: 600; font-size: 0.7rem; padding: 0.4rem 0.8rem; border-radius: 1.2rem; cursor: pointer; transition: all 0.3s; display: inline-flex; align-items: center; justify-content: center; gap: 0.2rem; text-transform: uppercase; }
     .btn:hover { background: #8b5cf6; color: #000; box-shadow: 0 0 20px rgba(139,92,246,0.5); }
     .btn-danger { border-color: #ef4444; color: #fca5a5; background: rgba(80,10,20,0.3); }
     .btn-danger:hover { background: #dc2626; color: #fff; }
@@ -108,12 +66,7 @@
     .page { display: none; animation: fadeIn 0.3s ease; }
     .page.active { display: block; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-    .section-title {
-      font-family: 'Orbitron', sans-serif; font-size: 1.1rem;
-      background: linear-gradient(135deg, #ddd6fe, #8b5cf6);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      margin-bottom: 0.8rem; letter-spacing: 2px;
-    }
+    .section-title { font-family: 'Orbitron', sans-serif; font-size: 1.1rem; background: linear-gradient(135deg, #ddd6fe, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.8rem; letter-spacing: 2px; }
     .card { background: rgba(11,8,24,0.8); border: 1px solid #1f1638; border-radius: 0.8rem; padding: 0.8rem; box-shadow: 0 4px 15px rgba(0,0,0,0.4); backdrop-filter: blur(10px); }
     .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.6rem; margin-bottom: 1rem; }
     .stat-card { background: rgba(11,8,24,0.8); border: 1px solid #1f1638; border-radius: 0.8rem; padding: 0.8rem 1rem; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.4); transition: all 0.3s; }
@@ -132,13 +85,8 @@
     input[type="file"]::file-selector-button { background: #8b5cf6; color: #000; border: none; padding: 0.3rem 0.6rem; border-radius: 1rem; cursor: pointer; font-weight: 600; margin-right: 0.5rem; }
     .product-img { width: 100%; height: 140px; object-fit: contain; border-radius: 0.5rem; background: #0e0a1a; border: 1px solid #352850; }
     .price-list { display: flex; flex-wrap: wrap; gap: 0.1rem; margin: 0.2rem 0; }
-    .price-tag {
-      background: #150e28; border: 1px solid #352850;
-      padding: 0.1rem 0.35rem; border-radius: 1rem; font-size: 0.55rem; color: #a78bfa;
-    }
-    .price-tag.sin-stock {
-      background: #2e0a0f; border-color: #ef4444; color: #fca5a5; text-decoration: line-through;
-    }
+    .price-tag { background: #150e28; border: 1px solid #352850; padding: 0.1rem 0.35rem; border-radius: 1rem; font-size: 0.55rem; color: #a78bfa; }
+    .price-tag.sin-stock { background: #2e0a0f; border-color: #ef4444; color: #fca5a5; text-decoration: line-through; }
     .filter-section { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; margin-bottom: 0.5rem; padding: 0.3rem 0.5rem; background: rgba(8,4,20,0.6); border-radius: 0.6rem; border: 1px solid #1f1638; }
     .filter-chip { background: #150e25; border: 1px solid #352850; color: #d4c8f0; padding: 0.15rem 0.4rem; border-radius: 1rem; cursor: pointer; font-weight: 500; font-size: 0.6rem; transition: all 0.25s; }
     .filter-chip:hover, .filter-chip.active { background: #8b5cf6; color: #000; border-color: #a78bfa; }
@@ -165,22 +113,8 @@
     .comision-box { margin:0.5rem 0;padding:0.6rem;background:rgba(239,68,68,0.1);border:1px solid #ef4444;border-radius:0.6rem; }
     .metodos-info { background: rgba(139,92,246,0.08); border: 1px solid #352850; padding: 0.4rem 0.6rem; border-radius: 0.5rem; margin-bottom: 0.5rem; font-size: 0.6rem; }
     .metodos-info p { margin: 0.15rem 0; color: #c4b5fd; }
-    .link-btn {
-      background: none;
-      border: none;
-      color: #a78bfa;
-      cursor: pointer;
-      font-size: 0.6rem;
-      text-decoration: underline;
-      padding: 0;
-      margin-top: 0.5rem;
-    }
-    @media (max-width: 768px) {
-      .topbar-admin { padding: 0.4rem 0.5rem; }
-      .nav-item { padding: 0.3rem 0.5rem; font-size: 0.65rem; }
-      .main { padding: 0.8rem 1rem 3rem 1rem; }
-      .grid-2 { grid-template-columns: 1fr; }
-    }
+    .link-btn { background: none; border: none; color: #a78bfa; cursor: pointer; font-size: 0.6rem; text-decoration: underline; padding: 0; margin-top: 0.5rem; }
+    @media (max-width: 768px) { .topbar-admin { padding: 0.4rem 0.5rem; } .nav-item { padding: 0.3rem 0.5rem; font-size: 0.65rem; } .main { padding: 0.8rem 1rem 3rem 1rem; } .grid-2 { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -225,14 +159,12 @@
         </div>
         <h2 style="font-family:'Orbitron',sans-serif;margin-bottom:0.8rem;font-size:1.1rem;background:linear-gradient(135deg,#ddd6fe,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">🔐 ACCESO</h2>
         <div id="loginMsg" style="color:#fca5a5;font-size:0.65rem;margin-bottom:0.5rem;display:none;"></div>
-        
         <div id="formLogin">
           <div class="input-group"><label>Usuario</label><input type="text" id="usuarioInput" placeholder="Usuario"></div>
           <div class="input-group"><label>Contraseña</label><input type="password" id="passwordInput" placeholder="••••"></div>
           <button class="btn" id="loginBtn" style="width:100%;margin-top:0.4rem;">INGRESAR</button>
           <button class="link-btn" id="mostrarRegistroBtn">¿No tenés cuenta? Registrate</button>
         </div>
-        
         <div id="formRegistro" style="display:none;">
           <p style="color:#fbbf24;font-size:0.65rem;margin-bottom:0.5rem;">📝 Registro de vendedor</p>
           <div class="input-group"><label>Usuario (sin espacios)</label><input type="text" id="regUsuarioInput" placeholder="Elegí un usuario"></div>
@@ -242,7 +174,6 @@
           <p id="regMsg" style="font-size:0.55rem;margin-top:0.3rem;"></p>
           <button class="link-btn" id="volverLoginBtn">Volver al inicio</button>
         </div>
-        
         <p style="margin-top:0.5rem;color:#9a8db8;font-size:0.6rem;">Nova Panel - Sistema de Gestión</p>
       </div>
     </div>
@@ -263,38 +194,32 @@
     <div class="card"><h3 style="color:#a78bfa;margin-bottom:0.3rem;font-size:0.75rem;">➕ Nuevo Vendedor</h3><div class="input-group"><label>Usuario</label><input type="text" id="nuevoUsuario" placeholder="usuario"></div><div class="input-group"><label>Contraseña</label><input type="password" id="nuevoPassword" placeholder="••••"></div><div class="input-group"><label>Nombre</label><input type="text" id="nuevoNombre" placeholder="Nombre completo"></div><button class="btn" id="crearVendedorBtn">CREAR</button></div>
     <div class="card"><h3 style="color:#a78bfa;margin-bottom:0.3rem;font-size:0.75rem;">💸 Acreditar Saldo</h3><div class="input-group"><label>Vendedor</label><select id="selectVendedor"></select></div><div class="input-group"><label>Monto USD</label><input type="number" id="montoAcreditar" placeholder="0.00" step="0.01"></div><button class="btn btn-success" id="acreditarBtn">ACREDITAR</button></div>
   </div>
-  
   <div class="card" style="margin-bottom:0.8rem;" id="seccionBackup">
     <h3 style="color:#a78bfa;margin-bottom:0.5rem;font-size:0.8rem;">💾 Copia de Seguridad</h3>
-    <p style="font-size:0.6rem;color:#9a8db8;margin-bottom:0.5rem;">Exportá tus datos para guardarlos o importalos en otro dispositivo. Solo visible para el administrador.</p>
+    <p style="font-size:0.6rem;color:#9a8db8;margin-bottom:0.5rem;">Exportá tus datos para guardarlos o importalos en otro dispositivo.</p>
     <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
       <button class="btn btn-success" id="exportarBtn" style="flex:1;">📤 EXPORTAR DATOS</button>
       <button class="btn" id="importarBtn" style="flex:1;" onclick="$('importarArchivo').click()">📥 IMPORTAR DATOS</button>
       <input type="file" id="importarArchivo" accept=".json" style="display:none;" onchange="importarDatos(event)">
     </div>
   </div>
-  
   <div class="card" style="margin-bottom:0.8rem;">
-    <h3 style="color:#a78bfa;margin-bottom:0.5rem;font-size:0.8rem;">💳 Métodos de Cobro (para recargas)</h3>
-    <p style="font-size:0.6rem;color:#9a8db8;margin-bottom:0.5rem;">Estos datos se mostrarán a los vendedores cuando quieran recargar saldo.</p>
+    <h3 style="color:#a78bfa;margin-bottom:0.5rem;font-size:0.8rem;">💳 Métodos de Cobro</h3>
     <div class="grid-2">
-      <div class="input-group"><label>🏦 Alias/CBU Mercado Pago (ARS)</label><input type="text" id="datoMP" placeholder="Alias o CBU de Mercado Pago"></div>
-      <div class="input-group"><label>📧 Email de PayPal (USD)</label><input type="text" id="datoPaypal" placeholder="Email de PayPal"></div>
+      <div class="input-group"><label>🏦 MP (ARS)</label><input type="text" id="datoMP"></div>
+      <div class="input-group"><label>📧 PayPal</label><input type="text" id="datoPaypal"></div>
     </div>
-    <div class="input-group" style="margin-top:0.3rem;"><label>₿ Wallet USDT (TRC20)</label><input type="text" id="datoWallet" placeholder="Dirección de wallet USDT TRC20"></div>
-    <button class="btn btn-success" id="guardarMetodosBtn" style="margin-top:0.4rem;">💾 GUARDAR MÉTODOS</button>
+    <div class="input-group" style="margin-top:0.3rem;"><label>₿ USDT TRC20</label><input type="text" id="datoWallet"></div>
+    <button class="btn btn-success" id="guardarMetodosBtn" style="margin-top:0.4rem;">💾 GUARDAR</button>
   </div>
-  
   <div class="card" style="margin-bottom:0.8rem;">
     <h3 style="color:#a78bfa;margin-bottom:0.5rem;font-size:0.8rem;">🔒 Cambiar Contraseña Admin</h3>
-    <p style="font-size:0.6rem;color:#9a8db8;margin-bottom:0.5rem;">Cambia tu contraseña de administrador. Se guarda en la nube.</p>
     <div class="grid-2">
-      <div class="input-group"><label>Contraseña actual</label><input type="password" id="passActual" placeholder="Contraseña actual"></div>
-      <div class="input-group"><label>Contraseña nueva</label><input type="password" id="passNueva" placeholder="Contraseña nueva"></div>
+      <div class="input-group"><label>Actual</label><input type="password" id="passActual"></div>
+      <div class="input-group"><label>Nueva</label><input type="password" id="passNueva"></div>
     </div>
-    <button class="btn btn-success" id="cambiarPassBtn" style="margin-top:0.4rem;">🔒 CAMBIAR CONTRASEÑA</button>
+    <button class="btn btn-success" id="cambiarPassBtn" style="margin-top:0.4rem;">CAMBIAR</button>
   </div>
-  
   <div class="grid-3" id="listaVendedores"></div>
 </div>
 
@@ -302,18 +227,18 @@
   <h1 class="section-title">🎮 Gestión de Productos</h1>
   <div class="card" style="margin-bottom:0.8rem;">
     <h3 style="color:#a78bfa;margin-bottom:0.3rem;font-size:0.8rem;">➕ Añadir Producto</h3>
-    <div class="input-group"><label>Nombre del producto *</label><input type="text" id="nombreProd" placeholder="Ej: Netflix Premium"></div>
-    <div class="input-group"><label>🖼️ Imagen desde tus archivos</label><input type="file" id="imagenArchivo" accept="image/*" onchange="previsualizarImagen(event)"></div>
+    <div class="input-group"><label>Nombre *</label><input type="text" id="nombreProd" placeholder="Ej: Netflix Premium"></div>
+    <div class="input-group"><label>🖼️ Imagen archivo</label><input type="file" id="imagenArchivo" accept="image/*" onchange="previsualizarImagen(event)"></div>
     <div class="or-divider">O</div>
-    <div class="input-group"><label>🔗 URL de imagen (opcional)</label><input type="text" id="imagenProd" placeholder="https://... (opcional)"></div>
+    <div class="input-group"><label>🔗 URL imagen</label><input type="text" id="imagenProd" placeholder="https://..."></div>
     <div id="previewContainer" style="text-align:center;margin:0.5rem 0;display:none;"><img id="previewImagen" src="" style="max-width:100%;max-height:120px;border-radius:0.5rem;border:1px solid #352850;"></div>
-    <p style="color:#9a8db8;margin:0.3rem 0;font-size:0.6rem;">💰 Precios (USD) - Deja vacío si no tienes keys de esa duración:</p>
+    <p style="color:#9a8db8;margin:0.3rem 0;font-size:0.6rem;">💰 Precios (USD):</p>
     <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
-      <div class="input-group" style="flex:1;min-width:80px;"><label>1 día</label><input type="number" id="precio1d" placeholder="0.00" step="0.01"></div>
-      <div class="input-group" style="flex:1;min-width:80px;"><label>3 días</label><input type="number" id="precio3d" placeholder="0.00" step="0.01"></div>
-      <div class="input-group" style="flex:1;min-width:80px;"><label>7 días</label><input type="number" id="precio7d" placeholder="0.00" step="0.01"></div>
-      <div class="input-group" style="flex:1;min-width:80px;"><label>10 días</label><input type="number" id="precio10d" placeholder="0.00" step="0.01"></div>
-      <div class="input-group" style="flex:1;min-width:80px;"><label>30 días</label><input type="number" id="precio30d" placeholder="0.00" step="0.01"></div>
+      <div class="input-group" style="flex:1;min-width:80px;"><label>1d</label><input type="number" id="precio1d" step="0.01"></div>
+      <div class="input-group" style="flex:1;min-width:80px;"><label>3d</label><input type="number" id="precio3d" step="0.01"></div>
+      <div class="input-group" style="flex:1;min-width:80px;"><label>7d</label><input type="number" id="precio7d" step="0.01"></div>
+      <div class="input-group" style="flex:1;min-width:80px;"><label>10d</label><input type="number" id="precio10d" step="0.01"></div>
+      <div class="input-group" style="flex:1;min-width:80px;"><label>30d</label><input type="number" id="precio30d" step="0.01"></div>
     </div>
     <button class="btn" id="agregarProdBtn" style="margin-top:0.5rem;width:100%;">AÑADIR PRODUCTO</button>
   </div>
@@ -337,43 +262,36 @@
       <div class="tabs-vendedor"><span class="tab-vendedor active" data-tab="catalogo">🎮 Catálogo</span><span class="tab-vendedor" data-tab="historial">📋 Mis Ventas</span><span class="tab-vendedor" data-tab="recarga">💎 Recargar</span><span class="tab-vendedor" data-tab="retiro">💸 Retirar</span></div>
       <div id="seccionCatalogo"><div class="grid-3" id="productosTienda" style="margin-bottom:0.6rem;"></div><div class="card"><h3 style="color:#a78bfa;margin-bottom:0.3rem;font-size:0.75rem;">🛍️ Vender</h3><div class="grid-2" style="align-items:end;"><div class="input-group"><label>Producto</label><select id="selectVentaProd"></select></div><div class="input-group"><label>Duración</label><select id="selectVentaDur"></select></div><div class="input-group"><label>Cant</label><input type="number" id="cantVenta" value="1" min="1"></div><button class="btn btn-success" id="venderBtn">VENDER</button></div><p style="margin-top:0.3rem;color:#a78bfa;font-size:0.7rem;" id="precioEst"></p></div></div>
       <div id="seccionHistorial" class="hidden"><h3 style="color:#a78bfa;margin-bottom:0.5rem;">📋 Mis Ventas</h3><div id="misVentasContainer" style="max-height:350px;overflow-y:auto;padding-bottom:0.8rem;"></div></div>
-      
       <div id="seccionRecarga" class="hidden">
         <h3 style="color:#a78bfa;margin-bottom:0.5rem;">💎 Recargar Saldo</h3>
         <div class="card" style="max-width:400px;">
-          <p style="color:#9a8db8;margin-bottom:0.6rem;font-size:0.7rem;">Solicita una recarga por WhatsApp. Luego del mensaje, enviá tu comprobante manualmente.</p>
+          <p style="color:#9a8db8;margin-bottom:0.6rem;font-size:0.7rem;">Solicita una recarga por WhatsApp. Enviá tu comprobante luego del mensaje.</p>
           <div class="metodos-info" id="metodosCobroInfo" style="display:none;">
             <p style="color:#fbbf24;font-weight:700;">💳 DATOS PARA EL PAGO:</p>
-            <p id="infoMP" style="display:none;">🏦 Mercado Pago (ARS): <strong id="txtMP"></strong></p>
-            <p id="infoPaypal" style="display:none;">📧 PayPal (USD): <strong id="txtPaypal"></strong></p>
-            <p id="infoWallet" style="display:none;">₿ Wallet USDT TRC20: <strong id="txtWallet"></strong></p>
+            <p id="infoMP" style="display:none;">🏦 MP (ARS): <strong id="txtMP"></strong></p>
+            <p id="infoPaypal" style="display:none;">📧 PayPal: <strong id="txtPaypal"></strong></p>
+            <p id="infoWallet" style="display:none;">₿ USDT: <strong id="txtWallet"></strong></p>
           </div>
           <div class="input-group"><label>Monto (USD)</label><input type="number" id="montoRecarga" placeholder="50.00" step="0.01" min="1"></div>
-          <div class="input-group"><label>Moneda de pago</label><select id="monedaPago"><option value="USD">💵 Dólares (USD)</option><option value="ARS">💵 Pesos Argentinos (ARS)</option><option value="USDT">₿ Cripto (USDT)</option></select></div>
-          <div class="input-group"><label>Nota</label><textarea id="notaRecarga" rows="2" placeholder="Ej: Ya realicé la transferencia..."></textarea></div>
-          <button class="btn btn-whatsapp" id="recargarWhatsappBtn" style="width:100%;padding:0.4rem;margin-top:0.3rem;">📱 ENVIAR A WHATSAPP</button>
-          <p style="font-size:0.55rem;color:#fca5a5;margin-top:0.3rem;text-align:center;">⚠️ Acordate de enviar el comprobante manualmente por WhatsApp después del mensaje.</p>
+          <div class="input-group"><label>Moneda</label><select id="monedaPago"><option value="USD">💵 USD</option><option value="ARS">💵 ARS</option><option value="USDT">₿ USDT</option></select></div>
+          <div class="input-group"><label>Nota</label><textarea id="notaRecarga" rows="2"></textarea></div>
+          <button class="btn btn-whatsapp" id="recargarWhatsappBtn" style="width:100%;padding:0.4rem;margin-top:0.3rem;">📱 ENVIAR WHATSAPP</button>
+          <p style="font-size:0.55rem;color:#fca5a5;margin-top:0.3rem;text-align:center;">⚠️ Enviá el comprobante manualmente.</p>
           <p style="font-size:0.55rem;color:#9a8db8;margin-top:0.1rem;text-align:center;">+54 9 11 5414-1893</p>
         </div>
       </div>
-      
       <div id="seccionRetiro" class="hidden">
         <h3 style="color:#a78bfa;margin-bottom:0.5rem;">💸 Retirar Dinero</h3>
-        <div class="alert-info">
-          ⚠️ El retiro mínimo es de <strong>$50.00 USD</strong>.<br>
-          💰 Se cobra una <strong>comisión del 30%</strong> sobre el monto solicitado.<br>
-          💎 Tu saldo actual es: <strong id="saldoRetiroDisplay">$0.00</strong>
-        </div>
+        <div class="alert-info">⚠️ Mínimo <strong>$50 USD</strong>. Comisión <strong>30%</strong>.<br>💎 Saldo: <strong id="saldoRetiroDisplay">$0.00</strong></div>
         <div class="card" style="max-width:400px;">
-          <div class="input-group"><label>Monto a retirar (USD)</label><input type="number" id="montoRetiro" placeholder="Mínimo 50.00" step="0.01" min="50" oninput="calcularComision()"></div>
+          <div class="input-group"><label>Monto (USD)</label><input type="number" id="montoRetiro" placeholder="Mín 50" step="0.01" min="50" oninput="calcularComision()"></div>
           <div class="comision-box" id="comisionInfo" style="display:none;">
-            <p style="font-size:0.65rem;color:#fca5a5;">📊 <strong>Desglose:</strong></p>
-            <p style="font-size:0.65rem;color:#fca5a5;">• Monto solicitado: <strong id="montoSolicitado">$0.00</strong></p>
-            <p style="font-size:0.65rem;color:#fca5a5;">• Comisión (30%): <strong id="comisionMonto" style="color:#ef4444;">-$0.00</strong></p>
-            <p style="font-size:0.7rem;color:#4ade80;font-weight:700;">✅ Recibirás: <strong id="montoRecibir">$0.00</strong></p>
+            <p style="font-size:0.65rem;color:#fca5a5;">Solicitado: <strong id="montoSolicitado">$0</strong></p>
+            <p style="font-size:0.65rem;color:#fca5a5;">Comisión: <strong id="comisionMonto">-$0</strong></p>
+            <p style="font-size:0.7rem;color:#4ade80;">Recibirá: <strong id="montoRecibir">$0</strong></p>
           </div>
-          <div class="input-group"><label>Método de pago</label><select id="metodoRetiro"><option value="transferencia">🏦 Transferencia Bancaria</option><option value="cripto">₿ Criptomonedas</option><option value="paypal">💳 PayPal</option></select></div>
-          <div class="input-group"><label>Datos para el pago</label><textarea id="datosRetiro" placeholder="CBU, alias, wallet, email de PayPal..." rows="2"></textarea></div>
+          <div class="input-group"><label>Método</label><select id="metodoRetiro"><option>Transferencia</option><option>Cripto</option><option>PayPal</option></select></div>
+          <div class="input-group"><label>Datos</label><textarea id="datosRetiro" rows="2"></textarea></div>
           <button class="btn btn-whatsapp" id="retiroWhatsappBtn" style="width:100%;padding:0.4rem;margin-top:0.3rem;">📱 SOLICITAR RETIRO</button>
           <p style="font-size:0.55rem;color:#9a8db8;margin-top:0.3rem;text-align:center;">+54 9 11 5414-1893</p>
         </div>
@@ -452,7 +370,6 @@
   function getStock(pid,dur) { return keys.filter(function(k){ return k.productoId===pid && k.duracion===dur && !k.usado && estado(k)!=='expired'; }).length; }
   function getVentasPorVendedor(usuario) { return ventas.filter(function(v){ return v.vendedor===usuario; }).reduce(function(sum,v){ return sum+v.total; },0); }
   function getTotalVentas() { return ventas.reduce(function(sum,v){ return sum+v.total; },0); }
-  function getTotalAcreditaciones() { return vendedores.reduce(function(sum,v){ return sum+(v.acreditaciones?v.acreditaciones.reduce(function(s,a){ return s+a.monto; },0):0); },0); }
 
   function showPage(name) {
     var pages = document.querySelectorAll('.page');
@@ -472,541 +389,154 @@
     $('topbarAdmin').classList.toggle('hidden',!esAdmin);
     $('headerVendedor').classList.toggle('hidden',esAdmin||!logged);
     if($('seccionBackup')) $('seccionBackup').style.display = esAdmin ? 'block' : 'none';
-    if(!logged) { 
-      showPage('login'); 
-      $('formLogin').style.display = 'block';
-      $('formRegistro').style.display = 'none';
-      return; 
-    }
-    if(esAdmin) { 
-      $('userTagAdmin').textContent = '🛡️ ADMIN'; 
-      if(currentPage==='login'||currentPage==='tienda') { showPage('dashboard'); renderDashboard(); } 
-      else { showPage(currentPage); if(currentPage==='vendedores') cargarMetodosCobro(); } 
-    }
-    else { $('userTagVendedor').textContent = '👤 '+(user.nombre||user.usuario); showPage('tienda'); renderTienda(); }
+    if(!logged) { showPage('login'); $('formLogin').style.display='block'; $('formRegistro').style.display='none'; return; }
+    if(esAdmin) { $('userTagAdmin').textContent='🛡️ ADMIN'; if(currentPage==='login'||currentPage==='tienda'){showPage('dashboard');renderDashboard();}else{showPage(currentPage);if(currentPage==='vendedores')cargarMetodosCobro();} }
+    else { $('userTagVendedor').textContent='👤 '+(user.nombre||user.usuario); showPage('tienda'); renderTienda(); }
   }
   
-  function cargarMetodosCobro() {
-    $('datoMP').value = metodosCobro.mp || '';
-    $('datoPaypal').value = metodosCobro.paypal || '';
-    $('datoWallet').value = metodosCobro.wallet || '';
-  }
+  function cargarMetodosCobro() { $('datoMP').value=metodosCobro.mp||''; $('datoPaypal').value=metodosCobro.paypal||''; $('datoWallet').value=metodosCobro.wallet||''; }
   
   function mostrarMetodosCobro() {
-    var info = $('metodosCobroInfo');
-    if(metodosCobro.mp || metodosCobro.paypal || metodosCobro.wallet) {
-      info.style.display = 'block';
-      if(metodosCobro.mp) { $('infoMP').style.display = 'block'; $('txtMP').textContent = metodosCobro.mp; }
-      else { $('infoMP').style.display = 'none'; }
-      if(metodosCobro.paypal) { $('infoPaypal').style.display = 'block'; $('txtPaypal').textContent = metodosCobro.paypal; }
-      else { $('infoPaypal').style.display = 'none'; }
-      if(metodosCobro.wallet) { $('infoWallet').style.display = 'block'; $('txtWallet').textContent = metodosCobro.wallet; }
-      else { $('infoWallet').style.display = 'none'; }
-    } else { info.style.display = 'none'; }
+    var info=$('metodosCobroInfo');
+    if(metodosCobro.mp||metodosCobro.paypal||metodosCobro.wallet){ info.style.display='block'; if(metodosCobro.mp){$('infoMP').style.display='block';$('txtMP').textContent=metodosCobro.mp;}else{$('infoMP').style.display='none';} if(metodosCobro.paypal){$('infoPaypal').style.display='block';$('txtPaypal').textContent=metodosCobro.paypal;}else{$('infoPaypal').style.display='none';} if(metodosCobro.wallet){$('infoWallet').style.display='block';$('txtWallet').textContent=metodosCobro.wallet;}else{$('infoWallet').style.display='none';} }else{info.style.display='none';}
   }
 
   function renderDashboard() {
-    var totalVentas = getTotalVentas();
-    var totalKeys = keys.length;
-    var keysUsadas = keys.filter(function(k){ return k.usado; }).length;
-    var totalVend = vendedores.length;
-    var html = '<div class="stat-card"><div class="stat-label">💰 Total Ventas</div><div class="stat-value green">$'+totalVentas.toFixed(2)+'</div></div>';
-    html += '<div class="stat-card"><div class="stat-label">🔑 Keys Disponibles</div><div class="stat-value">'+(totalKeys-keysUsadas)+'</div></div>';
-    html += '<div class="stat-card"><div class="stat-label">👥 Vendedores</div><div class="stat-value">'+totalVend+'</div></div>';
-    $('statsGenerales').innerHTML = html;
-    
-    var htmlVend = '';
-    for(var i=0;i<vendedores.length;i++) {
-      var v = vendedores[i];
-      htmlVend += '<div class="stat-card"><div class="stat-label">'+v.nombre+'</div><div class="stat-value" style="font-size:0.9rem;">$'+(v.saldo||0).toFixed(2)+'</div></div>';
-    }
-    $('statsVendedores').innerHTML = htmlVend || '<p style="color:#9a8db8;">Sin vendedores aún.</p>';
-    
-    var htmlAcred = '';
-    var todasAcred = [];
-    for(var i=0;i<vendedores.length;i++) {
-      if(vendedores[i].acreditaciones) {
-        for(var j=0;j<vendedores[i].acreditaciones.length;j++) {
-          todasAcred.push({vendedor:vendedores[i].nombre, monto:vendedores[i].acreditaciones[j].monto, fecha:vendedores[i].acreditaciones[j].fecha});
-        }
-      }
-    }
-    todasAcred.sort(function(a,b){ return new Date(b.fecha)-new Date(a.fecha); });
-    todasAcred = todasAcred.slice(0,10);
-    for(var i=0;i<todasAcred.length;i++) {
-      htmlAcred += '<div class="venta-row">💎 <strong>'+todasAcred[i].vendedor+'</strong> — $'+todasAcred[i].monto.toFixed(2)+'</div>';
-    }
-    $('historialAcreditaciones').innerHTML = htmlAcred || '<p style="color:#9a8db8;">Sin acreditaciones aún.</p>';
-    
-    var htmlVentas = '';
-    var ventasRecientes = ventas.slice().reverse().slice(0,20);
-    for(var i=0;i<ventasRecientes.length;i++) {
-      var vt = ventasRecientes[i];
-      htmlVentas += '<div class="venta-row">🛒 <strong>'+vt.vendedor+'</strong> — '+vt.cantidad+'x '+vt.producto+' — $'+vt.total.toFixed(2)+'</div>';
-    }
-    $('historialVentas').innerHTML = htmlVentas || '<p style="color:#9a8db8;">Sin ventas aún.</p>';
+    var totalVentas=getTotalVentas(), tk=keys.length, ku=keys.filter(function(k){return k.usado;}).length, tv=vendedores.length;
+    var html='<div class="stat-card"><div class="stat-label">💰 Total Ventas</div><div class="stat-value green">$'+totalVentas.toFixed(2)+'</div></div>';
+    html+='<div class="stat-card"><div class="stat-label">🔑 Keys Disponibles</div><div class="stat-value">'+(tk-ku)+'</div></div>';
+    html+='<div class="stat-card"><div class="stat-label">👥 Vendedores</div><div class="stat-value">'+tv+'</div></div>';
+    $('statsGenerales').innerHTML=html;
+    var hv=''; for(var i=0;i<vendedores.length;i++){ hv+='<div class="stat-card"><div class="stat-label">'+vendedores[i].nombre+'</div><div class="stat-value" style="font-size:0.9rem;">$'+(vendedores[i].saldo||0).toFixed(2)+'</div></div>'; }
+    $('statsVendedores').innerHTML=hv||'<p style="color:#9a8db8;">Sin vendedores.</p>';
+    var ha='', ta=[];
+    for(var i=0;i<vendedores.length;i++){ if(vendedores[i].acreditaciones){ for(var j=0;j<vendedores[i].acreditaciones.length;j++){ ta.push({vendedor:vendedores[i].nombre,monto:vendedores[i].acreditaciones[j].monto,fecha:vendedores[i].acreditaciones[j].fecha}); } } }
+    ta.sort(function(a,b){return new Date(b.fecha)-new Date(a.fecha);}); ta=ta.slice(0,10);
+    for(var i=0;i<ta.length;i++){ ha+='<div class="venta-row">💎 <strong>'+ta[i].vendedor+'</strong> — $'+ta[i].monto.toFixed(2)+'</div>'; }
+    $('historialAcreditaciones').innerHTML=ha||'<p style="color:#9a8db8;">Sin acreditaciones.</p>';
+    var hv2='', vr=ventas.slice().reverse().slice(0,20);
+    for(var i=0;i<vr.length;i++){ hv2+='<div class="venta-row">🛒 <strong>'+vr[i].vendedor+'</strong> — '+vr[i].cantidad+'x '+vr[i].producto+' — $'+vr[i].total.toFixed(2)+'</div>'; }
+    $('historialVentas').innerHTML=hv2||'<p style="color:#9a8db8;">Sin ventas.</p>';
   }
   
   function renderVendedores() {
-    var html = '';
-    for(var i=0;i<vendedores.length;i++) {
-      var v = vendedores[i];
-      html += '<div class="card"><h3 style="color:#a78bfa;margin-bottom:0.2rem;">'+v.nombre+'</h3><p style="font-size:0.65rem;">👤 '+v.usuario+'</p><p style="font-size:0.8rem;color:#4ade80;">💎 Saldo: $'+(v.saldo||0).toFixed(2)+'</p><button class="btn btn-danger btn-xs" style="margin-top:0.3rem;" onclick="eliminarVendedor(\''+v.uid+'\',\''+v.usuario+'\')">🗑 Eliminar</button></div>';
-    }
-    $('listaVendedores').innerHTML = html || '<p style="color:#9a8db8;">No hay vendedores aún.</p>';
-    var sel = $('selectVendedor');
-    sel.innerHTML = '';
-    for(var i=0;i<vendedores.length;i++) {
-      var opt = document.createElement('option');
-      opt.value = vendedores[i].usuario;
-      opt.textContent = vendedores[i].nombre + ' ($'+(vendedores[i].saldo||0).toFixed(2)+')';
-      sel.appendChild(opt);
-    }
+    var html=''; for(var i=0;i<vendedores.length;i++){ var v=vendedores[i]; html+='<div class="card"><h3 style="color:#a78bfa;margin-bottom:0.2rem;">'+v.nombre+'</h3><p style="font-size:0.65rem;">👤 '+v.usuario+'</p><p style="font-size:0.8rem;color:#4ade80;">💎 Saldo: $'+(v.saldo||0).toFixed(2)+'</p><button class="btn btn-danger btn-xs" style="margin-top:0.3rem;" onclick="eliminarVendedor(\''+v.uid+'\',\''+v.usuario+'\')">🗑 Eliminar</button></div>'; }
+    $('listaVendedores').innerHTML=html||'<p style="color:#9a8db8;">No hay vendedores.</p>';
+    var sel=$('selectVendedor'); sel.innerHTML='';
+    for(var i=0;i<vendedores.length;i++){ var o=document.createElement('option'); o.value=vendedores[i].usuario; o.textContent=vendedores[i].nombre+' ($'+(vendedores[i].saldo||0).toFixed(2)+')'; sel.appendChild(o); }
   }
   
-  async function eliminarProducto(id, nombre) {
-    if(!confirm('¿Eliminar producto '+nombre+'?')) return;
-    await db.collection('productos').doc(id).delete();
-    productos = productos.filter(function(p){ return p.id !== id; });
-    mostrarProductos();
-    actualizarSelectoresProductos();
-    alert('✅ Producto eliminado.');
-  }
-  
-  async function eliminarVendedor(uid, usuario) {
-    if(!confirm('¿Eliminar a '+usuario+'?')) return;
-    await db.collection('vendedores').doc(uid).delete();
-    vendedores = vendedores.filter(function(v){ return v.uid !== uid; });
-    renderVendedores();
-    alert('✅ Vendedor eliminado.');
-  }
+  async function eliminarProducto(id, nombre) { if(!confirm('¿Eliminar '+nombre+'?'))return; await db.collection('productos').doc(id).delete(); productos=productos.filter(function(p){return p.id!==id;}); mostrarProductos(); actualizarSelectoresProductos(); alert('✅ Eliminado.'); }
+  async function eliminarVendedor(uid, usuario) { if(!confirm('¿Eliminar a '+usuario+'?'))return; await db.collection('vendedores').doc(uid).delete(); vendedores=vendedores.filter(function(v){return v.uid!==uid;}); renderVendedores(); alert('✅ Eliminado.'); }
   
   function mostrarProductos() {
-    var html = '';
-    for(var i=0;i<productos.length;i++) {
-      var p = productos[i];
-      html += '<div class="card">';
-      html += '<img src="'+p.imagen+'" class="product-img" alt="'+p.nombre+'" onerror="this.style.display=\'none\'">';
-      html += '<h3 style="color:#a78bfa;font-size:0.75rem;margin-top:0.3rem;">'+p.nombre+'</h3>';
-      html += '<button class="btn btn-danger btn-xs" style="margin-top:0.2rem;" onclick="eliminarProducto(\''+p.id+'\',\''+p.nombre+'\')">🗑 Eliminar</button>';
-      html += '<div class="price-list">';
-      for(var d=0;d<DUR.length;d++) {
-        if(p.precios[DUR[d]]) {
-          var stock = getStock(p.id, DUR[d]);
-          html += '<span class="price-tag'+(stock===0?' sin-stock':'')+'">'+DUR[d]+': $'+p.precios[DUR[d]].toFixed(2)+' ('+stock+' disp)</span>';
-        }
-      }
-      html += '</div></div>';
-    }
-    $('listaProductos').innerHTML = html;
-    actualizarSelectoresProductos();
+    var html='';
+    for(var i=0;i<productos.length;i++){ var p=productos[i]; html+='<div class="card"><img src="'+p.imagen+'" class="product-img" alt="'+p.nombre+'" onerror="this.style.display=\'none\'"><h3 style="color:#a78bfa;font-size:0.75rem;margin-top:0.3rem;">'+p.nombre+'</h3><button class="btn btn-danger btn-xs" style="margin-top:0.2rem;" onclick="eliminarProducto(\''+p.id+'\',\''+p.nombre+'\')">🗑 Eliminar</button><div class="price-list">';
+      for(var d=0;d<DUR.length;d++){ if(p.precios[DUR[d]]){ var st=getStock(p.id,DUR[d]); html+='<span class="price-tag'+(st===0?' sin-stock':'')+'">'+DUR[d]+': $'+p.precios[DUR[d]].toFixed(2)+' ('+st+')</span>'; } }
+      html+='</div></div>'; }
+    $('listaProductos').innerHTML=html; actualizarSelectoresProductos();
   }
   
   function actualizarSelectoresProductos() {
-    var html = '';
-    for(var i=0;i<productos.length;i++) html += '<option value="'+productos[i].id+'">'+productos[i].nombre+'</option>';
-    if($('selectProdKey')) $('selectProdKey').innerHTML = html;
-    if($('filtroProducto')) $('filtroProducto').innerHTML = '<option value="todas">TODOS</option>' + html;
-    if($('selectVentaProd')) $('selectVentaProd').innerHTML = html;
-    if($('selectDurKey')) $('selectDurKey').innerHTML = '<option value="1 dia">1 día</option><option value="3 dias">3 días</option><option value="7 dias">7 días</option><option value="10 dias">10 días</option><option value="30 dias">30 días</option>';
+    var h=''; for(var i=0;i<productos.length;i++) h+='<option value="'+productos[i].id+'">'+productos[i].nombre+'</option>';
+    if($('selectProdKey')) $('selectProdKey').innerHTML=h;
+    if($('filtroProducto')) $('filtroProducto').innerHTML='<option value="todas">TODOS</option>'+h;
+    if($('selectVentaProd')) $('selectVentaProd').innerHTML=h;
+    if($('selectDurKey')) $('selectDurKey').innerHTML='<option value="1 dia">1 día</option><option value="3 dias">3 días</option><option value="7 dias">7 días</option><option value="10 dias">10 días</option><option value="30 dias">30 días</option>';
   }
   
   function agregarProducto() {
-    var nombre = $('nombreProd').value.trim();
-    if(!nombre) { alert('El nombre es obligatorio'); return; }
-    var precios = {};
-    if($('precio1d').value) precios['1 dia'] = parseFloat($('precio1d').value);
-    if($('precio3d').value) precios['3 dias'] = parseFloat($('precio3d').value);
-    if($('precio7d').value) precios['7 dias'] = parseFloat($('precio7d').value);
-    if($('precio10d').value) precios['10 dias'] = parseFloat($('precio10d').value);
-    if($('precio30d').value) precios['30 dias'] = parseFloat($('precio30d').value);
-    var id = 'prod'+Date.now();
-    var img = $('imagenProd').value.trim() || 'https://picsum.photos/id/'+Math.floor(Math.random()*100)+'/300/200';
-    productos.push({id:id, nombre:nombre, imagen:img, precios:precios});
-    guardarProductos();
-    mostrarProductos();
+    var n=$('nombreProd').value.trim(); if(!n){alert('Nombre obligatorio');return;}
+    var precios={}; if($('precio1d').value)precios['1 dia']=parseFloat($('precio1d').value); if($('precio3d').value)precios['3 dias']=parseFloat($('precio3d').value); if($('precio7d').value)precios['7 dias']=parseFloat($('precio7d').value); if($('precio10d').value)precios['10 dias']=parseFloat($('precio10d').value); if($('precio30d').value)precios['30 dias']=parseFloat($('precio30d').value);
+    var id='prod'+Date.now(), img=$('imagenProd').value.trim()||'https://picsum.photos/300/200';
+    productos.push({id:id,nombre:n,imagen:img,precios:precios}); guardarProductos(); mostrarProductos();
     $('nombreProd').value='';$('imagenProd').value='';$('precio1d').value='';$('precio3d').value='';$('precio7d').value='';$('precio10d').value='';$('precio30d').value='';
   }
   
-  function previsualizarImagen(event) {
-    var file = event.target.files[0];
-    if(file) {
-      var reader = new FileReader();
-      reader.onload = function(e) { $('previewImagen').src = e.target.result; $('previewContainer').style.display = 'block'; };
-      reader.readAsDataURL(file);
-    }
-  }
+  function previsualizarImagen(event) { var f=event.target.files[0]; if(f){ var r=new FileReader(); r.onload=function(e){$('previewImagen').src=e.target.result;$('previewContainer').style.display='block';}; r.readAsDataURL(f); } }
   
   function renderKeys() {
-    var keysFiltradas = keys;
-    if(filtroProd !== 'todas') keysFiltradas = keysFiltradas.filter(function(k){ return k.productoId === filtroProd; });
-    if(filtroDur !== 'todas') keysFiltradas = keysFiltradas.filter(function(k){ return k.duracion === filtroDur; });
-    var disponibles = keysFiltradas.filter(function(k){ return !k.usado && estado(k)!=='expired'; }).length;
-    $('resultadoFiltros').textContent = 'Mostrando '+keysFiltradas.length+' keys — '+disponibles+' disponibles';
-    var html = '';
-    for(var i=0;i<keysFiltradas.length;i++) {
-      var k = keysFiltradas[i];
-      var prod = productos.find(function(p){ return p.id===k.productoId; });
-      var nombreProd = prod ? prod.nombre : 'Desconocido';
-      var est = estado(k);
-      var claseEst = 'status-active', txtEst = 'DISP';
-      if(est==='warning') { claseEst='status-warning'; txtEst='PROX VENC'; }
-      else if(est==='expired') { claseEst='status-expired'; txtEst='VENCIDA'; }
-      else if(est==='used') { claseEst='status-used'; txtEst='USADA'; }
-    html += '<tr><td>'+nombreProd+'</td><td>'+k.duracion+'</td><td><span class="key-code-display">'+k.codigo+'</span></td><td>$'+k.precioAlCrear.toFixed(2)+'</td><td><span class="status-badge '+claseEst+'">'+txtEst+'</span></td><td>—</td><td><button class="btn btn-danger btn-xs" data-keyid="'+k.id+'" onclick="eliminarKey(this.getAttribute(\'data-keyid\'))">✕</button></td></tr>';
-    }
-    $('tablaKeys').innerHTML = html || '<tr><td colspan="7" style="color:#9a8db8;">No hay keys con esos filtros.</td></tr>';
+    var kf=keys; if(filtroProd!=='todas') kf=kf.filter(function(k){return k.productoId===filtroProd;}); if(filtroDur!=='todas') kf=kf.filter(function(k){return k.duracion===filtroDur;});
+    var d=kf.filter(function(k){return !k.usado&&estado(k)!=='expired';}).length;
+    $('resultadoFiltros').textContent=kf.length+' keys — '+d+' disponibles';
+    var html='';
+    for(var i=0;i<kf.length;i++){ var k=kf[i], p=productos.find(function(x){return x.id===k.productoId;}), e=estado(k), ce='status-active', te='DISP';
+      if(e==='warning'){ce='status-warning';te='PROX VENC';}else if(e==='expired'){ce='status-expired';te='VENCIDA';}else if(e==='used'){ce='status-used';te='USADA';}
+      html+='<tr><td>'+(p?p.nombre:'?')+'</td><td>'+k.duracion+'</td><td><span class="key-code-display">'+k.codigo+'</span></td><td>$'+k.precioAlCrear.toFixed(2)+'</td><td><span class="status-badge '+ce+'">'+te+'</span></td><td>—</td><td><button class="btn btn-danger btn-xs" onclick="eliminarKey(\''+k.id+'\')">✕</button></td></tr>'; }
+    $('tablaKeys').innerHTML=html||'<tr><td colspan="7" style="color:#9a8db8;">No hay keys.</td></tr>';
   }
   
-  async function eliminarKey(id) {
-    keys = keys.filter(function(k){ return k.id !== id; });
-    await db.collection('keys').doc(id).delete();
-    renderKeys();
-  }
+  async function eliminarKey(id) { keys=keys.filter(function(k){return k.id!==id;}); await db.collection('keys').doc(id).delete(); renderKeys(); }
   
-  function renderVentas() {
-    var html = '';
-    var ventasRecientes = ventas.slice().reverse();
-    for(var i=0;i<ventasRecientes.length;i++) {
-      var vt = ventasRecientes[i];
-      html += '<div class="venta-row">🛒 <strong>'+vt.vendedor+'</strong> — '+vt.cantidad+'x '+vt.producto+' ('+vt.duracion+') — $'+vt.total.toFixed(2)+'</div>';
-    }
-    $('ventasContainer').innerHTML = html || '<p style="color:#9a8db8;">Sin ventas registradas.</p>';
-  }
+  function renderVentas() { var h='', vr=ventas.slice().reverse(); for(var i=0;i<vr.length;i++){ h+='<div class="venta-row">🛒 <strong>'+vr[i].vendedor+'</strong> — '+vr[i].cantidad+'x '+vr[i].producto+' ('+vr[i].duracion+') — $'+vr[i].total.toFixed(2)+'</div>'; } $('ventasContainer').innerHTML=h||'<p style="color:#9a8db8;">Sin ventas.</p>'; }
   
   function renderTienda() {
-    if(!user || user.tipo!=='vendedor') return;
-    var vend = vendedores.find(function(v){ return v.usuario===user.usuario; });
-    if(!vend) return;
-    $('saldoDisplay').textContent = '$'+(vend.saldo||0).toFixed(2);
-    $('saldoRetiroDisplay').textContent = '$'+(vend.saldo||0).toFixed(2);
-    
-    var htmlProd = '';
-    for(var i=0;i<productos.length;i++) {
-      var p = productos[i];
-      htmlProd += '<div class="card">';
-      htmlProd += '<img src="'+p.imagen+'" class="product-img" alt="'+p.nombre+'" onerror="this.style.display=\'none\'">';
-      htmlProd += '<h3 style="color:#a78bfa;font-size:0.75rem;margin-top:0.3rem;">'+p.nombre+'</h3>';
-      htmlProd += '<div class="price-list">';
-      for(var d=0;d<DUR.length;d++) {
-        if(p.precios[DUR[d]]) {
-          var stock = getStock(p.id, DUR[d]);
-          htmlProd += '<span class="price-tag'+(stock===0?' sin-stock':'')+'">'+DUR[d]+': $'+p.precios[DUR[d]].toFixed(2)+' ('+stock+' disp)</span>';
-        }
-      }
-      htmlProd += '</div></div>';
-    }
-    $('productosTienda').innerHTML = htmlProd || '<p>No hay productos.</p>';
-    
-    var selVentaProd = $('selectVentaProd');
-    selVentaProd.innerHTML = '';
-    for(var i=0;i<productos.length;i++) {
-      var opt = document.createElement('option');
-      opt.value = productos[i].id;
-      opt.textContent = productos[i].nombre;
-      selVentaProd.appendChild(opt);
-    }
+    if(!user||user.tipo!=='vendedor')return; var vend=vendedores.find(function(v){return v.usuario===user.usuario;}); if(!vend)return;
+    $('saldoDisplay').textContent='$'+(vend.saldo||0).toFixed(2); $('saldoRetiroDisplay').textContent='$'+(vend.saldo||0).toFixed(2);
+    var hp=''; for(var i=0;i<productos.length;i++){ var p=productos[i]; hp+='<div class="card"><img src="'+p.imagen+'" class="product-img" alt="'+p.nombre+'" onerror="this.style.display=\'none\'"><h3 style="color:#a78bfa;font-size:0.75rem;">'+p.nombre+'</h3><div class="price-list">';
+      for(var d=0;d<DUR.length;d++){ if(p.precios[DUR[d]]){ var st=getStock(p.id,DUR[d]); hp+='<span class="price-tag'+(st===0?' sin-stock':'')+'">'+DUR[d]+': $'+p.precios[DUR[d]].toFixed(2)+' ('+st+')</span>'; } }
+      hp+='</div></div>'; }
+    $('productosTienda').innerHTML=hp||'<p>Sin productos.</p>';
+    var sel=$('selectVentaProd'); sel.innerHTML=''; for(var i=0;i<productos.length;i++){ var o=document.createElement('option'); o.value=productos[i].id; o.textContent=productos[i].nombre; sel.appendChild(o); }
     updatePrecioEst();
-    
-    if(tabActual==='historial') {
-      var misVentas = ventas.filter(function(v){ return v.vendedor===user.usuario; }).reverse();
-      var htmlV = '';
-      for(var i=0;i<misVentas.length;i++) {
-        var mv = misVentas[i];
-        htmlV += '<div class="venta-row">🛒 '+mv.cantidad+'x '+mv.producto+' ('+mv.duracion+') — $'+mv.total.toFixed(2)+'</div>';
-      }
-      $('misVentasContainer').innerHTML = htmlV || '<p style="color:#9a8db8;">Aún no has realizado ventas.</p>';
-    }
-    
+    if(tabActual==='historial'){ var mv=ventas.filter(function(v){return v.vendedor===user.usuario;}).reverse(), hv=''; for(var i=0;i<mv.length;i++){ hv+='<div class="venta-row">🛒 '+mv[i].cantidad+'x '+mv[i].producto+' ('+mv[i].duracion+') — $'+mv[i].total.toFixed(2)+'</div>'; } $('misVentasContainer').innerHTML=hv||'<p style="color:#9a8db8;">Sin ventas.</p>'; }
     mostrarMetodosCobro();
   }
   
-  function updatePrecioEst() {
-    var pid = $('selectVentaProd').value;
-    var dur = $('selectVentaDur').value;
-    var cant = parseInt($('cantVenta').value) || 1;
-    var precio = getPrecioActual(pid, dur);
-    var stock = getStock(pid, dur);
-    $('precioEst').textContent = '💵 Precio unitario: $'+precio.toFixed(2)+' | Total: $'+(precio*cant).toFixed(2)+' | Stock: '+stock;
-  }
-  
-  function calcularComision() {
-    var monto = parseFloat($('montoRetiro').value) || 0;
-    if(monto > 0) {
-      $('comisionInfo').style.display = 'block';
-      var comision = monto * 0.30;
-      $('montoSolicitado').textContent = '$'+monto.toFixed(2);
-      $('comisionMonto').textContent = '-$'+comision.toFixed(2);
-      $('montoRecibir').textContent = '$'+(monto-comision).toFixed(2);
-    } else { $('comisionInfo').style.display = 'none'; }
-  }
+  function updatePrecioEst() { var pid=$('selectVentaProd').value, dur=$('selectVentaDur').value, cant=parseInt($('cantVenta').value)||1, pr=getPrecioActual(pid,dur), st=getStock(pid,dur); $('precioEst').textContent='💵 Unit: $'+pr.toFixed(2)+' | Total: $'+(pr*cant).toFixed(2)+' | Stock: '+st; }
+  function calcularComision() { var m=parseFloat($('montoRetiro').value)||0; if(m>0){ $('comisionInfo').style.display='block'; var c=m*0.3; $('montoSolicitado').textContent='$'+m.toFixed(2); $('comisionMonto').textContent='-$'+c.toFixed(2); $('montoRecibir').textContent='$'+(m-c).toFixed(2); }else{$('comisionInfo').style.display='none';} }
     $('loginBtn').onclick = async function() {
       var u = $('usuarioInput').value.trim().toLowerCase();
       var p = $('passwordInput').value.trim();
       if(!u || !p) { alert('Completá todos los campos.'); return; }
-      if(u === 'admin') {
-        if(!adminExists()) { alert('Panel no configurado.'); return; }
-        if(p === getAdminPassword()) { user={tipo:'admin'}; updateUI(); return; }
-        alert('Credenciales inválidas'); return;
-      }
-      auth.signInWithEmailAndPassword(u+'@novapanel.com', p)
-      .then(function(result) {
-        var vend = vendedores.find(function(v){ return v.usuario===u; });
-        if(vend) { user={tipo:'vendedor',usuario:vend.usuario,nombre:vend.nombre}; updateUI(); }
-      })
-      .catch(function(e) { alert('Credenciales inválidas'); });
+      if(u === 'admin') { if(!adminExists()){alert('Panel no configurado.');return;} if(p===getAdminPassword()){user={tipo:'admin'};updateUI();return;} alert('Credenciales inválidas'); return; }
+      auth.signInWithEmailAndPassword(u+'@novapanel.com',p).then(function(r){ var v=vendedores.find(function(x){return x.usuario===u;}); if(v){user={tipo:'vendedor',usuario:v.usuario,nombre:v.nombre};updateUI();} }).catch(function(e){alert('Credenciales inválidas');});
     };
     
     $('registroBtn').onclick = function() {
-      var u = $('regUsuarioInput').value.trim().toLowerCase();
-      var p = $('regPasswordInput').value.trim();
-      var n = $('regNombreInput').value.trim();
-      if(!u || !p || !n) { $('regMsg').textContent = '❌ Completá todos los campos.'; $('regMsg').style.color = '#fca5a5'; return; }
-      if(u === 'admin') { $('regMsg').textContent = '❌ Usuario no permitido.'; $('regMsg').style.color = '#fca5a5'; return; }
-      if(p.length < 6) { $('regMsg').textContent = '❌ Contraseña mínimo 6 caracteres.'; $('regMsg').style.color = '#fca5a5'; return; }
-      auth.createUserWithEmailAndPassword(u+'@novapanel.com', p)
-      .then(async function(result) {
-        var nuevo = {uid:result.user.uid, usuario:u, nombre:n, saldo:0, acreditaciones:[]};
-        vendedores.push(nuevo);
-        await guardarVendedor(nuevo);
-        $('regMsg').textContent = '✅ Registro exitoso. Ya podés iniciar sesión.';
-        $('regMsg').style.color = '#4ade80';
-        setTimeout(function() { $('formRegistro').style.display='none'; $('formLogin').style.display='block'; $('regMsg').textContent=''; }, 2000);
-      })
-      .catch(function(e) {
-        if(e.code === 'auth/email-already-in-use') $('regMsg').textContent = '❌ Ese usuario ya existe.';
-        else $('regMsg').textContent = '❌ Error.';
-        $('regMsg').style.color = '#fca5a5';
-      });
+      var u=$('regUsuarioInput').value.trim().toLowerCase(), p=$('regPasswordInput').value.trim(), n=$('regNombreInput').value.trim();
+      if(!u||!p||!n){$('regMsg').textContent='❌ Completá todo.';$('regMsg').style.color='#fca5a5';return;}
+      if(u==='admin'){$('regMsg').textContent='❌ No permitido.';$('regMsg').style.color='#fca5a5';return;}
+      if(p.length<6){$('regMsg').textContent='❌ Mínimo 6 caracteres.';$('regMsg').style.color='#fca5a5';return;}
+      auth.createUserWithEmailAndPassword(u+'@novapanel.com',p).then(async function(r){ var nuevo={uid:r.user.uid,usuario:u,nombre:n,saldo:0,acreditaciones:[]}; vendedores.push(nuevo); await guardarVendedor(nuevo); $('regMsg').textContent='✅ Registro exitoso.';$('regMsg').style.color='#4ade80'; setTimeout(function(){$('formRegistro').style.display='none';$('formLogin').style.display='block';$('regMsg').textContent='';},2000); }).catch(function(e){ if(e.code==='auth/email-already-in-use')$('regMsg').textContent='❌ Ya existe.'; else $('regMsg').textContent='❌ Error.'; $('regMsg').style.color='#fca5a5'; });
     };
     
-    $('mostrarRegistroBtn').onclick = function() { $('formLogin').style.display='none'; $('formRegistro').style.display='block'; };
-    $('volverLoginBtn').onclick = function() { $('formRegistro').style.display='none'; $('formLogin').style.display='block'; $('regMsg').textContent=''; };
+    $('mostrarRegistroBtn').onclick=function(){$('formLogin').style.display='none';$('formRegistro').style.display='block';};
+    $('volverLoginBtn').onclick=function(){$('formRegistro').style.display='none';$('formLogin').style.display='block';$('regMsg').textContent='';};
+    function logout(){ auth.signOut().catch(function(){}); user=null; updateUI(); $('usuarioInput').value=''; $('passwordInput').value=''; }
     
-    function logout() { auth.signOut().catch(function(){}); user=null; updateUI(); $('usuarioInput').value=''; $('passwordInput').value=''; }
+    async function cambiarPasswordAdmin(){ var a=$('passActual').value.trim(), n=$('passNueva').value.trim(); if(!a||!n){alert('Completá ambos.');return;} if(a!==getAdminPassword()){alert('Contraseña actual incorrecta.');return;} await db.collection('config').doc('admin').set({password:n}); adminPasswordCache=n; alert('✅ Cambiada.'); $('passActual').value='';$('passNueva').value=''; }
     
-    async function cambiarPasswordAdmin() {
-      var actual = $('passActual').value.trim();
-      var nueva = $('passNueva').value.trim();
-      if(!actual||!nueva) { alert('Completá ambos campos.'); return; }
-      if(actual !== getAdminPassword()) { alert('Contraseña actual incorrecta.'); return; }
-      await db.collection('config').doc('admin').set({password: nueva});
-      adminPasswordCache = nueva;
-      alert('✅ Contraseña cambiada correctamente.');
-      $('passActual').value='';$('passNueva').value='';
-    }
+    function irWhatsApp(){ var m=parseFloat($('montoRecarga').value)||0; if(m<=0){alert('Monto inválido.');return;} var v=vendedores.find(function(x){return x.usuario===user.usuario;}); window.open('https://wa.me/'+WAN+'?text=💎 RECARGA '+encodeURIComponent(v.nombre)+' $'+m+' '+TOKEN,'_blank'); }
+    function irWhatsAppRetiro(){ var m=parseFloat($('montoRetiro').value)||0, v=vendedores.find(function(x){return x.usuario===user.usuario;}); if(m<50){alert('Mínimo $50.');return;} if((v.saldo||0)<m){alert('Saldo insuficiente.');return;} var d=$('datosRetiro').value.trim(); if(!d){alert('Completá datos.');return;} var c=m*0.3; window.open('https://wa.me/'+WAN+'?text=💸 RETIRO '+encodeURIComponent(v.nombre)+' $'+m+' Recibe $'+(m-c)+' '+TOKEN,'_blank'); }
     
-    function irWhatsApp() {
-      var monto = parseFloat($('montoRecarga').value)||0;
-      if(monto<=0) { alert('Ingresá un monto válido.'); return; }
-      var vend = vendedores.find(function(v){ return v.usuario===user.usuario; });
-      var msg = '💎 *RECARGA NOVA PANEL*%0A%0A👤 '+encodeURIComponent(vend.nombre)+'%0A💰 $'+monto+'%0A🔐 '+TOKEN;
-      window.open('https://wa.me/'+WAN+'?text='+msg, '_blank');
-    }
+    $('passwordInput').addEventListener('keypress',function(e){if(e.key==='Enter')$('loginBtn').click();});
+    $('logoutAdminBtn').onclick=logout; $('logoutVendedorBtn').onclick=logout;
+    $('recargarWhatsappBtn').onclick=irWhatsApp; $('retiroWhatsappBtn').onclick=irWhatsAppRetiro;
+    $('agregarProdBtn').onclick=agregarProducto;
     
-    function irWhatsAppRetiro() {
-      var monto = parseFloat($('montoRetiro').value)||0;
-      var vend = vendedores.find(function(v){ return v.usuario===user.usuario; });
-      if(monto<50) { alert('El retiro mínimo es de $50.00 USD.'); return; }
-      if((vend.saldo||0)<monto) { alert('Saldo insuficiente.'); return; }
-      var datos = $('datosRetiro').value.trim();
-      if(!datos) { alert('Completá los datos para el pago.'); return; }
-      var comision = monto*0.30;
-      var msg = '💸 *RETIRO NOVA PANEL*%0A%0A👤 '+encodeURIComponent(vend.nombre)+'%0A💰 $'+monto+'%0A✅ Recibe $'+(monto-comision)+'%0A🔐 '+TOKEN;
-      window.open('https://wa.me/'+WAN+'?text='+msg, '_blank');
-    }
+    $('exportarBtn').onclick=async function(){ var d={v:vendedores,p:productos,k:keys,h:ventas,mc:metodosCobro}; var b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'}); var a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='backup.json'; a.click(); alert('✅ Exportado.'); };
     
-    $('passwordInput').addEventListener('keypress', function(e){ if(e.key==='Enter') $('loginBtn').click(); });
-    $('logoutAdminBtn').onclick = logout;
-    $('logoutVendedorBtn').onclick = logout;
-    $('recargarWhatsappBtn').onclick = irWhatsApp;
-    $('retiroWhatsappBtn').onclick = irWhatsAppRetiro;
-    $('agregarProdBtn').onclick = agregarProducto;
+    function importarDatos(event){ var f=event.target.files[0]; if(!f)return; var r=new FileReader(); r.onload=async function(e){ var d=JSON.parse(e.target.result); if(d.v&&d.p){ vendedores=d.v;productos=d.p;keys=d.k;ventas=d.h;metodosCobro=d.mc||{mp:'',paypal:'',wallet:''}; for(var i=0;i<productos.length;i++)await db.collection('productos').doc(productos[i].id).set(productos[i]); for(var i=0;i<vendedores.length;i++)await guardarVendedor(vendedores[i]); for(var i=0;i<keys.length;i++)await db.collection('keys').doc(keys[i].id).set(keys[i]); for(var i=0;i<ventas.length;i++)await guardarVentas(); alert('✅ Importado. Recargando...'); location.reload(); } }; r.readAsText(f); event.target.value=''; }
     
-    $('exportarBtn').onclick = async function() {
-      var datos = { v: vendedores, p: productos, k: keys, h: ventas, mc: metodosCobro, version: '2.0', fecha: new Date().toISOString() };
-      var blob = new Blob([JSON.stringify(datos, null, 2)], {type: 'application/json'});
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement('a');
-      a.href = url;
-      a.download = 'novapanel_backup_' + new Date().toISOString().slice(0,10) + '.json';
-      document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
-      alert('✅ Datos exportados correctamente.');
-    };
+    $('guardarMetodosBtn').onclick=async function(){ metodosCobro.mp=$('datoMP').value.trim();metodosCobro.paypal=$('datoPaypal').value.trim();metodosCobro.wallet=$('datoWallet').value.trim(); await guardarMetodosCobro(); alert('✅ Guardados.'); };
+    $('cambiarPassBtn').onclick=cambiarPasswordAdmin;
     
-    function importarDatos(event) {
-      var file = event.target.files[0];
-      if(!file) return;
-      var reader = new FileReader();
-      reader.onload = async function(e) {
-        try {
-          var datos = JSON.parse(e.target.result);
-          if(datos.v && datos.p && datos.k && datos.h) {
-            if(!confirm('¿Importar datos? Esto reemplazará los datos actuales.')) return;
-            vendedores = datos.v; productos = datos.p; keys = datos.k; ventas = datos.h;
-            if(datos.mc) metodosCobro = datos.mc;
-            for(var i=0;i<productos.length;i++) await db.collection('productos').doc(productos[i].id).set(productos[i]);
-            for(var i=0;i<vendedores.length;i++) await db.collection('vendedores').doc(vendedores[i].uid).set(vendedores[i]);
-            for(var i=0;i<keys.length;i++) await db.collection('keys').doc(keys[i].id).set(keys[i]);
-            for(var i=0;i<ventas.length;i++) await db.collection('ventas').add(ventas[i]);
-            await guardarMetodosCobro();
-            alert('✅ Datos importados correctamente. Recargando...');
-            location.reload();
-          } else { alert('❌ El archivo no tiene el formato correcto.'); }
-        } catch(err) { alert('❌ Error al leer el archivo.'); }
-      };
-      reader.readAsText(file);
-      event.target.value = '';
-    }
+    $('crearVendedorBtn').onclick=function(){ var u=$('nuevoUsuario').value.trim().toLowerCase(), p=$('nuevoPassword').value.trim(), n=$('nuevoNombre').value.trim(); if(!u||!p||!n){alert('Completá todo.');return;} if(p.length<6){alert('Mínimo 6 caracteres.');return;} if(vendedores.find(function(v){return v.usuario===u;})){alert('Ya existe.');return;} auth.createUserWithEmailAndPassword(u+'@novapanel.com',p).then(async function(r){ var nuevo={uid:r.user.uid,usuario:u,nombre:n,saldo:0,acreditaciones:[]}; vendedores.push(nuevo); await guardarVendedor(nuevo); renderVendedores(); $('nuevoUsuario').value='';$('nuevoPassword').value='';$('nuevoNombre').value=''; alert('✅ Creado.'); }).catch(async function(e){ if(e.code==='auth/email-already-in-use'){ try{ var si=await auth.signInWithEmailAndPassword(u+'@novapanel.com',p); var nuevo={uid:si.user.uid,usuario:u,nombre:n,saldo:0,acreditaciones:[]}; vendedores.push(nuevo); await guardarVendedor(nuevo); renderVendedores(); $('nuevoUsuario').value='';$('nuevoPassword').value='';$('nuevoNombre').value=''; alert('✅ Creado.'); }catch(e2){alert('Error: '+e2.message);} }else{alert('Error: '+e.message);} }); };
     
-    $('guardarMetodosBtn').onclick = async function() {
-      metodosCobro.mp=$('datoMP').value.trim(); metodosCobro.paypal=$('datoPaypal').value.trim(); metodosCobro.wallet=$('datoWallet').value.trim();
-      await guardarMetodosCobro();
-      alert('✅ Métodos de cobro guardados.');
-    };
-    $('cambiarPassBtn').onclick = cambiarPasswordAdmin;
+    $('acreditarBtn').onclick=async function(){ var u=$('selectVendedor').value, m=parseFloat($('montoAcreditar').value); if(!u||!m||m<=0){alert('Seleccioná vendedor y monto.');return;} var v=vendedores.find(function(x){return x.usuario===u;}); if(!v)return; if(!v.acreditaciones)v.acreditaciones=[]; v.acreditaciones.push({monto:m,fecha:new Date().toLocaleString()}); v.saldo=(v.saldo||0)+m; await guardarVendedor(v); renderVendedores(); $('montoAcreditar').value=''; alert('✅ Acreditado.'); };
     
-    $('crearVendedorBtn').onclick = function() {
-      var u=$('nuevoUsuario').value.trim().toLowerCase();
-      var p=$('nuevoPassword').value.trim();
-      var n=$('nuevoNombre').value.trim();
-      if(!u||!p||!n) { alert('Completá todos los campos.'); return; }
-      if(p.length<6) { alert('Contraseña mínimo 6 caracteres.'); return; }
-      if(vendedores.find(function(v){ return v.usuario===u; })) { alert('Ese usuario ya existe.'); return; }
-      auth.createUserWithEmailAndPassword(u+'@novapanel.com', p)
-      .then(async function(result) {
-        var nuevo = {uid:result.user.uid, usuario:u, nombre:n, saldo:0, acreditaciones:[]};
-        vendedores.push(nuevo);
-        await guardarVendedor(nuevo);
-        renderVendedores();
-        $('nuevoUsuario').value='';$('nuevoPassword').value='';$('nuevoNombre').value='';
-        alert('✅ Vendedor creado.');
-      })
-      .catch(async function(e) {
-        if(e.code === 'auth/email-already-in-use') {
-          try {
-            var signIn = await auth.signInWithEmailAndPassword(u+'@novapanel.com', p);
-            var nuevo = {uid:signIn.user.uid, usuario:u, nombre:n, saldo:0, acreditaciones:[]};
-            vendedores.push(nuevo);
-            await guardarVendedor(nuevo);
-            renderVendedores();
-            $('nuevoUsuario').value='';$('nuevoPassword').value='';$('nuevoNombre').value='';
-            alert('✅ Vendedor creado.');
-          } catch(e2) { alert('Error: '+e2.message); }
-        } else { alert('Error: '+e.message); }
-      });
-    };
+    $('agregarKeyBtn').onclick=async function(){ var pid=$('selectProdKey').value, dur=$('selectDurKey').value, cod=$('codigoKey').value.trim(); if(!pid||!dur||!cod){alert('Completá todo.');return;} if(keys.find(function(k){return k.codigo===cod;})){alert('Código duplicado.');return;} var id='key'+Date.now(); keys.push({id:id,productoId:pid,duracion:dur,codigo:cod,usado:false,fechaCreacion:new Date().toISOString(),precioAlCrear:getPrecioActual(pid,dur)}); await db.collection('keys').doc(id).set(keys[keys.length-1]); renderKeys(); $('codigoKey').value=''; alert('✅ Key creada.'); };
     
-    $('acreditarBtn').onclick = async function() {
-      var u=$('selectVendedor').value;
-      var m=parseFloat($('montoAcreditar').value);
-      if(!u||!m||m<=0) { alert('Seleccioná vendedor y monto válido.'); return; }
-      var vend=vendedores.find(function(v){ return v.usuario===u; });
-      if(!vend) return;
-      if(!vend.acreditaciones) vend.acreditaciones=[];
-      vend.acreditaciones.push({monto:m, fecha:new Date().toLocaleString()});
-      vend.saldo=(vend.saldo||0)+m;
-      await guardarVendedor(vend);
-      renderVendedores();
-      $('montoAcreditar').value='';
-      alert('✅ Saldo acreditado.');
-    };
+    $('venderBtn').onclick=async function(){ var pid=$('selectVentaProd').value, dur=$('selectVentaDur').value, cant=parseInt($('cantVenta').value)||1, v=vendedores.find(function(x){return x.usuario===user.usuario;}); if(!v)return; var pr=getPrecioActual(pid,dur), tot=pr*cant, disp=keys.filter(function(k){return k.productoId===pid&&k.duracion===dur&&!k.usado&&estado(k)!=='expired';}); if(disp.length<cant){alert('Stock insuficiente.');return;} if((v.saldo||0)<tot){alert('Saldo insuficiente.');return;} for(var i=0;i<cant;i++){disp[i].usado=true; await db.collection('keys').doc(disp[i].id).update({usado:true});} v.saldo-=tot; await guardarVendedor(v); ventas.push({vendedor:user.usuario,producto:productos.find(function(x){return x.id===pid;})?.nombre||'?',duracion:dur,cantidad:cant,total:tot,keys:disp.slice(0,cant).map(function(k){return k.codigo;}),fecha:new Date().toLocaleString()}); await guardarVentas(); renderTienda(); updatePrecioEst(); alert('✅ Vendido.'); };
     
-    $('agregarKeyBtn').onclick = async function() {
-      var pid=$('selectProdKey').value;
-      var dur=$('selectDurKey').value;
-      var cod=$('codigoKey').value.trim();
-      if(!pid||!dur||!cod) { alert('Completá todos los campos.'); return; }
-      if(keys.find(function(k){ return k.codigo===cod; })) { alert('Ese código ya existe.'); return; }
-      var precio=getPrecioActual(pid,dur);
-      var id='key'+Date.now();
-      keys.push({id:id,productoId:pid,duracion:dur,codigo:cod,usado:false,fechaCreacion:new Date().toISOString(),precioAlCrear:precio});
-      await db.collection('keys').doc(id).set(keys[keys.length-1]);
-      renderKeys();
-      $('codigoKey').value='';
-      alert('✅ Key creada.');
-    };
+    document.querySelectorAll('.nav-item').forEach(function(item){ item.addEventListener('click',function(){ var p=this.getAttribute('data-page'); showPage(p); if(p==='dashboard')renderDashboard(); if(p==='vendedores')renderVendedores(); if(p==='productos')mostrarProductos(); if(p==='keys')renderKeys(); if(p==='ventas')renderVentas(); }); });
+    document.querySelectorAll('.tab-vendedor').forEach(function(t){ t.addEventListener('click',function(){ document.querySelectorAll('.tab-vendedor').forEach(function(x){x.classList.remove('active');}); this.classList.add('active'); tabActual=this.getAttribute('data-tab'); $('seccionCatalogo').classList.toggle('hidden',tabActual!=='catalogo'); $('seccionHistorial').classList.toggle('hidden',tabActual!=='historial'); $('seccionRecarga').classList.toggle('hidden',tabActual!=='recarga'); $('seccionRetiro').classList.toggle('hidden',tabActual!=='retiro'); renderTienda(); }); });
+    document.querySelectorAll('#filtroBar .filter-chip').forEach(function(c){ c.addEventListener('click',function(){ document.querySelectorAll('#filtroBar .filter-chip').forEach(function(x){x.classList.remove('active');}); this.classList.add('active'); filtroDur=this.getAttribute('data-filtro'); renderKeys(); }); });
+    $('filtroProducto').addEventListener('change',function(){filtroProd=this.value;renderKeys();});
+    $('selectVentaProd').addEventListener('change',updatePrecioEst); $('selectVentaDur').addEventListener('change',updatePrecioEst); $('cantVenta').addEventListener('input',updatePrecioEst);
     
-    $('venderBtn').onclick = async function() {
-      var pid=$('selectVentaProd').value;
-      var dur=$('selectVentaDur').value;
-      var cant=parseInt($('cantVenta').value)||1;
-      var vend=vendedores.find(function(v){ return v.usuario===user.usuario; });
-      if(!vend) return;
-      var precio=getPrecioActual(pid,dur);
-      var total=precio*cant;
-      var disponibles=keys.filter(function(k){ return k.productoId===pid&&k.duracion===dur&&!k.usado&&estado(k)!=='expired'; });
-      if(disponibles.length<cant) { alert('Stock insuficiente. Hay '+disponibles.length+' disponibles.'); return; }
-      if((vend.saldo||0)<total) { alert('Saldo insuficiente. Necesitás $'+total.toFixed(2)+'.'); return; }
-      var prod=productos.find(function(p){ return p.id===pid; });
-      var keysVendidas=[];
-      for(var i=0;i<cant;i++) {
-        disponibles[i].usado=true;
-        keysVendidas.push(disponibles[i].codigo);
-        await db.collection('keys').doc(disponibles[i].id).update({usado:true});
-      }
-      vend.saldo-=total;
-      await guardarVendedor(vend);
-      ventas.push({vendedor:user.usuario,producto:prod?prod.nombre:'Desconocido',duracion:dur,cantidad:cant,total:total,keys:keysVendidas,fecha:new Date().toLocaleString()});
-      await guardarVentas();
-      renderTienda();
-      updatePrecioEst();
-      alert('✅ Venta realizada. Keys: '+keysVendidas.join(', '));
-    };
-    
-    document.querySelectorAll('.nav-item').forEach(function(item) {
-      item.addEventListener('click', function() {
-        var page=this.getAttribute('data-page');
-        showPage(page);
-        if(page==='dashboard') renderDashboard();
-        if(page==='vendedores') renderVendedores();
-        if(page==='productos') mostrarProductos();
-        if(page==='keys') renderKeys();
-        if(page==='ventas') renderVentas();
-      });
-    });
-    
-    document.querySelectorAll('.tab-vendedor').forEach(function(tab) {
-      tab.addEventListener('click', function() {
-        document.querySelectorAll('.tab-vendedor').forEach(function(t){ t.classList.remove('active'); });
-        this.classList.add('active');
-        tabActual=this.getAttribute('data-tab');
-        $('seccionCatalogo').classList.toggle('hidden',tabActual!=='catalogo');
-        $('seccionHistorial').classList.toggle('hidden',tabActual!=='historial');
-        $('seccionRecarga').classList.toggle('hidden',tabActual!=='recarga');
-        $('seccionRetiro').classList.toggle('hidden',tabActual!=='retiro');
-        renderTienda();
-      });
-    });
-    
-    document.querySelectorAll('#filtroBar .filter-chip').forEach(function(chip) {
-      chip.addEventListener('click', function() {
-        document.querySelectorAll('#filtroBar .filter-chip').forEach(function(c){ c.classList.remove('active'); });
-        this.classList.add('active');
-        filtroDur=this.getAttribute('data-filtro');
-        renderKeys();
-      });
-    });
-    
-    $('filtroProducto').addEventListener('change', function() { filtroProd=this.value; renderKeys(); });
-    $('selectVentaProd').addEventListener('change', updatePrecioEst);
-    $('selectVentaDur').addEventListener('change', updatePrecioEst);
-    $('cantVenta').addEventListener('input', updatePrecioEst);
-    
-    cargarDatosFirestore().then(function() {
-      auth.onAuthStateChanged(function(firebaseUser) {
-        if(firebaseUser && !user) {
-          var email = firebaseUser.email || '';
-          var u = email.replace('@novapanel.com','');
-          var vend = vendedores.find(function(v){ return v.usuario===u; });
-          if(vend) { user={tipo:'vendedor',usuario:vend.usuario,nombre:vend.nombre}; }
-        }
-        if(!user && !firebaseUser) { user=null; }
-        updateUI();
-        mostrarProductos();
-        actualizarSelectoresProductos();
-      });
-    });
+    cargarDatosFirestore().then(function(){ auth.onAuthStateChanged(function(fb){ if(fb&&!user){ var u=(fb.email||'').replace('@novapanel.com',''), v=vendedores.find(function(x){return x.usuario===u;}); if(v)user={tipo:'vendedor',usuario:v.usuario,nombre:v.nombre}; } if(!user&&!fb){user=null;} updateUI(); mostrarProductos(); actualizarSelectoresProductos(); }); });
   </script>
 </body>
 </html>
