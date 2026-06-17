@@ -382,7 +382,6 @@
   </main>
   </div>
   <script>
-<script>
   const firebaseConfig = {
     apiKey: "AIzaSyBsYxEHoS9ta6efEYfAKKOa82r_g4LEbmg",
     authDomain: "novapanelsocios-2152c.firebaseapp.com",
@@ -581,15 +580,6 @@
     alert('✅ Vendedor eliminado.');
   }
   
-  async function eliminarProducto(id, nombre) {
-    if(!confirm('¿Eliminar producto '+nombre+'?')) return;
-    await db.collection('productos').doc(id).delete();
-    productos = productos.filter(function(p){ return p.id !== id; });
-    mostrarProductos();
-    actualizarSelectoresProductos();
-    alert('✅ Producto eliminado.');
-  }
-  
   function mostrarProductos() {
     var html = '';
     for(var i=0;i<productos.length;i++) {
@@ -597,7 +587,6 @@
       html += '<div class="card">';
       html += '<img src="'+p.imagen+'" class="product-img" alt="'+p.nombre+'" onerror="this.style.display=\'none\'">';
       html += '<h3 style="color:#a78bfa;font-size:0.75rem;margin-top:0.3rem;">'+p.nombre+'</h3>';
-      html += '<button class="btn btn-danger btn-xs" style="margin-top:0.2rem;" onclick="eliminarProducto(\''+p.id+'\',\''+p.nombre+'\')">🗑 Eliminar</button>';
       html += '<div class="price-list">';
       for(var d=0;d<DUR.length;d++) {
         if(p.precios[DUR[d]]) {
@@ -750,7 +739,7 @@
       $('montoRecibir').textContent = '$'+(monto-comision).toFixed(2);
     } else { $('comisionInfo').style.display = 'none'; }
   }
-    $('loginBtn').onclick = async function() {
+        $('loginBtn').onclick = async function() {
       var u = $('usuarioInput').value.trim().toLowerCase();
       var p = $('passwordInput').value.trim();
       if(!u || !p) { alert('Completá todos los campos.'); return; }
