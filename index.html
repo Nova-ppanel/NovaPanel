@@ -9,7 +9,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <style>
-    :root {
+    :roothtml += '<tr><td>'+nombreProd+'</td><td>'+k.duracion+'</td><td><span class="key-code-display">'+k.codigo+'</span></td><td>$'+k.precioAlCrear.toFixed(2)+'</td><td><span class="status-badge '+claseEst+'">'+txtEst+'</span></td><td>—</td><td><button class="btn btn-danger btn-xs" onclick="eliminarKey(\''+k.id+'\')">✕</button></td></tr>'; {
       --bg-deep: #020107;
       --bg-card: #0b0818;
       --bg-input: #0a0716;
@@ -653,7 +653,7 @@
       if(est==='warning') { claseEst='status-warning'; txtEst='PROX VENC'; }
       else if(est==='expired') { claseEst='status-expired'; txtEst='VENCIDA'; }
       else if(est==='used') { claseEst='status-used'; txtEst='USADA'; }
-      html += '<tr><td>'+nombreProd+'</td><td>'+k.duracion+'</td><td><span class="key-code-display">'+k.codigo+'</span></td><td>$'+k.precioAlCrear.toFixed(2)+'</td><td><span class="status-badge '+claseEst+'">'+txtEst+'</span></td><td>—</td><td><button class="btn btn-danger btn-xs" onclick="eliminarKey(\''+k.id+'\')">✕</button></td></tr>';
+    html += '<tr><td>'+nombreProd+'</td><td>'+k.duracion+'</td><td><span class="key-code-display">'+k.codigo+'</span></td><td>$'+k.precioAlCrear.toFixed(2)+'</td><td><span class="status-badge '+claseEst+'">'+txtEst+'</span></td><td>—</td><td><button class="btn btn-danger btn-xs" data-keyid="'+k.id+'" onclick="eliminarKey(this.getAttribute(\'data-keyid\'))">✕</button></td></tr>';
     }
     $('tablaKeys').innerHTML = html || '<tr><td colspan="7" style="color:#9a8db8;">No hay keys con esos filtros.</td></tr>';
   }
