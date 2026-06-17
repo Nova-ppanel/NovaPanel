@@ -9,7 +9,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <style>
-    :root{--bg-deep:#020107;--bg-card:#0b0818;--bg-input:#0a0716;--border-subtle:#1f1638;--border-medium:#352850;--violet:#8b5cf6;--violet-light:#a78bfa;--violet-glow:#c4b5fd;--text-primary:#f5f0ff;--text-secondary:#d4c8f0;--text-dim:#9a8db8;--danger:#ef4444;--success:#22c55e;--warning:#eab308;--whatsaif(filtroProd!=='todas') kf=kf.filter(function(k){return k.productoId===filtroProd;});pp:#25D366;--radius:0.8rem}
+    :root{--bg-deep:#020107;--bg-card:#0b0818;--bg-input:#0a0716;--border-subtle:#1f1638;--border-medium:#352850;--violet:#8b5cf6;--violet-light:#a78bfa;--violet-glow:#c4b5fd;--text-primary:#f5f0ff;--text-secondary:#d4c8f0;--text-dim:#9a8db8;--danger:#ef4444;--success:#22c55e;--warning:#eab308;--whatsaif(filtroProd && filtroProd!=='todas') kf=kf.filter(function(k){return k.productoId===filtroProd;});pp:#25D366;--radius:0.8rem}
     *{margin:0;padding:0;box-sizing:border-box}
     html{overflow:hidden;height:100%}
     body{font-family:'Inter','Rajdhani',sans-serif;background:#020107;color:#f5f0ff;height:100%;overflow:hidden;position:relative;line-height:1.5}
@@ -470,7 +470,7 @@ if($('filtroProducto')) $('filtroProducto').value='todas';
     document.querySelectorAll('.nav-item').forEach(function(item){ item.addEventListener('click',function(){ var p=this.getAttribute('data-page'); showPage(p); if(p==='dashboard')renderDashboard(); if(p==='vendedores')renderVendedores(); if(p==='productos')mostrarProductos(); if(p==='keys')renderKeys(); if(p==='ventas')renderVentas(); }); });
     document.querySelectorAll('.tab-vendedor').forEach(function(t){ t.addEventListener('click',function(){ document.querySelectorAll('.tab-vendedor').forEach(function(x){x.classList.remove('active');}); this.classList.add('active'); tabActual=this.getAttribute('data-tab'); $('seccionCatalogo').classList.toggle('hidden',tabActual!=='catalogo'); $('seccionHistorial').classList.toggle('hidden',tabActual!=='historial'); $('seccionRecarga').classList.toggle('hidden',tabActual!=='recarga'); $('seccionRetiro').classList.toggle('hidden',tabActual!=='retiro'); renderTienda(); }); });
     document.querySelectorAll('#filtroBar .filter-chip').forEach(function(c){ c.addEventListener('click',function(){ document.querySelectorAll('#filtroBar .filter-chip').forEach(function(x){x.classList.remove('active');}); this.classList.add('active'); filtroDur=this.getAttribute('data-filtro'); renderKeys(); }); });
-    $('filtroProducto').addEventListener('change',function(){filtroProd=this.value;renderKeys();});
+   $('filtroProducto').addEventListener('change',function(){filtroProd=(this.value==='todas'||this.value==='')?'todas':this.value;renderKeys();});
     $('selectVentaProd').addEventListener('change',updatePrecioEst); $('selectVentaDur').addEventListener('change',updatePrecioEst); $('cantVenta').addEventListener('input',updatePrecioEst);
     cargarDatosFirestore().then(function(){ auth.onAuthStateChanged(function(fb){ if(fb&&!user){ var u=(fb.email||'').replace('@novapanel.com',''), v=vendedores.find(function(x){return x.usuario===u;}); if(v)user={tipo:'vendedor',usuario:v.usuario,nombre:v.nombre}; } if(!user&&!fb){user=null;} updateUI(); mostrarProductos(); actualizarSelectoresProductos(); }); });
   </script>
