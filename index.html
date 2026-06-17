@@ -18,14 +18,14 @@
             --border: #2a2a3e;
             --text: #e0e0f0;
             --text2: #8888aa;
-            --accent: #8b5cf6;
-            --accent-hover: #7c3aed;
+            --accent: #a855f7;
+            --accent-hover: #9333ea;
             --danger: #ef4444;
             --success: #22c55e;
             --warning: #f59e0b;
             --radius: 12px;
-            --shadow: 0 4px 32px rgba(139, 92, 246, 0.15);
-            --gradient: linear-gradient(135deg, #8b5cf6, #6d28d9);
+            --shadow: 0 4px 32px rgba(168, 85, 247, 0.2);
+            --gradient: linear-gradient(135deg, #a855f7, #7c3aed);
         }
 
         * {
@@ -36,24 +36,77 @@
 
         body {
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background: var(--bg);
+            background: #050508;
             color: var(--text);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            background-image: radial-gradient(ellipse at top, #1a1a3e 0%, #0a0a12 60%);
+            overflow: hidden;
+        }
+
+        /* ========== FONDO ANIMADO ========== */
+        .particulas {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+        }
+        .particula {
+            position: absolute;
+            border-radius: 50%;
+            background: var(--accent);
+            opacity: 0;
+            animation: flotar linear infinite;
+        }
+        @keyframes flotar {
+            0% {
+                transform: translateY(100vh) scale(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.6;
+            }
+            90% {
+                opacity: 0.3;
+            }
+            100% {
+                transform: translateY(-10vh) scale(1.5);
+                opacity: 0;
+            }
+        }
+
+        /* RESPLANDOR */
+        .resplandor {
+            position: fixed;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.15) 0%, transparent 70%);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 0;
+            pointer-events: none;
+            animation: pulsar 4s ease-in-out infinite;
+        }
+        @keyframes pulsar {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
+            50% { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
         }
 
         /* ========== LOGIN ========== */
         #loginContainer {
-            background: var(--surface);
+            position: relative;
+            z-index: 1;
+            background: rgba(18, 18, 28, 0.85);
+            backdrop-filter: blur(20px);
             padding: 3rem 2.5rem;
             border-radius: 20px;
-            box-shadow: var(--shadow);
+            box-shadow: 0 0 60px rgba(168, 85, 247, 0.15), 0 4px 32px rgba(0,0,0,0.5);
             width: 100%;
             max-width: 420px;
-            border: 1px solid var(--border);
+            border: 1px solid rgba(168, 85, 247, 0.2);
             text-align: center;
         }
         #loginContainer .logo-login {
@@ -369,6 +422,10 @@
 </head>
 <body>
 
+    <!-- FONDO ANIMADO -->
+    <div class="particulas" id="particulas"></div>
+    <div class="resplandor"></div>
+
     <!-- ========== LOGIN ========== -->
     <div id="loginContainer">
         <div class="logo-icon">⚡</div>
@@ -517,21 +574,21 @@
     <div class="toast" id="toast"></div>
 <script>
     // ===== FIREBASE CONFIG =====
+    // ⚠️ REEMPLAZÁ LOS ASTERISCOS POR TU API KEY REAL
     const firebaseConfig = {
-        apiKey: "***************************************",
-        authDomain: "novapanel-2d72b.firebaseapp.com",
-        projectId: "novapanel-2d72b",
-        storageBucket: "novapanel-2d72b.appspot.com",
-        messagingSenderId: "317388043186",
-        appId: "1:317388043186:web:3fc4f4c8d63b1c92e5e1ab"
-    };
+  apiKey: "AIzaSyBsYxEHoS9ta6efEYfAKKOa82r_g4LEbmg",
+  authDomain: "novapanelsocios-2152c.firebaseapp.com",
+  projectId: "novapanelsocios-2152c",
+  storageBucket: "novapanelsocios-2152c.firebasestorage.app",
+  messagingSenderId: "216473572181",
+  appId: "1:216473572181:web:9488830339d010133755dc"
+};
 
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
 
     // ===== ELEMENTOS DOM =====
-    // Login
     const loginContainer = document.getElementById('loginContainer');
     const adminContainer = document.getElementById('adminContainer');
     const loginBtn = document.getElementById('loginBtn');
@@ -540,17 +597,14 @@
     const loginError = document.getElementById('loginError');
     const logoutBtn = document.getElementById('logoutBtn');
 
-    // Sidebar
     const navLinks = document.querySelectorAll('#sidebar nav a');
     const sections = document.querySelectorAll('.section');
 
-    // Dashboard
     const dashProductos = document.getElementById('dashProductos');
     const dashVentasHoy = document.getElementById('dashVentasHoy');
     const dashClientes = document.getElementById('dashClientes');
     const dashIngresos = document.getElementById('dashIngresos');
 
-    // Productos
     const cargarProductosBtn = document.getElementById('cargarProductosBtn');
     const verTodasKeysBtn = document.getElementById('verTodasKeysBtn');
     const agregarProductoBtn = document.getElementById('agregarProductoBtn');
@@ -568,7 +622,6 @@
     const closeKeysBtn = document.getElementById('closeKeysBtn');
     const toast = document.getElementById('toast');
 
-    // Ventas
     const ventasTableBody = document.getElementById('ventasTableBody');
     const clientesTableBody = document.getElementById('clientesTableBody');
 
@@ -726,248 +779,265 @@
             renderProductos();
         });
     });
-</script>
-    <script>
-        // ===== VER KEYS =====
-        async function verKeys(productoId) {
-            try {
-                keysList.innerHTML = 'Cargando keys...';
-                keysModalOverlay.classList.add('active');
-                
-                const doc = await db.collection('productos').doc(productoId).get();
-                if (!doc.exists) {
-                    keysList.innerHTML = '<p style="color:var(--danger);">Producto no encontrado.</p>';
-                    return;
-                }
-                
-                const data = doc.data();
-                const keysArray = Array.isArray(data.keys) ? data.keys : 
-                    (typeof data.keys === 'string' ? data.keys.split(',').map(k => k.trim()).filter(k => k) : []);
-                
-                if (keysArray.length === 0) {
-                    keysList.innerHTML = '<p style="color:var(--text2);">No hay keys cargadas.</p>';
-                    return;
-                }
-                
-                keysList.innerHTML = keysArray.map((k, i) => {
-                    const usada = k.startsWith('USADA:');
-                    return `<div style="padding:0.4rem 0; border-bottom:1px solid var(--border); color:${usada ? 'var(--danger)' : 'var(--success)'}; font-family:monospace;">
-                        ${i+1}. ${k}
-                    </div>`;
-                }).join('');
-            } catch (e) {
-                console.error('Error cargando keys:', e);
-                keysList.innerHTML = '<p style="color:var(--danger);">Error al cargar keys.</p>';
-            }
-        }
 
-        // ===== VER TODAS LAS KEYS =====
-        verTodasKeysBtn.addEventListener('click', async function() {
-            try {
-                keysList.innerHTML = 'Cargando todas las keys...';
-                keysModalOverlay.classList.add('active');
-                
-                let lista = productosCache;
-                if (filtroDur !== 'todas') {
-                    lista = productosCache.filter(p => p.duracion === filtroDur);
-                }
-                
-                if (lista.length === 0) {
-                    keysList.innerHTML = '<p style="color:var(--text2);">No hay productos para mostrar.</p>';
-                    return;
-                }
-                
-                let html = '';
-                lista.forEach(p => {
-                    const keysArray = Array.isArray(p.keys) ? p.keys : 
-                        (typeof p.keys === 'string' ? p.keys.split(',').map(k => k.trim()).filter(k => k) : []);
-                    html += `<div style="margin-bottom:1rem; padding-bottom:0.5rem; border-bottom:2px solid var(--accent);">
-                        <strong>📦 ${p.nombre || 'Sin nombre'}</strong> (${formatearDuracion(p.duracion)})
-                    </div>`;
-                    if (keysArray.length === 0) {
-                        html += '<p style="color:var(--text2); font-size:0.8rem; margin-left:1rem;">Sin keys.</p>';
-                    } else {
-                        keysArray.forEach((k, i) => {
-                            const usada = k.startsWith('USADA:');
-                            html += `<div style="padding:0.3rem 0; margin-left:1rem; border-bottom:1px solid var(--border); color:${usada ? 'var(--danger)' : 'var(--success)'}; font-family:monospace; font-size:0.8rem;">
-                                ${i+1}. ${k}
-                            </div>`;
-                        });
-                    }
-                });
-                
-                keysList.innerHTML = html;
-            } catch (e) {
-                console.error('Error cargando todas las keys:', e);
-                keysList.innerHTML = '<p style="color:var(--danger);">Error al cargar las keys.</p>';
-            }
-        });
-
-        closeKeysBtn.addEventListener('click', () => {
-            keysModalOverlay.classList.remove('active');
-        });
-        keysModalOverlay.addEventListener('click', function(e) {
-            if (e.target === keysModalOverlay) {
-                keysModalOverlay.classList.remove('active');
-            }
-        });
-
-        // ===== AGREGAR / EDITAR PRODUCTO =====
-        agregarProductoBtn.addEventListener('click', () => {
-            editProductoId = null;
-            productoModalTitle.textContent = 'Agregar Producto';
-            prodNombre.value = '';
-            prodDuracion.value = '1dia';
-            prodPrecio.value = '';
-            prodKeys.value = '';
-            productoModalOverlay.classList.add('active');
-        });
-
-        async function editarProducto(id) {
-            try {
-                const doc = await db.collection('productos').doc(id).get();
-                if (!doc.exists) return;
-                const data = doc.data();
-                editProductoId = id;
-                productoModalTitle.textContent = 'Editar Producto';
-                prodNombre.value = data.nombre || '';
-                prodDuracion.value = data.duracion || '1dia';
-                prodPrecio.value = data.precio || '';
-                const keysArray = Array.isArray(data.keys) ? data.keys.join(', ') : (typeof data.keys === 'string' ? data.keys : '');
-                prodKeys.value = keysArray;
-                productoModalOverlay.classList.add('active');
-            } catch (e) {
-                console.error('Error editando:', e);
-                showToast('Error al cargar producto', 'error');
-            }
-        }
-
-        cancelProductoBtn.addEventListener('click', () => {
-            productoModalOverlay.classList.remove('active');
-            editProductoId = null;
-        });
-        productoModalOverlay.addEventListener('click', function(e) {
-            if (e.target === productoModalOverlay) {
-                productoModalOverlay.classList.remove('active');
-                editProductoId = null;
-            }
-        });
-
-        saveProductoBtn.addEventListener('click', async () => {
-            const nombre = prodNombre.value.trim();
-            const duracion = prodDuracion.value;
-            const precio = parseFloat(prodPrecio.value);
-            const keysRaw = prodKeys.value.trim();
-
-            if (!nombre || !duracion || isNaN(precio) || !keysRaw) {
-                showToast('Completá todos los campos', 'error');
+    // ===== VER KEYS =====
+    async function verKeys(productoId) {
+        try {
+            keysList.innerHTML = 'Cargando keys...';
+            keysModalOverlay.classList.add('active');
+            
+            const doc = await db.collection('productos').doc(productoId).get();
+            if (!doc.exists) {
+                keysList.innerHTML = '<p style="color:var(--danger);">Producto no encontrado.</p>';
                 return;
             }
+            
+            const data = doc.data();
+            const keysArray = Array.isArray(data.keys) ? data.keys : 
+                (typeof data.keys === 'string' ? data.keys.split(',').map(k => k.trim()).filter(k => k) : []);
+            
+            if (keysArray.length === 0) {
+                keysList.innerHTML = '<p style="color:var(--text2);">No hay keys cargadas.</p>';
+                return;
+            }
+            
+            keysList.innerHTML = keysArray.map((k, i) => {
+                const usada = k.startsWith('USADA:');
+                return `<div style="padding:0.4rem 0; border-bottom:1px solid var(--border); color:${usada ? 'var(--danger)' : 'var(--success)'}; font-family:monospace;">
+                    ${i+1}. ${k}
+                </div>`;
+            }).join('');
+        } catch (e) {
+            console.error('Error cargando keys:', e);
+            keysList.innerHTML = '<p style="color:var(--danger);">Error al cargar keys.</p>';
+        }
+    }
 
-            const keysArray = keysRaw.split(',').map(k => k.trim()).filter(k => k);
-
-            try {
-                const data = {
-                    nombre,
-                    duracion,
-                    precio,
-                    keys: keysArray,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                };
-
-                if (editProductoId) {
-                    await db.collection('productos').doc(editProductoId).update(data);
-                    showToast('Producto actualizado ✅');
+    // ===== VER TODAS LAS KEYS =====
+    verTodasKeysBtn.addEventListener('click', async function() {
+        try {
+            keysList.innerHTML = 'Cargando todas las keys...';
+            keysModalOverlay.classList.add('active');
+            
+            let lista = productosCache;
+            if (filtroDur !== 'todas') {
+                lista = productosCache.filter(p => p.duracion === filtroDur);
+            }
+            
+            if (lista.length === 0) {
+                keysList.innerHTML = '<p style="color:var(--text2);">No hay productos para mostrar.</p>';
+                return;
+            }
+            
+            let html = '';
+            lista.forEach(p => {
+                const keysArray = Array.isArray(p.keys) ? p.keys : 
+                    (typeof p.keys === 'string' ? p.keys.split(',').map(k => k.trim()).filter(k => k) : []);
+                html += `<div style="margin-bottom:1rem; padding-bottom:0.5rem; border-bottom:2px solid var(--accent);">
+                    <strong>📦 ${p.nombre || 'Sin nombre'}</strong> (${formatearDuracion(p.duracion)})
+                </div>`;
+                if (keysArray.length === 0) {
+                    html += '<p style="color:var(--text2); font-size:0.8rem; margin-left:1rem;">Sin keys.</p>';
                 } else {
-                    data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-                    await db.collection('productos').add(data);
-                    showToast('Producto agregado ✅');
+                    keysArray.forEach((k, i) => {
+                        const usada = k.startsWith('USADA:');
+                        html += `<div style="padding:0.3rem 0; margin-left:1rem; border-bottom:1px solid var(--border); color:${usada ? 'var(--danger)' : 'var(--success)'}; font-family:monospace; font-size:0.8rem;">
+                            ${i+1}. ${k}
+                        </div>`;
+                    });
                 }
+            });
+            
+            keysList.innerHTML = html;
+        } catch (e) {
+            console.error('Error cargando todas las keys:', e);
+            keysList.innerHTML = '<p style="color:var(--danger);">Error al cargar las keys.</p>';
+        }
+    });
 
-                productoModalOverlay.classList.remove('active');
-                editProductoId = null;
-                cargarProductos();
-                cargarDashboard();
-            } catch (e) {
-                console.error('Error guardando:', e);
-                showToast('Error: ' + e.message, 'error');
-            }
-        });
+    closeKeysBtn.addEventListener('click', () => {
+        keysModalOverlay.classList.remove('active');
+    });
+    keysModalOverlay.addEventListener('click', function(e) {
+        if (e.target === keysModalOverlay) {
+            keysModalOverlay.classList.remove('active');
+        }
+    });
 
-        async function eliminarProducto(id) {
-            if (!confirm('¿Eliminar este producto?')) return;
-            try {
-                await db.collection('productos').doc(id).delete();
-                showToast('Producto eliminado ✅');
-                cargarProductos();
-                cargarDashboard();
-            } catch (e) {
-                console.error('Error eliminando:', e);
-                showToast('Error: ' + e.message, 'error');
-            }
+    // ===== AGREGAR / EDITAR PRODUCTO =====
+    agregarProductoBtn.addEventListener('click', () => {
+        editProductoId = null;
+        productoModalTitle.textContent = 'Agregar Producto';
+        prodNombre.value = '';
+        prodDuracion.value = '1dia';
+        prodPrecio.value = '';
+        prodKeys.value = '';
+        productoModalOverlay.classList.add('active');
+    });
+
+    async function editarProducto(id) {
+        try {
+            const doc = await db.collection('productos').doc(id).get();
+            if (!doc.exists) return;
+            const data = doc.data();
+            editProductoId = id;
+            productoModalTitle.textContent = 'Editar Producto';
+            prodNombre.value = data.nombre || '';
+            prodDuracion.value = data.duracion || '1dia';
+            prodPrecio.value = data.precio || '';
+            const keysArray = Array.isArray(data.keys) ? data.keys.join(', ') : (typeof data.keys === 'string' ? data.keys : '');
+            prodKeys.value = keysArray;
+            productoModalOverlay.classList.add('active');
+        } catch (e) {
+            console.error('Error editando:', e);
+            showToast('Error al cargar producto', 'error');
+        }
+    }
+
+    cancelProductoBtn.addEventListener('click', () => {
+        productoModalOverlay.classList.remove('active');
+        editProductoId = null;
+    });
+    productoModalOverlay.addEventListener('click', function(e) {
+        if (e.target === productoModalOverlay) {
+            productoModalOverlay.classList.remove('active');
+            editProductoId = null;
+        }
+    });
+
+    saveProductoBtn.addEventListener('click', async () => {
+        const nombre = prodNombre.value.trim();
+        const duracion = prodDuracion.value;
+        const precio = parseFloat(prodPrecio.value);
+        const keysRaw = prodKeys.value.trim();
+
+        if (!nombre || !duracion || isNaN(precio) || !keysRaw) {
+            showToast('Completá todos los campos', 'error');
+            return;
         }
 
-        cargarProductosBtn.addEventListener('click', cargarProductos);
+        const keysArray = keysRaw.split(',').map(k => k.trim()).filter(k => k);
 
-        // ===== VENTAS =====
-        async function cargarVentas() {
-            try {
-                ventasTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:2rem;">Cargando...</td></tr>';
-                const snap = await db.collection('ventas').orderBy('fecha', 'desc').limit(50).get();
-                if (snap.empty) {
-                    ventasTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:2rem; color:var(--text2);">No hay ventas</td></tr>';
-                    return;
-                }
-                ventasTableBody.innerHTML = '';
-                snap.forEach(doc => {
-                    const v = doc.data();
-                    const fecha = v.fecha ? v.fecha.toDate().toLocaleDateString('es-AR') : 'N/A';
-                    ventasTableBody.innerHTML += `
-                    <tr>
-                        <td>${doc.id.slice(-6)}</td>
-                        <td>${v.producto || 'N/A'}</td>
-                        <td>${v.cliente || 'N/A'}</td>
-                        <td style="font-family:monospace; font-size:0.75rem;">${v.key || 'N/A'}</td>
-                        <td>${fecha}</td>
-                        <td>$${(v.total || 0).toLocaleString('es-AR')}</td>
-                    </tr>`;
-                });
-            } catch (e) {
-                console.error('Error cargando ventas:', e);
-                ventasTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:2rem; color:var(--danger);">Error al cargar ventas</td></tr>';
+        try {
+            const data = {
+                nombre,
+                duracion,
+                precio,
+                keys: keysArray,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            if (editProductoId) {
+                await db.collection('productos').doc(editProductoId).update(data);
+                showToast('Producto actualizado ✅');
+            } else {
+                data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+                await db.collection('productos').add(data);
+                showToast('Producto agregado ✅');
             }
-        }
 
-        // ===== CLIENTES =====
-        async function cargarClientes() {
-            try {
-                clientesTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:2rem;">Cargando...</td></tr>';
-                const snap = await db.collection('clientes').orderBy('totalGastado', 'desc').get();
-                if (snap.empty) {
-                    clientesTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:2rem; color:var(--text2);">No hay clientes</td></tr>';
-                    return;
-                }
-                clientesTableBody.innerHTML = '';
-                snap.forEach(doc => {
-                    const c = doc.data();
-                    clientesTableBody.innerHTML += `
-                    <tr>
-                        <td>${c.email || 'N/A'}</td>
-                        <td>${c.nombre || 'N/A'}</td>
-                        <td>${c.compras || 0}</td>
-                        <td>$${(c.totalGastado || 0).toLocaleString('es-AR')}</td>
-                    </tr>`;
-                });
-            } catch (e) {
-                console.error('Error cargando clientes:', e);
-                clientesTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:2rem; color:var(--danger);">Error al cargar clientes</td></tr>';
+            productoModalOverlay.classList.remove('active');
+            editProductoId = null;
+            cargarProductos();
+            cargarDashboard();
+        } catch (e) {
+            console.error('Error guardando:', e);
+            showToast('Error: ' + e.message, 'error');
+        }
+    });
+
+    async function eliminarProducto(id) {
+        if (!confirm('¿Eliminar este producto?')) return;
+        try {
+            await db.collection('productos').doc(id).delete();
+            showToast('Producto eliminado ✅');
+            cargarProductos();
+            cargarDashboard();
+        } catch (e) {
+            console.error('Error eliminando:', e);
+            showToast('Error: ' + e.message, 'error');
+        }
+    }
+
+    cargarProductosBtn.addEventListener('click', cargarProductos);
+
+    // ===== VENTAS =====
+    async function cargarVentas() {
+        try {
+            ventasTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:2rem;">Cargando...</td></tr>';
+            const snap = await db.collection('ventas').orderBy('fecha', 'desc').limit(50).get();
+            if (snap.empty) {
+                ventasTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:2rem; color:var(--text2);">No hay ventas</td></tr>';
+                return;
             }
+            ventasTableBody.innerHTML = '';
+            snap.forEach(doc => {
+                const v = doc.data();
+                const fecha = v.fecha ? v.fecha.toDate().toLocaleDateString('es-AR') : 'N/A';
+                ventasTableBody.innerHTML += `
+                <tr>
+                    <td>${doc.id.slice(-6)}</td>
+                    <td>${v.producto || 'N/A'}</td>
+                    <td>${v.cliente || 'N/A'}</td>
+                    <td style="font-family:monospace; font-size:0.75rem;">${v.key || 'N/A'}</td>
+                    <td>${fecha}</td>
+                    <td>$${(v.total || 0).toLocaleString('es-AR')}</td>
+                </tr>`;
+            });
+        } catch (e) {
+            console.error('Error cargando ventas:', e);
+            ventasTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:2rem; color:var(--danger);">Error al cargar ventas</td></tr>';
         }
+    }
 
-        // ===== HACER FUNCIONES GLOBALES =====
-        window.verKeys = verKeys;
-        window.editarProducto = editarProducto;
-        window.eliminarProducto = eliminarProducto;
+    // ===== CLIENTES =====
+    async function cargarClientes() {
+        try {
+            clientesTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:2rem;">Cargando...</td></tr>';
+            const snap = await db.collection('clientes').orderBy('totalGastado', 'desc').get();
+            if (snap.empty) {
+                clientesTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:2rem; color:var(--text2);">No hay clientes</td></tr>';
+                return;
+            }
+            clientesTableBody.innerHTML = '';
+            snap.forEach(doc => {
+                const c = doc.data();
+                clientesTableBody.innerHTML += `
+                <tr>
+                    <td>${c.email || 'N/A'}</td>
+                    <td>${c.nombre || 'N/A'}</td>
+                    <td>${c.compras || 0}</td>
+                    <td>$${(c.totalGastado || 0).toLocaleString('es-AR')}</td>
+                </tr>`;
+            });
+        } catch (e) {
+            console.error('Error cargando clientes:', e);
+            clientesTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:2rem; color:var(--danger);">Error al cargar clientes</td></tr>';
+        }
+    }
+
+    // ===== HACER FUNCIONES GLOBALES =====
+    window.verKeys = verKeys;
+    window.editarProducto = editarProducto;
+    window.eliminarProducto = eliminarProducto;
+</script>
+    <!-- ===== SCRIPT DE PARTÍCULAS ===== -->
+    <script>
+        (function() {
+            const container = document.getElementById('particulas');
+            const cantidad = 40;
+            for (let i = 0; i < cantidad; i++) {
+                const p = document.createElement('div');
+                p.classList.add('particula');
+                const size = Math.random() * 4 + 2;
+                p.style.width = size + 'px';
+                p.style.height = size + 'px';
+                p.style.left = Math.random() * 100 + '%';
+                p.style.animationDuration = Math.random() * 8 + 6 + 's';
+                p.style.animationDelay = Math.random() * 10 + 's';
+                container.appendChild(p);
+            }
+        })();
     </script>
 
 </body>
