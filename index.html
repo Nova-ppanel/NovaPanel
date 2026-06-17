@@ -187,7 +187,7 @@
   <div class="bg-particles" id="particlesContainer"></div>
   <div class="grid-bg"></div>
   <div class="neon-lines"></div>
-  <div class="app" id="appRoot">
+<div class="app" id="appRoot">
   <div class="topbar-admin hidden" id="topbarAdmin">
     <div style="display:flex;align-items:center;gap:0.5rem;">
       <img src="https://i.postimg.cc/FRqgzfFW/IMG-20260515-WA0222.jpg" style="width:35px;height:35px;border-radius:50%;object-fit:cover;border:1.5px solid #8b5cf6;">
@@ -246,7 +246,7 @@
         <p style="margin-top:0.5rem;color:#9a8db8;font-size:0.6rem;">Nova Panel - Sistema de Gestión</p>
       </div>
     </div>
-    <div class="page" id="pageDashboard">
+<div class="page" id="pageDashboard">
   <h1 class="section-title">📊 Panel de Control</h1>
   <div class="stats-grid" id="statsGenerales"></div>
   <h2 style="color:#a78bfa;margin:1rem 0 0.6rem;font-size:0.9rem;">📋 Rendimiento por Vendedor</h2>
@@ -380,645 +380,72 @@
       </div>
     </div>
   </main>
-  </div>
-  <script>
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyBsYxEHoS9ta6efEYfAKKOa82r_g4LEbmg",
-    authDomain: "novapanelsocios-2152c.firebaseapp.com",
-    projectId: "novapanelsocios-2152c",
-    storageBucket: "novapanelsocios-2152c.firebasestorage.app",
-    messagingSenderId: "216473572181",
-    appId: "1:216473572181:web:9488830339d010133755dc"
-  };
-  
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const db = firebase.firestore();
-  
-  (function() {
-    var c = document.getElementById('particlesContainer');
-    var cols = ['#8b5cf6','#a78bfa','#c4b5fd','#6d28d9','#7c3aed','#ddd6fe'];
-    for(var i=0;i<40;i++) {
-      var p=document.createElement('div'); p.className='particle';
-      var s=Math.random()*3+1.5;
-      p.style.cssText='width:'+s+'px;height:'+s+'px;background:'+cols[Math.floor(Math.random()*cols.length)]+';left:'+Math.random()*100+'%;animation-duration:'+(Math.random()*12+8)+'s;animation-delay:'+Math.random()*8+'s;box-shadow:0 0 '+s*2+'px currentColor;';
-      c.appendChild(p);
-    }
-  })();
-
-  var DUR = ['1 dia','3 dias','7 dias','10 dias','30 dias'];
-  var _t1 = "wo"; var _t2 = "rd"; var TOKEN = _t1 + _t2;
-  var _n1 = "549115"; var _n2 = "4141893"; var WAN = _n1 + _n2;
-  
-  var productos = [], vendedores = [], metodosCobro = { mp: '', paypal: '', wallet: '' }, keys = [], ventas = [];
-  var user = null, currentPage = 'dashboard', filtroDur = 'todas', filtroProd = 'todas', tabActual = 'catalogo';
-  var adminPasswordCache = null;
-  
-  function $(id) { return document.getElementById(id); }
-  
-  async function cargarDatosFirestore() {
-    var snapP = await db.collection('productos').get();
-    productos = []; snapP.forEach(function(d) { var x=d.data(); x.id=d.id; productos.push(x); });
-    if(productos.length===0) {
-      productos = [{id:"prod1",nombre:"Netflix Premium",imagen:"https://picsum.photos/id/0/300/200",precios:{'1 dia':1.5,'3 dias':3.99,'7 dias':8.5,'10 dias':11.99,'30 dias':29.99}},{id:"prod2",nombre:"Spotify Family",imagen:"https://picsum.photos/id/1/300/200",precios:{'1 dia':0.99,'3 dias':2.5,'7 dias':5.99,'10 dias':8.5,'30 dias':22.99}}];
-      for(var i=0;i<productos.length;i++) db.collection('productos').doc(productos[i].id).set(productos[i]);
-    }
-    var snapV = await db.collection('vendedores').get();
-    vendedores = []; snapV.forEach(function(d) { var x=d.data(); x.uid=d.id; vendedores.push(x); });
-    var snapK = await db.collection('keys').get();
-    keys = []; snapK.forEach(function(d) { var x=d.data(); x.id=d.id; keys.push(x); });
-    var snapH = await db.collection('ventas').get();
-    ventas = []; snapH.forEach(function(d) { ventas.push(d.data()); });
-    var snapMC = await db.collection('config').doc('metodosCobro').get();
-    if(snapMC.exists) metodosCobro = snapMC.data();
-    
-    try {
-      var snapAdmin = await db.collection('config').doc('admin').get();
-      if(snapAdmin.exists) {
-        adminPasswordCache = snapAdmin.data().password;
-      }
-    } catch(e) {
-      adminPasswordCache = null;
-    }
-  }
-  
-  async function guardarProductos() { for(var i=0;i<productos.length;i++) await db.collection('productos').doc(productos[i].id).set(productos[i]); }
-  async function guardarVendedor(v) { await db.collection('vendedores').doc(v.uid).set(v); }
-  async function guardarVentas() { for(var i=0;i<ventas.length;i++) await db.collection('ventas').add(ventas[i]); }
-  async function guardarMetodosCobro() { await db.collection('config').doc('metodosCobro').set(metodosCobro); }
-  
-  function getAdminPassword() { return adminPasswordCache; }
-  function adminExists() { return adminPasswordCache !== null && adminPasswordCache !== undefined; }
-  
-  function calcVenc(k) { if(!k.fechaCreacion) return null; var m = {'1 dia':1,'3 dias':3,'7 dias':7,'10 dias':10,'30 dias':30}; var fc = new Date(k.fechaCreacion); fc.setDate(fc.getDate()+(m[k.duracion]||0)); return fc; }
-  function estado(k) { if(k.usado) return 'used'; var v = calcVenc(k); if(!v) return 'active'; var d = Math.ceil((v-new Date())/(86400000)); if(d<0) return 'expired'; if(d<=2) return 'warning'; return 'active'; }
-  function getPrecioActual(pid,dur) { var prod = productos.find(function(p){ return p.id===pid; }); return prod ? (prod.precios[dur]||0) : 0; }
-  function getStock(pid,dur) { return keys.filter(function(k){ return k.productoId===pid && k.duracion===dur && !k.usado && estado(k)!=='expired'; }).length; }
-  function getVentasPorVendedor(usuario) { return ventas.filter(function(v){ return v.vendedor===usuario; }).reduce(function(sum,v){ return sum+v.total; },0); }
-  function getTotalVentas() { return ventas.reduce(function(sum,v){ return sum+v.total; },0); }
-  function getTotalAcreditaciones() { return vendedores.reduce(function(sum,v){ return sum+(v.acreditaciones?v.acreditaciones.reduce(function(s,a){ return s+a.monto; },0):0); },0); }
-
-  function showPage(name) {
-    var pages = document.querySelectorAll('.page');
-    for(var i=0;i<pages.length;i++) pages[i].classList.remove('active');
-    var page = $('page'+name.charAt(0).toUpperCase()+name.slice(1));
-    if(page) page.classList.add('active');
-    var navs = document.querySelectorAll('.nav-item');
-    for(var j=0;j<navs.length;j++) navs[j].classList.remove('active');
-    var nav = document.querySelector('[data-page="'+name+'"]');
-    if(nav) nav.classList.add('active');
-    currentPage = name;
-  }
-
-  function updateUI() {
-    var logged = !!user;
-    var esAdmin = user && user.tipo==='admin';
-    $('topbarAdmin').classList.toggle('hidden',!esAdmin);
-    $('headerVendedor').classList.toggle('hidden',esAdmin||!logged);
-    if($('seccionBackup')) $('seccionBackup').style.display = esAdmin ? 'block' : 'none';
-    if(!logged) { 
-      showPage('login'); 
-      $('formLogin').style.display = 'block';
-      $('formRegistro').style.display = 'none';
-      return; 
-    }
-    if(esAdmin) { 
-      $('userTagAdmin').textContent = '🛡️ ADMIN'; 
-      if(currentPage==='login'||currentPage==='tienda') { showPage('dashboard'); renderDashboard(); } 
-      else { showPage(currentPage); if(currentPage==='vendedores') cargarMetodosCobro(); } 
-    }
-    else { $('userTagVendedor').textContent = '👤 '+(user.nombre||user.usuario); showPage('tienda'); renderTienda(); }
-  }
-  
-  function cargarMetodosCobro() {
-    $('datoMP').value = metodosCobro.mp || '';
-    $('datoPaypal').value = metodosCobro.paypal || '';
-    $('datoWallet').value = metodosCobro.wallet || '';
-  }
-  
-  function mostrarMetodosCobro() {
-    var info = $('metodosCobroInfo');
-    if(metodosCobro.mp || metodosCobro.paypal || metodosCobro.wallet) {
-      info.style.display = 'block';
-      if(metodosCobro.mp) { $('infoMP').style.display = 'block'; $('txtMP').textContent = metodosCobro.mp; }
-      else { $('infoMP').style.display = 'none'; }
-      if(metodosCobro.paypal) { $('infoPaypal').style.display = 'block'; $('txtPaypal').textContent = metodosCobro.paypal; }
-      else { $('infoPaypal').style.display = 'none'; }
-      if(metodosCobro.wallet) { $('infoWallet').style.display = 'block'; $('txtWallet').textContent = metodosCobro.wallet; }
-      else { $('infoWallet').style.display = 'none'; }
-    } else { info.style.display = 'none'; }
-  }
-
-  function renderDashboard() {
-    var totalVentas = getTotalVentas();
-    var totalAcred = getTotalAcreditaciones();
-    var totalKeys = keys.length;
-    var keysUsadas = keys.filter(function(k){ return k.usado; }).length;
-    var totalVend = vendedores.length;
-    var html = '<div class="stat-card"><div class="stat-label">💰 Total Ventas</div><div class="stat-value green">$'+totalVentas.toFixed(2)+'</div></div>';
-    html += '<div class="stat-card"><div class="stat-label">💎 Total Acreditado</div><div class="stat-value gold">$'+totalAcred.toFixed(2)+'</div></div>';
-    html += '<div class="stat-card"><div class="stat-label">🔑 Keys Disponibles</div><div class="stat-value">'+(totalKeys-keysUsadas)+'</div></div>';
-    html += '<div class="stat-card"><div class="stat-label">👥 Vendedores</div><div class="stat-value">'+totalVend+'</div></div>';
-    $('statsGenerales').innerHTML = html;
-    
-    var htmlVend = '';
-    for(var i=0;i<vendedores.length;i++) {
-      var v = vendedores[i];
-      var vtas = getVentasPorVendedor(v.usuario);
-      htmlVend += '<div class="stat-card"><div class="stat-label">'+v.nombre+'</div><div class="stat-value" style="font-size:0.9rem;">$'+(v.saldo||0).toFixed(2)+'</div><div style="font-size:0.55rem;color:#9a8db8;">Ventas: $'+vtas.toFixed(2)+'</div></div>';
-    }
-    $('statsVendedores').innerHTML = htmlVend;
-    
-    var htmlAcred = '';
-    var todasAcred = [];
-    for(var i=0;i<vendedores.length;i++) {
-      if(vendedores[i].acreditaciones) {
-        for(var j=0;j<vendedores[i].acreditaciones.length;j++) {
-          todasAcred.push({vendedor:vendedores[i].nombre, monto:vendedores[i].acreditaciones[j].monto, fecha:vendedores[i].acreditaciones[j].fecha});
-        }
-      }
-    }
-    todasAcred.sort(function(a,b){ return new Date(b.fecha)-new Date(a.fecha); });
-    todasAcred = todasAcred.slice(0,10);
-    for(var i=0;i<todasAcred.length;i++) {
-      htmlAcred += '<div class="venta-row">💎 <strong>'+todasAcred[i].vendedor+'</strong> — $'+todasAcred[i].monto.toFixed(2)+' <span style="color:#9a8db8;font-size:0.6rem;">'+todasAcred[i].fecha+'</span></div>';
-    }
-    $('historialAcreditaciones').innerHTML = htmlAcred || '<p style="color:#9a8db8;">Sin acreditaciones aún.</p>';
-    
-    var htmlVentas = '';
-    var ventasRecientes = ventas.slice().reverse().slice(0,20);
-    for(var i=0;i<ventasRecientes.length;i++) {
-      var vt = ventasRecientes[i];
-      htmlVentas += '<div class="venta-row">🛒 <strong>'+vt.vendedor+'</strong> vendió '+vt.cantidad+'x '+vt.producto+' ('+vt.duracion+') — $'+vt.total.toFixed(2)+' <span style="color:#9a8db8;font-size:0.6rem;">'+vt.fecha+'</span></div>';
-    }
-    $('historialVentas').innerHTML = htmlVentas || '<p style="color:#9a8db8;">Sin ventas aún.</p>';
-  }
-  
-  function renderVendedores() {
-    var html = '';
-    for(var i=0;i<vendedores.length;i++) {
-      var v = vendedores[i];
-      var vtas = getVentasPorVendedor(v.usuario);
-      html += '<div class="card"><h3 style="color:#a78bfa;margin-bottom:0.2rem;">'+v.nombre+'</h3><p style="font-size:0.65rem;">👤 '+v.usuario+'</p><p style="font-size:0.8rem;color:#4ade80;">💎 Saldo: $'+(v.saldo||0).toFixed(2)+'</p><p style="font-size:0.6rem;color:#9a8db8;">Ventas: $'+vtas.toFixed(2)+'</p><button class="btn btn-danger btn-xs" style="margin-top:0.3rem;" onclick="eliminarVendedor(\''+v.uid+'\',\''+v.usuario+'\')">🗑 Eliminar</button></div>';
-    }
-    $('listaVendedores').innerHTML = html || '<p style="color:#9a8db8;">No hay vendedores aún.</p>';
-    var sel = $('selectVendedor');
-    sel.innerHTML = '';
-    for(var i=0;i<vendedores.length;i++) {
-      var opt = document.createElement('option');
-      opt.value = vendedores[i].usuario;
-      opt.textContent = vendedores[i].nombre + ' ($'+(vendedores[i].saldo||0).toFixed(2)+')';
-      sel.appendChild(opt);
-    }
-  }
-  
-  async function eliminarVendedor(uid, usuario) {
-    if(!confirm('¿Eliminar a '+usuario+'?')) return;
-    await db.collection('vendedores').doc(uid).delete();
-    vendedores = vendedores.filter(function(v){ return v.uid !== uid; });
-    renderVendedores();
-    alert('✅ Vendedor eliminado.');
-  }
-  
-  async function eliminarProducto(id, nombre) {
-    if(!confirm('¿Eliminar producto '+nombre+'?')) return;
-    await db.collection('productos').doc(id).delete();
-    productos = productos.filter(function(p){ return p.id !== id; });
-    mostrarProductos();
-    actualizarSelectoresProductos();
-    alert('✅ Producto eliminado.');
-  }
-  
-  function mostrarProductos() {
-    var html = '';
-    for(var i=0;i<productos.length;i++) {
-      var p = productos[i];
-      html += '<div class="card">';
-      html += '<img src="'+p.imagen+'" class="product-img" alt="'+p.nombre+'" onerror="this.style.display=\'none\'">';
-      html += '<h3 style="color:#a78bfa;font-size:0.75rem;margin-top:0.3rem;">'+p.nombre+'</h3>';
-      html += '<button class="btn btn-danger btn-xs" style="margin-top:0.2rem;" onclick="eliminarProducto(\''+p.id+'\',\''+p.nombre+'\')">🗑 Eliminar</button>';p.nombre+'\')">🗑 Eliminar</button>';
-      html += '<div class="price-list">';
-      for(var d=0;d<DUR.length;d++) {
-        if(p.precios[DUR[d]]) {
-          var stock = getStock(p.id, DUR[d]);
-          html += '<span class="price-tag'+(stock===0?' sin-stock':'')+'">'+DUR[d]+': $'+p.precios[DUR[d]].toFixed(2)+' ('+stock+' disp)</span>';
-        }
-      }
-      html += '</div></div>';
-    }
-    $('listaProductos').innerHTML = html;
-    actualizarSelectoresProductos();
-  }
-  
-  function actualizarSelectoresProductos() {
-    var html = '';
-    for(var i=0;i<productos.length;i++) html += '<option value="'+productos[i].id+'">'+productos[i].nombre+'</option>';
-    if($('selectProdKey')) $('selectProdKey').innerHTML = html;
-    if($('filtroProducto')) $('filtroProducto').innerHTML = '<option value="todas">TODOS</option>' + html;
-    if($('selectVentaProd')) $('selectVentaProd').innerHTML = html;
-  }
-  
-  function agregarProducto() {
-    var nombre = $('nombreProd').value.trim();
-    if(!nombre) { alert('El nombre es obligatorio'); return; }
-    var precios = {};
-    if($('precio1d').value) precios['1 dia'] = parseFloat($('precio1d').value);
-    if($('precio3d').value) precios['3 dias'] = parseFloat($('precio3d').value);
-    if($('precio7d').value) precios['7 dias'] = parseFloat($('precio7d').value);
-    if($('precio10d').value) precios['10 dias'] = parseFloat($('precio10d').value);
-    if($('precio30d').value) precios['30 dias'] = parseFloat($('precio30d').value);
-    var id = 'prod'+Date.now();
-    var img = $('imagenProd').value.trim() || 'https://picsum.photos/id/'+Math.floor(Math.random()*100)+'/300/200';
-    productos.push({id:id, nombre:nombre, imagen:img, precios:precios});
-    guardarProductos();
-    mostrarProductos();
-    $('nombreProd').value='';$('imagenProd').value='';$('precio1d').value='';$('precio3d').value='';$('precio7d').value='';$('precio10d').value='';$('precio30d').value='';
-  }
-  
-  function previsualizarImagen(event) {
-    var file = event.target.files[0];
-    if(file) {
-      var reader = new FileReader();
-      reader.onload = function(e) { $('previewImagen').src = e.target.result; $('previewContainer').style.display = 'block'; };
-      reader.readAsDataURL(file);
-    }
-  }
-  
-  function renderKeys() {
-    var keysFiltradas = keys;
-    if(filtroProd !== 'todas') keysFiltradas = keysFiltradas.filter(function(k){ return k.productoId === filtroProd; });
-    if(filtroDur !== 'todas') keysFiltradas = keysFiltradas.filter(function(k){ return k.duracion === filtroDur; });
-    var disponibles = keysFiltradas.filter(function(k){ return !k.usado && estado(k)!=='expired'; }).length;
-    $('resultadoFiltros').textContent = 'Mostrando '+keysFiltradas.length+' keys — '+disponibles+' disponibles';
-    var html = '';
-    for(var i=0;i<keysFiltradas.length;i++) {
-      var k = keysFiltradas[i];
-      var prod = productos.find(function(p){ return p.id===k.productoId; });
-      var nombreProd = prod ? prod.nombre : 'Desconocido';
-      var est = estado(k);
-      var venc = calcVenc(k);
-      var vencStr = venc ? venc.toLocaleDateString() : '—';
-      var claseEst = 'status-active', txtEst = 'DISP';
-      if(est==='warning') { claseEst='status-warning'; txtEst='PROX VENC'; }
-      else if(est==='expired') { claseEst='status-expired'; txtEst='VENCIDA'; }
-      else if(est==='used') { claseEst='status-used'; txtEst='USADA'; }
-      html += '<tr><td>'+nombreProd+'</td><td>'+k.duracion+'</td><td><span class="key-code-display">'+k.codigo+'</span></td><td>$'+k.precioAlCrear.toFixed(2)+'</td><td><span class="status-badge '+claseEst+'">'+txtEst+'</span></td><td>'+vencStr+'</td><td><button class="btn btn-danger btn-xs" onclick="eliminarKey(\''+k.id+'\')">✕</button></td></tr>';
-    }
-    $('tablaKeys').innerHTML = html || '<tr><td colspan="7">No hay keys.</td></tr>';
-  }
-  
-  async function eliminarKey(id) {
-    keys = keys.filter(function(k){ return k.id !== id; });
-    await db.collection('keys').doc(id).delete();
-    renderKeys();
-  }
-  
-  function renderVentas() {
-    var html = '';
-    var ventasRecientes = ventas.slice().reverse();
-    for(var i=0;i<ventasRecientes.length;i++) {
-      var vt = ventasRecientes[i];
-      html += '<div class="venta-row">🛒 <strong>'+vt.vendedor+'</strong> — '+vt.cantidad+'x '+vt.producto+' ('+vt.duracion+') — $'+vt.total.toFixed(2)+' <span style="color:#9a8db8;font-size:0.6rem;">'+vt.fecha+'</span></div>';
-    }
-    $('ventasContainer').innerHTML = html || '<p style="color:#9a8db8;">Sin ventas registradas.</p>';
-  }
-  
-  function renderTienda() {
-    if(!user || user.tipo!=='vendedor') return;
-    var vend = vendedores.find(function(v){ return v.usuario===user.usuario; });
-    if(!vend) return;
-    $('saldoDisplay').textContent = '$'+(vend.saldo||0).toFixed(2);
-    $('saldoRetiroDisplay').textContent = '$'+(vend.saldo||0).toFixed(2);
-    
-    var htmlProd = '';
-    for(var i=0;i<productos.length;i++) {
-      var p = productos[i];
-      htmlProd += '<div class="card">';
-      htmlProd += '<img src="'+p.imagen+'" class="product-img" alt="'+p.nombre+'" onerror="this.style.display=\'none\'">';
-      htmlProd += '<h3 style="color:#a78bfa;font-size:0.75rem;margin-top:0.3rem;">'+p.nombre+'</h3>';
-      htmlProd += '<div class="price-list">';
-      for(var d=0;d<DUR.length;d++) {
-        if(p.precios[DUR[d]]) {
-          var stock = getStock(p.id, DUR[d]);
-          htmlProd += '<span class="price-tag'+(stock===0?' sin-stock':'')+'">'+DUR[d]+': $'+p.precios[DUR[d]].toFixed(2)+' ('+stock+' disp)</span>';
-        }
-      }
-      htmlProd += '</div></div>';
-    }
-    $('productosTienda').innerHTML = htmlProd || '<p>No hay productos.</p>';
-    
-    var selVentaProd = $('selectVentaProd');
-    selVentaProd.innerHTML = '';
-    for(var i=0;i<productos.length;i++) {
-      var opt = document.createElement('option');
-      opt.value = productos[i].id;
-      opt.textContent = productos[i].nombre;
-      selVentaProd.appendChild(opt);
-    }
-    updatePrecioEst();
-    
-    if(tabActual==='historial') {
-      var misVentas = ventas.filter(function(v){ return v.vendedor===user.usuario; }).reverse();
-      var htmlV = '';
-      for(var i=0;i<misVentas.length;i++) {
-        var mv = misVentas[i];
-        htmlV += '<div class="venta-row">🛒 '+mv.cantidad+'x '+mv.producto+' ('+mv.duracion+') — $'+mv.total.toFixed(2)+' <span style="color:#9a8db8;font-size:0.6rem;">'+mv.fecha+'</span></div>';
-      }
-      $('misVentasContainer').innerHTML = htmlV || '<p style="color:#9a8db8;">Aún no has realizado ventas.</p>';
-    }
-    
-    mostrarMetodosCobro();
-  }
-  
-  function updatePrecioEst() {
-    var pid = $('selectVentaProd').value;
-    var dur = $('selectVentaDur').value;
-    var cant = parseInt($('cantVenta').value) || 1;
-    var precio = getPrecioActual(pid, dur);
-    var stock = getStock(pid, dur);
-    $('precioEst').textContent = '💵 Precio unitario: $'+precio.toFixed(2)+' | Total: $'+(precio*cant).toFixed(2)+' | Stock: '+stock;
-  }
-  
-  function calcularComision() {
-    var monto = parseFloat($('montoRetiro').value) || 0;
-    if(monto > 0) {
-      $('comisionInfo').style.display = 'block';
-      var comision = monto * 0.30;
-      $('montoSolicitado').textContent = '$'+monto.toFixed(2);
-      $('comisionMonto').textContent = '-$'+comision.toFixed(2);
-      $('montoRecibir').textContent = '$'+(monto-comision).toFixed(2);
-    } else { $('comisionInfo').style.display = 'none'; }
-  }
+</div>
     $('loginBtn').onclick = async function() {
       var u = $('usuarioInput').value.trim().toLowerCase();
       var p = $('passwordInput').value.trim();
       if(!u || !p) { alert('Completá todos los campos.'); return; }
-      if(u === 'admin') {
-        if(!adminExists()) { alert('Panel no configurado.'); return; }
-        if(p === getAdminPassword()) { user={tipo:'admin'}; updateUI(); return; }
-        alert('Credenciales inválidas'); return;
-      }
-      auth.signInWithEmailAndPassword(u+'@novapanel.com', p)
-      .then(function(result) {
-        var vend = vendedores.find(function(v){ return v.usuario===u; });
-        if(vend) { user={tipo:'vendedor',usuario:vend.usuario,nombre:vend.nombre}; updateUI(); }
-      })
-      .catch(function(e) { alert('Credenciales inválidas'); });
+      if(u === 'admin') { if(!adminExists()){alert('Panel no configurado.');return;} if(p===getAdminPassword()){user={tipo:'admin'};updateUI();return;} alert('Credenciales inválidas'); return; }
+      auth.signInWithEmailAndPassword(u+'@novapanel.com',p).then(function(r){ var v=vendedores.find(function(x){return x.usuario===u;}); if(v){user={tipo:'vendedor',usuario:v.usuario,nombre:v.nombre};updateUI();} }).catch(function(e){alert('Credenciales inválidas');});
     };
     
     $('registroBtn').onclick = function() {
-      var u = $('regUsuarioInput').value.trim().toLowerCase();
-      var p = $('regPasswordInput').value.trim();
-      var n = $('regNombreInput').value.trim();
-      if(!u || !p || !n) { $('regMsg').textContent = '❌ Completá todos los campos.'; $('regMsg').style.color = '#fca5a5'; return; }
-      if(u === 'admin') { $('regMsg').textContent = '❌ Usuario no permitido.'; $('regMsg').style.color = '#fca5a5'; return; }
-      if(p.length < 6) { $('regMsg').textContent = '❌ Contraseña mínimo 6 caracteres.'; $('regMsg').style.color = '#fca5a5'; return; }
-      auth.createUserWithEmailAndPassword(u+'@novapanel.com', p)
-      .then(async function(result) {
-        var nuevo = {uid:result.user.uid, usuario:u, nombre:n, saldo:0, acreditaciones:[]};
-        vendedores.push(nuevo);
-        await guardarVendedor(nuevo);
-        $('regMsg').textContent = '✅ Registro exitoso. Ya podés iniciar sesión.';
-        $('regMsg').style.color = '#4ade80';
-        setTimeout(function() { $('formRegistro').style.display='none'; $('formLogin').style.display='block'; $('regMsg').textContent=''; }, 2000);
-      })
-      .catch(function(e) {
-        if(e.code === 'auth/email-already-in-use') $('regMsg').textContent = '❌ Ese usuario ya existe.';
-        else $('regMsg').textContent = '❌ Error.';
-        $('regMsg').style.color = '#fca5a5';
-      });
+      var u=$('regUsuarioInput').value.trim().toLowerCase(), p=$('regPasswordInput').value.trim(), n=$('regNombreInput').value.trim();
+      if(!u||!p||!n){$('regMsg').textContent='❌ Completá todos los campos.';$('regMsg').style.color='#fca5a5';return;}
+      if(u==='admin'){$('regMsg').textContent='❌ Usuario no permitido.';$('regMsg').style.color='#fca5a5';return;}
+      if(p.length<6){$('regMsg').textContent='❌ Contraseña mínimo 6 caracteres.';$('regMsg').style.color='#fca5a5';return;}
+      auth.createUserWithEmailAndPassword(u+'@novapanel.com',p).then(async function(r){ var nuevo={uid:r.user.uid,usuario:u,nombre:n,saldo:0,acreditaciones:[]}; vendedores.push(nuevo); await guardarVendedor(nuevo); $('regMsg').textContent='✅ Registro exitoso.'; $('regMsg').style.color='#4ade80'; setTimeout(function(){$('formRegistro').style.display='none';$('formLogin').style.display='block';$('regMsg').textContent='';},2000); }).catch(function(e){ if(e.code==='auth/email-already-in-use') $('regMsg').textContent='❌ Ese usuario ya existe.'; else $('regMsg').textContent='❌ Error.'; $('regMsg').style.color='#fca5a5'; });
     };
     
-    $('mostrarRegistroBtn').onclick = function() { $('formLogin').style.display='none'; $('formRegistro').style.display='block'; };
-    $('volverLoginBtn').onclick = function() { $('formRegistro').style.display='none'; $('formLogin').style.display='block'; $('regMsg').textContent=''; };
+    $('mostrarRegistroBtn').onclick=function(){$('formLogin').style.display='none';$('formRegistro').style.display='block';};
+    $('volverLoginBtn').onclick=function(){$('formRegistro').style.display='none';$('formLogin').style.display='block';$('regMsg').textContent='';};
     
-    function logout() { auth.signOut().catch(function(){}); user=null; updateUI(); $('usuarioInput').value=''; $('passwordInput').value=''; }
+    function logout(){ auth.signOut().catch(function(){}); user=null; updateUI(); $('usuarioInput').value=''; $('passwordInput').value=''; }
     
-    async function cambiarPasswordAdmin() {
-      var actual = $('passActual').value.trim();
-      var nueva = $('passNueva').value.trim();
-      if(!actual||!nueva) { alert('Completá ambos campos.'); return; }
-      if(actual !== getAdminPassword()) { alert('Contraseña actual incorrecta.'); return; }
-      await db.collection('config').doc('admin').set({password: nueva});
-      adminPasswordCache = nueva;
-      alert('✅ Contraseña cambiada correctamente.');
-      $('passActual').value='';$('passNueva').value='';
-    }
+    async function cambiarPasswordAdmin(){ var a=$('passActual').value.trim(), n=$('passNueva').value.trim(); if(!a||!n){alert('Completá ambos campos.');return;} if(a!==getAdminPassword()){alert('Contraseña actual incorrecta.');return;} await db.collection('config').doc('admin').set({password:n}); adminPasswordCache=n; alert('✅ Contraseña cambiada.'); $('passActual').value='';$('passNueva').value=''; }
     
-    function irWhatsApp() {
-      var monto = parseFloat($('montoRecarga').value)||0;
-      if(monto<=0) { alert('Ingresá un monto válido.'); return; }
-      var vend = vendedores.find(function(v){ return v.usuario===user.usuario; });
-      var msg = '💎 *RECARGA NOVA PANEL*%0A%0A👤 Vendedor: '+encodeURIComponent(vend.nombre)+' (@'+encodeURIComponent(vend.usuario)+')%0A💰 Monto: '+encodeURIComponent(monto.toFixed(2))+' '+$('monedaPago').value+'%0A📝 Nota: '+encodeURIComponent($('notaRecarga').value.trim()||'Sin nota')+'%0A%0A🔐 Token: '+TOKEN;
-      window.open('https://wa.me/'+WAN+'?text='+msg, '_blank');
-    }
+    function irWhatsApp(){ var m=parseFloat($('montoRecarga').value)||0; if(m<=0){alert('Ingresá un monto válido.');return;} var v=vendedores.find(function(x){return x.usuario===user.usuario;}); window.open('https://wa.me/'+WAN+'?text=💎 RECARGA '+encodeURIComponent(v.nombre)+' $'+m+' '+TOKEN,'_blank'); }
     
-    function irWhatsAppRetiro() {
-      var monto = parseFloat($('montoRetiro').value)||0;
-      var vend = vendedores.find(function(v){ return v.usuario===user.usuario; });
-      if(monto<50) { alert('El retiro mínimo es de $50.00 USD.'); return; }
-      if((vend.saldo||0)<monto) { alert('Saldo insuficiente.'); return; }
-      var datos = $('datosRetiro').value.trim();
-      if(!datos) { alert('Completá los datos para el pago.'); return; }
-      var comision = monto*0.30;
-      var msg = '💸 *RETIRO NOVA PANEL*%0A%0A👤 Vendedor: '+encodeURIComponent(vend.nombre)+' (@'+encodeURIComponent(vend.usuario)+')%0A💰 Monto solicitado: $'+encodeURIComponent(monto.toFixed(2))+'%0A📊 Comisión (30%): -$'+encodeURIComponent(comision.toFixed(2))+'%0A✅ Recibirá: $'+encodeURIComponent((monto-comision).toFixed(2))+'%0A🏦 Método: '+encodeURIComponent($('metodoRetiro').value)+'%0A📋 Datos: '+encodeURIComponent(datos)+'%0A%0A🔐 Token: '+TOKEN;
-      window.open('https://wa.me/'+WAN+'?text='+msg, '_blank');
-    }
+    function irWhatsAppRetiro(){ var m=parseFloat($('montoRetiro').value)||0, v=vendedores.find(function(x){return x.usuario===user.usuario;}); if(m<50){alert('Mínimo $50.');return;} if((v.saldo||0)<m){alert('Saldo insuficiente.');return;} var d=$('datosRetiro').value.trim(); if(!d){alert('Completá los datos.');return;} var c=m*0.3; window.open('https://wa.me/'+WAN+'?text=💸 RETIRO '+encodeURIComponent(v.nombre)+' $'+m+' Recibe $'+(m-c)+' '+TOKEN,'_blank'); }
     
-    $('passwordInput').addEventListener('keypress', function(e){ if(e.key==='Enter') $('loginBtn').click(); });
-    $('logoutAdminBtn').onclick = logout;
-    $('logoutVendedorBtn').onclick = logout;
-    $('recargarWhatsappBtn').onclick = irWhatsApp;
-    $('retiroWhatsappBtn').onclick = irWhatsAppRetiro;
-    $('agregarProdBtn').onclick = agregarProducto;
+    $('passwordInput').addEventListener('keypress',function(e){if(e.key==='Enter')$('loginBtn').click();});
+    $('logoutAdminBtn').onclick=logout;
+    $('logoutVendedorBtn').onclick=logout;
+    $('recargarWhatsappBtn').onclick=irWhatsApp;
+    $('retiroWhatsappBtn').onclick=irWhatsAppRetiro;
+    $('agregarProdBtn').onclick=agregarProducto;
     
-    $('exportarBtn').onclick = async function() {
-      var datos = { v: vendedores, p: productos, k: keys, h: ventas, mc: metodosCobro, version: '2.0', fecha: new Date().toISOString() };
-      var blob = new Blob([JSON.stringify(datos, null, 2)], {type: 'application/json'});
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement('a');
-      a.href = url;
-      a.download = 'novapanel_backup_' + new Date().toISOString().slice(0,10) + '.json';
-      document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
-      alert('✅ Datos exportados correctamente.');
-    };
+    $('exportarBtn').onclick=async function(){ var d={v:vendedores,p:productos,k:keys,h:ventas,mc:metodosCobro}; var b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'}); var a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='backup.json'; a.click(); alert('✅ Exportado.'); };
     
-    function importarDatos(event) {
-      var file = event.target.files[0];
-      if(!file) return;
-      var reader = new FileReader();
-      reader.onload = async function(e) {
-        try {
-          var datos = JSON.parse(e.target.result);
-          if(datos.v && datos.p && datos.k && datos.h) {
-            if(!confirm('¿Importar datos? Esto reemplazará los datos actuales.')) return;
-            vendedores = datos.v; productos = datos.p; keys = datos.k; ventas = datos.h;
-            if(datos.mc) metodosCobro = datos.mc;
-            for(var i=0;i<productos.length;i++) await db.collection('productos').doc(productos[i].id).set(productos[i]);
-            for(var i=0;i<vendedores.length;i++) await db.collection('vendedores').doc(vendedores[i].uid).set(vendedores[i]);
-            for(var i=0;i<keys.length;i++) await db.collection('keys').doc(keys[i].id).set(keys[i]);
-            for(var i=0;i<ventas.length;i++) await db.collection('ventas').add(ventas[i]);
-            await guardarMetodosCobro();
-            alert('✅ Datos importados correctamente. Recargando...');
-            location.reload();
-          } else { alert('❌ El archivo no tiene el formato correcto.'); }
-        } catch(err) { alert('❌ Error al leer el archivo.'); }
-      };
-      reader.readAsText(file);
-      event.target.value = '';
-    }
+    function importarDatos(event){ var f=event.target.files[0]; if(!f)return; var r=new FileReader(); r.onload=async function(e){ var d=JSON.parse(e.target.result); if(d.v&&d.p){ vendedores=d.v;productos=d.p;keys=d.k;ventas=d.h;metodosCobro=d.mc||{mp:'',paypal:'',wallet:''}; for(var i=0;i<productos.length;i++) await db.collection('productos').doc(productos[i].id).set(productos[i]); for(var i=0;i<vendedores.length;i++) await guardarVendedor(vendedores[i]); for(var i=0;i<keys.length;i++) await db.collection('keys').doc(keys[i].id).set(keys[i]); for(var i=0;i<ventas.length;i++) await guardarVentas(); alert('✅ Importado. Recargando...'); location.reload(); } }; r.readAsText(f); event.target.value=''; }
     
-    $('guardarMetodosBtn').onclick = async function() {
-      metodosCobro.mp=$('datoMP').value.trim(); metodosCobro.paypal=$('datoPaypal').value.trim(); metodosCobro.wallet=$('datoWallet').value.trim();
-      await guardarMetodosCobro();
-      alert('✅ Métodos de cobro guardados.');
-    };
-    $('cambiarPassBtn').onclick = cambiarPasswordAdmin;
+    $('guardarMetodosBtn').onclick=async function(){ metodosCobro.mp=$('datoMP').value.trim();metodosCobro.paypal=$('datoPaypal').value.trim();metodosCobro.wallet=$('datoWallet').value.trim(); await guardarMetodosCobro(); alert('✅ Guardados.'); };
+    $('cambiarPassBtn').onclick=cambiarPasswordAdmin;
     
-    $('crearVendedorBtn').onclick = function() {
-      var u=$('nuevoUsuario').value.trim().toLowerCase();
-      var p=$('nuevoPassword').value.trim();
-      var n=$('nuevoNombre').value.trim();
-      if(!u||!p||!n) { alert('Completá todos los campos.'); return; }
-      if(p.length<6) { alert('Contraseña mínimo 6 caracteres.'); return; }
-      if(vendedores.find(function(v){ return v.usuario===u; })) { alert('Ese usuario ya existe.'); return; }
-      auth.createUserWithEmailAndPassword(u+'@novapanel.com', p)
-      .then(async function(result) {
-        var nuevo = {uid:result.user.uid, usuario:u, nombre:n, saldo:0, acreditaciones:[]};
-        vendedores.push(nuevo);
-        await guardarVendedor(nuevo);
-        renderVendedores();
-        $('nuevoUsuario').value='';$('nuevoPassword').value='';$('nuevoNombre').value='';
-        alert('✅ Vendedor creado.');
-      })
-      .catch(async function(e) {
-        if(e.code === 'auth/email-already-in-use') {
-          try {
-            var signIn = await auth.signInWithEmailAndPassword(u+'@novapanel.com', p);
-            var nuevo = {uid:signIn.user.uid, usuario:u, nombre:n, saldo:0, acreditaciones:[]};
-            vendedores.push(nuevo);
-            await guardarVendedor(nuevo);
-            renderVendedores();
-            $('nuevoUsuario').value='';$('nuevoPassword').value='';$('nuevoNombre').value='';
-            alert('✅ Vendedor creado.');
-          } catch(e2) {
-            alert('Error: '+e2.message);
-          }
-        } else {
-          alert('Error: '+e.message);
-        }
-      });
-    };
+    $('crearVendedorBtn').onclick=function(){ var u=$('nuevoUsuario').value.trim().toLowerCase(), p=$('nuevoPassword').value.trim(), n=$('nuevoNombre').value.trim(); if(!u||!p||!n){alert('Completá todo.');return;} if(p.length<6){alert('Contraseña mínimo 6 caracteres.');return;} if(vendedores.find(function(v){return v.usuario===u;})){alert('Ya existe.');return;} auth.createUserWithEmailAndPassword(u+'@novapanel.com',p).then(async function(r){ var nuevo={uid:r.user.uid,usuario:u,nombre:n,saldo:0,acreditaciones:[]}; vendedores.push(nuevo); await guardarVendedor(nuevo); renderVendedores(); $('nuevoUsuario').value='';$('nuevoPassword').value='';$('nuevoNombre').value=''; alert('✅ Creado.'); }).catch(async function(e){ if(e.code==='auth/email-already-in-use'){ try{ var si=await auth.signInWithEmailAndPassword(u+'@novapanel.com',p); var nuevo={uid:si.user.uid,usuario:u,nombre:n,saldo:0,acreditaciones:[]}; vendedores.push(nuevo); await guardarVendedor(nuevo); renderVendedores(); $('nuevoUsuario').value='';$('nuevoPassword').value='';$('nuevoNombre').value=''; alert('✅ Creado.'); }catch(e2){alert('Error: '+e2.message);} }else{alert('Error: '+e.message);} }); };
     
-    $('acreditarBtn').onclick = async function() {
-      var u=$('selectVendedor').value;
-      var m=parseFloat($('montoAcreditar').value);
-      if(!u||!m||m<=0) { alert('Seleccioná vendedor y monto válido.'); return; }
-      var vend=vendedores.find(function(v){ return v.usuario===u; });
-      if(!vend) return;
-      if(!vend.acreditaciones) vend.acreditaciones=[];
-      vend.acreditaciones.push({monto:m, fecha:new Date().toLocaleString()});
-      vend.saldo=(vend.saldo||0)+m;
-      await guardarVendedor(vend);
-      renderVendedores();
-      $('montoAcreditar').value='';
-      alert('✅ Saldo acreditado.');
-    };
+    $('acreditarBtn').onclick=async function(){ var u=$('selectVendedor').value, m=parseFloat($('montoAcreditar').value); if(!u||!m||m<=0){alert('Seleccioná vendedor y monto válido.');return;} var v=vendedores.find(function(x){return x.usuario===u;}); if(!v)return; if(!v.acreditaciones)v.acreditaciones=[]; v.acreditaciones.push({monto:m,fecha:new Date().toLocaleString()}); v.saldo=(v.saldo||0)+m; await guardarVendedor(v); renderVendedores(); $('montoAcreditar').value=''; alert('✅ Acreditado.'); };
     
-    $('agregarKeyBtn').onclick = async function() {
-      var pid=$('selectProdKey').value;
-      var dur=$('selectDurKey').value;
-      var cod=$('codigoKey').value.trim();
-      if(!pid||!dur||!cod) { alert('Completá todos los campos.'); return; }
-      if(keys.find(function(k){ return k.codigo===cod; })) { alert('Ese código ya existe.'); return; }
-      var precio=getPrecioActual(pid,dur);
-      var id='key'+Date.now();
-      keys.push({id:id,productoId:pid,duracion:dur,codigo:cod,usado:false,fechaCreacion:new Date().toISOString(),precioAlCrear:precio});
-      await db.collection('keys').doc(id).set(keys[keys.length-1]);
-      renderKeys();
-      $('codigoKey').value='';
-      alert('✅ Key creada.');
-    };
+    $('agregarKeyBtn').onclick=async function(){ var pid=$('selectProdKey').value, dur=$('selectDurKey').value, cod=$('codigoKey').value.trim(); if(!pid||!dur||!cod){alert('Completá todo.');return;} if(keys.find(function(k){return k.codigo===cod;})){alert('Código duplicado.');return;} var id='key'+Date.now(); keys.push({id:id,productoId:pid,duracion:dur,codigo:cod,usado:false,fechaCreacion:new Date().toISOString(),precioAlCrear:getPrecioActual(pid,dur)}); await db.collection('keys').doc(id).set(keys[keys.length-1]); renderKeys(); $('codigoKey').value=''; alert('✅ Key creada.'); };
     
-    $('venderBtn').onclick = async function() {
-      var pid=$('selectVentaProd').value;
-      var dur=$('selectVentaDur').value;
-      var cant=parseInt($('cantVenta').value)||1;
-      var vend=vendedores.find(function(v){ return v.usuario===user.usuario; });
-      if(!vend) return;
-      var precio=getPrecioActual(pid,dur);
-      var total=precio*cant;
-      var disponibles=keys.filter(function(k){ return k.productoId===pid&&k.duracion===dur&&!k.usado&&estado(k)!=='expired'; });
-      if(disponibles.length<cant) { alert('Stock insuficiente. Hay '+disponibles.length+' disponibles.'); return; }
-      if((vend.saldo||0)<total) { alert('Saldo insuficiente. Necesitás $'+total.toFixed(2)+'.'); return; }
-      var prod=productos.find(function(p){ return p.id===pid; });
-      var keysVendidas=[];
-      for(var i=0;i<cant;i++) {
-        disponibles[i].usado=true;
-        keysVendidas.push(disponibles[i].codigo);
-        await db.collection('keys').doc(disponibles[i].id).update({usado:true});
-      }
-      vend.saldo-=total;
-      await guardarVendedor(vend);
-      ventas.push({vendedor:user.usuario,producto:prod?prod.nombre:'Desconocido',duracion:dur,cantidad:cant,total:total,keys:keysVendidas,fecha:new Date().toLocaleString()});
-      await guardarVentas();
-      renderTienda();
-      updatePrecioEst();
-      alert('✅ Venta realizada. Keys: '+keysVendidas.join(', '));
-    };
+    $('venderBtn').onclick=async function(){ var pid=$('selectVentaProd').value, dur=$('selectVentaDur').value, cant=parseInt($('cantVenta').value)||1, v=vendedores.find(function(x){return x.usuario===user.usuario;}); if(!v)return; var pr=getPrecioActual(pid,dur), tot=pr*cant, disp=keys.filter(function(k){return k.productoId===pid&&k.duracion===dur&&!k.usado&&estado(k)!=='expired';}); if(disp.length<cant){alert('Stock insuficiente.');return;} if((v.saldo||0)<tot){alert('Saldo insuficiente.');return;} for(var i=0;i<cant;i++){disp[i].usado=true; await db.collection('keys').doc(disp[i].id).update({usado:true});} v.saldo-=tot; await guardarVendedor(v); ventas.push({vendedor:user.usuario,producto:productos.find(function(x){return x.id===pid;})?.nombre||'?',duracion:dur,cantidad:cant,total:tot,keys:disp.slice(0,cant).map(function(k){return k.codigo;}),fecha:new Date().toLocaleString()}); await guardarVentas(); renderTienda(); updatePrecioEst(); alert('✅ Vendido.'); };
     
-    document.querySelectorAll('.nav-item').forEach(function(item) {
-      item.addEventListener('click', function() {
-        var page=this.getAttribute('data-page');
-        showPage(page);
-        if(page==='dashboard') renderDashboard();
-        if(page==='vendedores') renderVendedores();
-        if(page==='productos') mostrarProductos();
-        if(page==='keys') renderKeys();
-        if(page==='ventas') renderVentas();
-      });
-    });
+    document.querySelectorAll('.nav-item').forEach(function(item){ item.addEventListener('click',function(){ var p=this.getAttribute('data-page'); showPage(p); if(p==='dashboard')renderDashboard(); if(p==='vendedores')renderVendedores(); if(p==='productos')mostrarProductos(); if(p==='keys')renderKeys(); if(p==='ventas')renderVentas(); }); });
     
-    document.querySelectorAll('.tab-vendedor').forEach(function(tab) {
-      tab.addEventListener('click', function() {
-        document.querySelectorAll('.tab-vendedor').forEach(function(t){ t.classList.remove('active'); });
-        this.classList.add('active');
-        tabActual=this.getAttribute('data-tab');
-        $('seccionCatalogo').classList.toggle('hidden',tabActual!=='catalogo');
-        $('seccionHistorial').classList.toggle('hidden',tabActual!=='historial');
-        $('seccionRecarga').classList.toggle('hidden',tabActual!=='recarga');
-        $('seccionRetiro').classList.toggle('hidden',tabActual!=='retiro');
-        renderTienda();
-      });
-    });
+    document.querySelectorAll('.tab-vendedor').forEach(function(t){ t.addEventListener('click',function(){ document.querySelectorAll('.tab-vendedor').forEach(function(x){x.classList.remove('active');}); this.classList.add('active'); tabActual=this.getAttribute('data-tab'); $('seccionCatalogo').classList.toggle('hidden',tabActual!=='catalogo'); $('seccionHistorial').classList.toggle('hidden',tabActual!=='historial'); $('seccionRecarga').classList.toggle('hidden',tabActual!=='recarga'); $('seccionRetiro').classList.toggle('hidden',tabActual!=='retiro'); renderTienda(); }); });
     
-    document.querySelectorAll('#filtroBar .filter-chip').forEach(function(chip) {
-      chip.addEventListener('click', function() {
-        document.querySelectorAll('#filtroBar .filter-chip').forEach(function(c){ c.classList.remove('active'); });
-        this.classList.add('active');
-        filtroDur=this.getAttribute('data-filtro');
-        renderKeys();
-      });
-    });
+    document.querySelectorAll('#filtroBar .filter-chip').forEach(function(c){ c.addEventListener('click',function(){ document.querySelectorAll('#filtroBar .filter-chip').forEach(function(x){x.classList.remove('active');}); this.classList.add('active'); filtroDur=this.getAttribute('data-filtro'); renderKeys(); }); });
     
-    $('filtroProducto').addEventListener('change', function() { filtroProd=this.value; renderKeys(); });
-    $('selectVentaProd').addEventListener('change', updatePrecioEst);
-    $('selectVentaDur').addEventListener('change', updatePrecioEst);
-    $('cantVenta').addEventListener('input', updatePrecioEst);
+    $('filtroProducto').addEventListener('change',function(){filtroProd=this.value;renderKeys();});
+    $('selectVentaProd').addEventListener('change',updatePrecioEst);
+    $('selectVentaDur').addEventListener('change',updatePrecioEst);
+    $('cantVenta').addEventListener('input',updatePrecioEst);
     
-    cargarDatosFirestore().then(function() {
-      auth.onAuthStateChanged(function(firebaseUser) {
-        if(firebaseUser && !user) {
-          var email = firebaseUser.email || '';
-          var u = email.replace('@novapanel.com','');
-          var vend = vendedores.find(function(v){ return v.usuario===u; });
-          if(vend) { user={tipo:'vendedor',usuario:vend.usuario,nombre:vend.nombre}; }
-        }
-        if(!user && !firebaseUser) { user=null; }
-        updateUI();
-        mostrarProductos();
-        actualizarSelectoresProductos();
+    cargarDatosFirestore().then(function(){
+      auth.onAuthStateChanged(function(fb){
+        if(fb&&!user){ var u=(fb.email||'').replace('@novapanel.com',''), v=vendedores.find(function(x){return x.usuario===u;}); if(v) user={tipo:'vendedor',usuario:v.usuario,nombre:v.nombre}; }
+        if(!user&&!fb){user=null;}
+        updateUI(); mostrarProductos(); actualizarSelectoresProductos();
       });
     });
   </script>
