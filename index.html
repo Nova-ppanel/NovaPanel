@@ -62,39 +62,39 @@
     
     .topbar-admin {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 0.25rem 0.6rem; background: rgba(10,5,20,0.98);
+      padding: 0.5rem 0.8rem; background: rgba(10,5,20,0.98);
       border-bottom: 1px solid #352850; z-index: 15;
-      backdrop-filter: blur(25px); flex-wrap: wrap; gap: 0.3rem;
+      backdrop-filter: blur(25px); flex-wrap: wrap; gap: 0.5rem;
       box-shadow: 0 4px 20px rgba(0,0,0,0.5);
     }
     .topbar-admin .logo {
-      font-family: 'Orbitron', sans-serif; font-size: 0.75rem; font-weight: 800;
+      font-family: 'Orbitron', sans-serif; font-size: 0.9rem; font-weight: 800;
       background: linear-gradient(135deg, #ddd6fe, #a78bfa, #8b5cf6);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 1px;
     }
     .nav-horizontal {
-      display: flex; gap: 0.1rem; flex-wrap: wrap;
-      background: rgba(15,8,30,0.6); padding: 0.1rem;
+      display: flex; gap: 0.3rem; flex-wrap: wrap;
+      background: rgba(15,8,30,0.6); padding: 0.3rem;
       border-radius: 1rem; border: 1px solid #352850;
     }
     .nav-item {
-      display: flex; align-items: center; gap: 0.15rem;
-      padding: 0.2rem 0.4rem; border-radius: 0.8rem;
-      cursor: pointer; font-weight: 600; font-size: 0.58rem;
+      display: flex; align-items: center; gap: 0.2rem;
+      padding: 0.4rem 0.7rem; border-radius: 0.8rem;
+      cursor: pointer; font-weight: 600; font-size: 0.7rem;
       color: #c4b5fd; transition: all 0.3s;
       border: 1px solid transparent; background: transparent;
       white-space: nowrap;
     }
     .nav-item:hover { background: rgba(139,92,246,0.2); border-color: rgba(139,92,246,0.5); color: #fff; box-shadow: 0 0 10px rgba(139,92,246,0.3); }
     .nav-item.active { background: #8b5cf6; color: #fff; border-color: #a78bfa; box-shadow: 0 0 15px rgba(139,92,246,0.5); font-weight: 700; }
-    .user-tag { background: rgba(139,92,246,0.15); border: 1px solid rgba(139,92,246,0.3); padding: 0.2rem 0.5rem; border-radius: 1rem; font-weight: 600; color: #c4b5fd; font-size: 0.58rem; }
+    .user-tag { background: rgba(139,92,246,0.15); border: 1px solid rgba(139,92,246,0.3); padding: 0.3rem 0.6rem; border-radius: 1rem; font-weight: 600; color: #c4b5fd; font-size: 0.7rem; }
     .btn {
       background: rgba(20,10,45,0.6); border: 1.5px solid #8b5cf6;
-      color: #c4b5fd; font-weight: 600; font-size: 0.58rem;
-      padding: 0.25rem 0.6rem; border-radius: 1.2rem;
+      color: #c4b5fd; font-weight: 600; font-size: 0.7rem;
+      padding: 0.4rem 0.8rem; border-radius: 1.2rem;
       cursor: pointer; transition: all 0.3s;
       display: inline-flex; align-items: center; justify-content: center;
-      gap: 0.15rem; text-transform: uppercase;
+      gap: 0.2rem; text-transform: uppercase;
     }
     .btn:hover { background: #8b5cf6; color: #000; box-shadow: 0 0 20px rgba(139,92,246,0.5); }
     .btn-danger { border-color: #ef4444; color: #fca5a5; background: rgba(80,10,20,0.3); }
@@ -176,8 +176,8 @@
       margin-top: 0.5rem;
     }
     @media (max-width: 768px) {
-      .topbar-admin { padding: 0.2rem 0.5rem; }
-      .nav-item { padding: 0.15rem 0.3rem; font-size: 0.55rem; }
+      .topbar-admin { padding: 0.4rem 0.5rem; }
+      .nav-item { padding: 0.3rem 0.5rem; font-size: 0.65rem; }
       .main { padding: 0.8rem 1rem 3rem 1rem; }
       .grid-2 { grid-template-columns: 1fr; }
     }
@@ -187,9 +187,12 @@
   <div class="bg-particles" id="particlesContainer"></div>
   <div class="grid-bg"></div>
   <div class="neon-lines"></div>
-<div class="app" id="appRoot">
+  <div class="app" id="appRoot">
   <div class="topbar-admin hidden" id="topbarAdmin">
-    <div class="logo">⚡ NOVA PANEL</div>
+    <div style="display:flex;align-items:center;gap:0.5rem;">
+      <img src="https://i.postimg.cc/FRqgzfFW/IMG-20260515-WA0222.jpg" style="width:35px;height:35px;border-radius:50%;object-fit:cover;border:1.5px solid #8b5cf6;">
+      <div class="logo">⚡ NOVA PANEL</div>
+    </div>
     <nav class="nav-horizontal" id="navHorizontal">
       <button class="nav-item active" data-page="dashboard">📊 Dashboard</button>
       <button class="nav-item" data-page="vendedores">👥 Vend</button>
@@ -199,12 +202,15 @@
     </nav>
     <div style="display:flex;align-items:center;gap:0.3rem;">
       <span class="user-tag" id="userTagAdmin"></span>
-      <button class="btn" id="logoutAdminBtn" style="font-size:0.55rem;">SALIR</button>
+      <button class="btn" id="logoutAdminBtn">SALIR</button>
     </div>
   </div>
 
   <div class="hidden" id="headerVendedor" style="width:100%;padding:0.25rem 0.6rem;background:rgba(10,5,20,0.98);border-bottom:1px solid #352850;display:flex;justify-content:space-between;align-items:center;">
-    <div class="logo" style="font-size:0.75rem;">⚡ NOVA PANEL</div>
+    <div style="display:flex;align-items:center;gap:0.4rem;">
+      <img src="https://i.postimg.cc/FRqgzfFW/IMG-20260515-WA0222.jpg" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:1.5px solid #8b5cf6;">
+      <div class="logo" style="font-size:0.75rem;">⚡ NOVA PANEL</div>
+    </div>
     <div style="display:flex;align-items:center;gap:0.3rem;">
       <span class="user-tag" id="userTagVendedor"></span>
       <button class="btn" id="logoutVendedorBtn" style="font-size:0.55rem;">SALIR</button>
@@ -214,6 +220,9 @@
   <main class="main" id="mainContent">
     <div class="page active" id="pageLogin">
       <div class="card" style="max-width:350px;margin:3rem auto;text-align:center;">
+        <div style="margin-bottom:0.8rem;">
+          <img src="https://i.postimg.cc/FRqgzfFW/IMG-20260515-WA0222.jpg" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #8b5cf6;box-shadow:0 0 15px rgba(139,92,246,0.4);">
+        </div>
         <h2 style="font-family:'Orbitron',sans-serif;margin-bottom:0.8rem;font-size:1.1rem;background:linear-gradient(135deg,#ddd6fe,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">🔐 ACCESO</h2>
         <div id="loginMsg" style="color:#fca5a5;font-size:0.65rem;margin-bottom:0.5rem;display:none;"></div>
         
@@ -237,7 +246,7 @@
         <p style="margin-top:0.5rem;color:#9a8db8;font-size:0.6rem;">Nova Panel - Sistema de Gestión</p>
       </div>
     </div>
-<div class="page" id="pageDashboard">
+    <div class="page" id="pageDashboard">
   <h1 class="section-title">📊 Panel de Control</h1>
   <div class="stats-grid" id="statsGenerales"></div>
   <h2 style="color:#a78bfa;margin:1rem 0 0.6rem;font-size:0.9rem;">📋 Rendimiento por Vendedor</h2>
@@ -371,8 +380,8 @@
       </div>
     </div>
   </main>
-</div>
-<script>
+  </div>
+  <script>
   const firebaseConfig = {
     apiKey: "AIzaSyBsYxEHoS9ta6efEYfAKKOa82r_g4LEbmg",
     authDomain: "novapanelsocios-2152c.firebaseapp.com",
@@ -730,7 +739,7 @@
       $('montoRecibir').textContent = '$'+(monto-comision).toFixed(2);
     } else { $('comisionInfo').style.display = 'none'; }
   }
-    $('loginBtn').onclick = async function() {
+        $('loginBtn').onclick = async function() {
       var u = $('usuarioInput').value.trim().toLowerCase();
       var p = $('passwordInput').value.trim();
       if(!u || !p) { alert('Completá todos los campos.'); return; }
