@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
   <title>Nova Panel | Panel Completo</title>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-aif($('filtroProducto')) $('filtroProducto').innerHTML='<option value="todas">TODOS</option>'+h;pp-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script srif(filtroProd!=='todas') kf=kf.filter(function(k){return k.productoId===filtroProd;});c="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <style>
     :root{--bg-deep:#020107;--bg-card:#0b0818;--bg-input:#0a0716;--border-subtle:#1f1638;--border-medium:#352850;--violet:#8b5cf6;--violet-light:#a78bfa;--violet-glow:#c4b5fd;--text-primary:#f5f0ff;--text-secondary:#d4c8f0;--text-dim:#9a8db8;--danger:#ef4444;--success:#22c55e;--warning:#eab308;--whatsapp:#25D366;--radius:0.8rem}
     *{margin:0;padding:0;box-sizing:border-box}
@@ -387,7 +387,7 @@
   function actualizarSelectoresProductos() {
     var h=''; for(var i=0;i<productos.length;i++) h+='<option value="'+productos[i].id+'">'+productos[i].nombre+'</option>';
     if($('selectProdKey')) $('selectProdKey').innerHTML=h;
-    if($('filtroProducto')) $('filtroProducto').innerHTML='<option value="todas">TODOS</option>'+h;
+    if($('filtroProducto')) $('filtroProducto').innerHTML='<option value="*">TODOS</option>'+h;
     if($('selectVentaProd')) $('selectVentaProd').innerHTML=h;
     if($('selectDurKey')) $('selectDurKey').innerHTML='<option value="1 dia">1 día</option><option value="3 dias">3 días</option><option value="7 dias">7 días</option><option value="10 dias">10 días</option><option value="30 dias">30 días</option>';
   }
@@ -404,7 +404,7 @@
   
   function renderKeys() {
     var kf=keys;
-    if(filtroProd!=='todas') kf=kf.filter(function(k){return k.productoId===filtroProd;});
+    if(filtroProd!=='*' && filtroProd!=='todas') kf=kf.filter(function(k){return k.productoId===filtroProd;});
     if(filtroDur!=='todas') kf=kf.filter(function(k){return k.duracion===filtroDur;});
     var d=kf.filter(function(k){return !k.usado&&estado(k)!=='expired';}).length;
     $('resultadoFiltros').textContent=kf.length+' keys — '+d+' disponibles';
