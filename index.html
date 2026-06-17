@@ -637,26 +637,26 @@
     }
   }
   
-function renderKeys() {
-  var keysFiltradas = keys;
-  if(filtroProd !== 'todas') keysFiltradas = keysFiltradas.filter(function(k){ return k.productoId === filtroProd; });
-  if(filtroDur !== 'todas') keysFiltradas = keysFiltradas.filter(function(k){ return k.duracion === filtroDur; });
-  var disponibles = keysFiltradas.filter(function(k){ return !k.usado && estado(k)!=='expired'; }).length;
-  $('resultadoFiltros').textContent = 'Mostrando '+keysFiltradas.length+' keys — '+disponibles+' disponibles';
-  var html = '';
-  for(var i=0;i<keysFiltradas.length;i++) {
-    var k = keysFiltradas[i];
-    var prod = productos.find(function(p){ return p.id===k.productoId; });
-    var nombreProd = prod ? prod.nombre : 'Desconocido';
-    var est = estado(k);
-    var claseEst = 'status-active', txtEst = 'DISP';
-    if(est==='warning') { claseEst='status-warning'; txtEst='PROX VENC'; }
-    else if(est==='expired') { claseEst='status-expired'; txtEst='VENCIDA'; }
-    else if(est==='used') { claseEst='status-used'; txtEst='USADA'; }
-    html += '<tr><td>'+nombreProd+'</td><td>'+k.duracion+'</td><td><span class="key-code-display">'+k.codigo+'</span></td><td>$'+k.precioAlCrear.toFixed(2)+'</td><td><span class="status-badge '+claseEst+'">'+txtEst+'</span></td><td>—</td><td><button class="btn btn-danger btn-xs" onclick="eliminarKey(\''+k.id+'\')">✕</button></td></tr>';
+  function renderKeys() {
+    var keysFiltradas = keys;
+    if(filtroProd !== 'todas') keysFiltradas = keysFiltradas.filter(function(k){ return k.productoId === filtroProd; });
+    if(filtroDur !== 'todas') keysFiltradas = keysFiltradas.filter(function(k){ return k.duracion === filtroDur; });
+    var disponibles = keysFiltradas.filter(function(k){ return !k.usado && estado(k)!=='expired'; }).length;
+    $('resultadoFiltros').textContent = 'Mostrando '+keysFiltradas.length+' keys — '+disponibles+' disponibles';
+    var html = '';
+    for(var i=0;i<keysFiltradas.length;i++) {
+      var k = keysFiltradas[i];
+      var prod = productos.find(function(p){ return p.id===k.productoId; });
+      var nombreProd = prod ? prod.nombre : 'Desconocido';
+      var est = estado(k);
+      var claseEst = 'status-active', txtEst = 'DISP';
+      if(est==='warning') { claseEst='status-warning'; txtEst='PROX VENC'; }
+      else if(est==='expired') { claseEst='status-expired'; txtEst='VENCIDA'; }
+      else if(est==='used') { claseEst='status-used'; txtEst='USADA'; }
+      html += '<tr><td>'+nombreProd+'</td><td>'+k.duracion+'</td><td><span class="key-code-display">'+k.codigo+'</span></td><td>$'+k.precioAlCrear.toFixed(2)+'</td><td><span class="status-badge '+claseEst+'">'+txtEst+'</span></td><td>—</td><td><button class="btn btn-danger btn-xs" onclick="eliminarKey(\''+k.id+'\')">✕</button></td></tr>';
+    }
+    $('tablaKeys').innerHTML = html || '<tr><td colspan="7" style="color:#9a8db8;">No hay keys con esos filtros.</td></tr>';
   }
-  $('tablaKeys').innerHTML = html || '<tr><td colspan="7" style="color:#9a8db8;">No hay keys con esos filtros.</td></tr>';
-}
   
   async function eliminarKey(id) {
     keys = keys.filter(function(k){ return k.id !== id; });
