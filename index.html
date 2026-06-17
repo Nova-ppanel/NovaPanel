@@ -881,7 +881,23 @@
         $('nuevoUsuario').value='';$('nuevoPassword').value='';$('nuevoNombre').value='';
         alert('✅ Vendedor creado.');
       })
-      .catch(function(e) { alert('Error: '+e.message); });
+      .catch(async function(e) {
+        if(e.code === 'auth/email-already-in-use') {
+          try {
+            var signIn = await auth.signInWithEmailAndPassword(u+'@novapanel.com', p);
+            var nuevo = {uid:signIn.user.uid, usuario:u, nombre:n, saldo:0, acreditaciones:[]};
+            vendedores.push(nuevo);
+            await guardarVendedor(nuevo);
+            renderVendedores();
+            $('nuevoUsuario').value='';$('nuevoPassword').value='';$('nuevoNombre').value='';
+            alert('✅ Vendedor creado.');
+          } catch(e2) {
+            alert('Error: '+e2.message);
+          }
+        } else {
+          alert('Error: '+e.message);
+        }
+      });
     };
     
     $('acreditarBtn').onclick = async function() {
