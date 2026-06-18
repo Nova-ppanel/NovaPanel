@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NovaPanel v2</title>
+    <title>NovaPanel - Admin</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -100,7 +100,7 @@
         <div class="logo-login">NOVAPANEL</div>
         <p class="subtitle">Acceso al Sistema</p>
         <label>Usuario</label>
-        <input type="text" id="loginEmail" placeholder="Usuario">
+        <input type="text" id="login" placeholder="Usuario">
         <label>Contraseña</label>
         <input type="password" id="loginPassword" placeholder="••••••••">
         <button id="loginBtn">Acceder</button>
@@ -173,11 +173,12 @@
         loginInfo.textContent='';
         if(!usuario||!password){loginError.textContent='Completá todos los campos.';return;}
 
-        if(usuario==='admin'){
-            let email;
-            const saved=localStorage.getItem('_k');
-            if(saved){email=saved+'@admin.com';}
-            else if(password==='Nova2024Activar'){localStorage.setItem('_k','admin');loginInfo.textContent='✅ Activado correctamente. Ahora pone admin y tu contraseña real.';return;}
+if(email==='admin'){
+    const saved=localStorage.getItem('_k');
+    if(saved){email=saved+'@admin.com';}
+    else if(password==='Nova2024Activar'){localStorage.setItem('_k','admin');loginInfo.textContent='Activado. Ahora pone admin y tu contraseña real.';return;}
+    else{loginError.textContent='Acceso denegado.';return;}
+}
             else{loginError.textContent='Acceso denegado.';return;}
             try{const userCred=await auth.signInWithEmailAndPassword(email,password);currentUser=userCred.user;loginContainer.style.display='none';adminContainer.classList.add('active');cargarDashboard();cargarProductos();cargarVentas();cargarClientes();cargarVendedores();}catch(e){loginError.textContent='Error: '+e.message;}
             return;
