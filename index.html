@@ -1,5 +1,5 @@
- <!DOCTYPE html>
-<html lang="es"> 
+<!DOCTYPE html>
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,12 +8,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <style>
-        :root {
-            --bg: #0a0a12; --surface: #12121c; --surface2: #1a1a2e; --border: #2a2a3e;
-            --text: #e0e0f0; --text2: #8888aa; --accent: #8b5cf6; --accent-hover: #7c3aed;
-            --danger: #ef4444; --success: #22c55e; --warning: #f59e0b; --radius: 12px;
-            --shadow: 0 4px 32px rgba(139, 92, 246, 0.15); --gradient: linear-gradient(135deg, #8b5cf6, #6d28d9);
-        }
+        :root { --bg: #0a0a12; --surface: #12121c; --surface2: #1a1a2e; --border: #2a2a3e; --text: #e0e0f0; --text2: #8888aa; --accent: #8b5cf6; --accent-hover: #7c3aed; --danger: #ef4444; --success: #22c55e; --warning: #f59e0b; --radius: 12px; --shadow: 0 4px 32px rgba(139, 92, 246, 0.15); --gradient: linear-gradient(135deg, #8b5cf6, #6d28d9); }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; align-items: center; justify-content: center; background-image: radial-gradient(ellipse at top, #1a1a3e 0%, #0a0a12 60%); }
         #loginContainer { background: var(--surface); padding: 3rem 2.5rem; border-radius: 20px; box-shadow: var(--shadow); width: 100%; max-width: 420px; border: 1px solid var(--border); text-align: center; }
@@ -67,44 +62,11 @@
     </style>
 </head>
 <body>
-    <div id="loginContainer">
-        <div class="logo-icon">⚡</div>
-        <div class="logo-login">NOVAPANEL</div>
-        <p class="subtitle">Panel de Administración</p>
-        <label>Email</label>
-        <input type="email" id="loginEmail" placeholder="admin@novapanel.com">
-        <label>Contraseña</label>
-        <input type="password" id="loginPassword" placeholder="••••••••">
-        <button id="loginBtn">Iniciar Sesión</button>
-        <p class="login-error" id="loginError"></p>
-    </div>
-    <div id="adminContainer">
-        <aside id="sidebar">
-            <div class="logo">⚡ NOVAPANEL</div>
-            <nav>
-                <a class="active" data-section="dashboard">📊 Inicio</a>
-                <a data-section="ventas">💰 Ventas</a>
-                <a data-section="clientes">👥 Clientes</a>
-                <a data-section="productos">📦 Productos</a>
-                <a data-section="proveedores">🏭 Proveedores</a>
-                <a data-section="reportes">📋 Reportes</a>
-                <a data-section="configuracion">⚙️ Configuración</a>
-            </nav>
-            <button id="logoutBtn">🚪 Cerrar Sesión</button>
-        </aside>
-        <main id="mainContent">
-            <div class="section active" id="dashboardSection"><h2>Dashboard</h2><div class="cards-grid" id="dashCards"><div class="card"><div class="label">Productos</div><div class="value" id="dashProductos">0</div></div><div class="card"><div class="label">Ventas Hoy</div><div class="value" id="dashVentasHoy">0</div></div><div class="card"><div class="label">Clientes</div><div class="value" id="dashClientes">0</div></div><div class="card"><div class="label">Ingresos</div><div class="value" id="dashIngresos">$0</div></div></div></div>
-            <div class="section" id="ventasSection"><h2>💰 Ventas</h2><div class="table-container"><table><thead><tr><th>ID</th><th>Producto</th><th>Cliente</th><th>Key</th><th>Fecha</th><th>Total</th></tr></thead><tbody id="ventasTableBody"></tbody></table></div></div>
-            <div class="section" id="clientesSection"><h2>👥 Clientes</h2><div class="table-container"><table><thead><tr><th>Email</th><th>Nombre</th><th>Compras</th><th>Total Gastado</th></tr></thead><tbody id="clientesTableBody"></tbody></table></div></div>
-            <div class="section" id="productosSection"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;"><h2>📦 Productos</h2><div style="display:flex;gap:0.5rem;"><button class="btn btn-outline" id="cargarProductosBtn">🔄 Cargar Productos</button><button class="btn btn-outline" id="verTodasKeysBtn">🔑 Ver Todas las Keys</button><button class="btn btn-primary" id="agregarProductoBtn">+ Agregar Producto</button></div></div><div class="filter-bar" id="filtroBar"><button class="filter-chip active" data-filtro="todas">📋 Todas</button><button class="filter-chip" data-filtro="1dia">1 Día</button><button class="filter-chip" data-filtro="3dias">3 Días</button><button class="filter-chip" data-filtro="7dias">7 Días</button></div><div class="table-container"><table><thead><tr><th>Nombre</th><th>Duración</th><th>Precio</th><th>Stock</th><th>Keys Totales</th><th>Acciones</th></tr></thead><tbody id="productosTableBody"></tbody></table></div></div>
-            <div class="section" id="proveedoresSection"><h2>🏭 Proveedores</h2><p style="color:var(--text2)">Gestión de proveedores próximamente.</p></div>
-            <div class="section" id="reportesSection"><h2>📋 Reportes</h2><p style="color:var(--text2)">Reportes próximamente.</p></div>
-            <div class="section" id="configuracionSection"><h2>⚙️ Configuración</h2><p style="color:var(--text2)">Configuración próximamente.</p></div>
-        </main>
-    </div>
-    <div class="modal-overlay" id="productoModalOverlay"><div class="modal"><h3 id="productoModalTitle">Agregar Producto</h3><input type="text" id="prodNombre" placeholder="Nombre del producto"><select id="prodDuracion"><option value="1dia">1 Día</option><option value="3dias">3 Días</option><option value="7dias">7 Días</option></select><input type="number" id="prodPrecio" placeholder="Precio"><input type="text" id="prodKeys" placeholder="Keys (separadas por coma)"><div class="modal-actions"><button class="btn btn-outline" id="cancelProductoBtn">Cancelar</button><button class="btn btn-primary" id="saveProductoBtn">Guardar</button></div></div></div>
-    <div class="modal-overlay" id="keysModalOverlay"><div class="modal"><h3>🔑 Keys del Producto</h3><div id="keysList" style="max-height:300px;overflow-y:auto;font-size:0.8rem;background:var(--surface2);padding:1rem;border-radius:var(--radius);"></div><div class="modal-actions"><button class="btn btn-outline" id="closeKeysBtn">Cerrar</button></div></div></div>
-    <div class="toast" id="toast"></div>
+<div id="loginContainer"><div class="logo-icon">⚡</div><div class="logo-login">NOVAPANEL</div><p class="subtitle">Panel de Administración</p><label>Email</label><input type="email" id="loginEmail" placeholder="admin@novapanel.com"><label>Contraseña</label><input type="password" id="loginPassword" placeholder="••••••••"><button id="loginBtn">Iniciar Sesión</button><p class="login-error" id="loginError"></p></div>
+<div id="adminContainer"><aside id="sidebar"><div class="logo">⚡ NOVAPANEL</div><nav><a class="active" data-section="dashboard">📊 Inicio</a><a data-section="ventas">💰 Ventas</a><a data-section="clientes">👥 Clientes</a><a data-section="productos">📦 Productos</a><a data-section="proveedores">🏭 Proveedores</a><a data-section="reportes">📋 Reportes</a><a data-section="configuracion">⚙️ Configuración</a></nav><button id="logoutBtn">🚪 Cerrar Sesión</button></aside><main id="mainContent"><div class="section active" id="dashboardSection"><h2>Dashboard</h2><div class="cards-grid" id="dashCards"><div class="card"><div class="label">Productos</div><div class="value" id="dashProductos">0</div></div><div class="card"><div class="label">Ventas Hoy</div><div class="value" id="dashVentasHoy">0</div></div><div class="card"><div class="label">Clientes</div><div class="value" id="dashClientes">0</div></div><div class="card"><div class="label">Ingresos</div><div class="value" id="dashIngresos">$0</div></div></div></div><div class="section" id="ventasSection"><h2>💰 Ventas</h2><div class="table-container"><table><thead><tr><th>ID</th><th>Producto</th><th>Cliente</th><th>Key</th><th>Fecha</th><th>Total</th></tr></thead><tbody id="ventasTableBody"></tbody></table></div></div><div class="section" id="clientesSection"><h2>👥 Clientes</h2><div class="table-container"><table><thead><tr><th>Email</th><th>Nombre</th><th>Compras</th><th>Total Gastado</th></tr></thead><tbody id="clientesTableBody"></tbody></table></div></div><div class="section" id="productosSection"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;"><h2>📦 Productos</h2><div style="display:flex;gap:0.5rem;"><button class="btn btn-outline" id="cargarProductosBtn">🔄 Cargar Productos</button><button class="btn btn-outline" id="verTodasKeysBtn">🔑 Ver Todas las Keys</button><button class="btn btn-primary" id="agregarProductoBtn">+ Agregar Producto</button></div></div><div class="filter-bar" id="filtroBar"><button class="filter-chip active" data-filtro="todas">📋 Todas</button><button class="filter-chip" data-filtro="1dia">1 Día</button><button class="filter-chip" data-filtro="3dias">3 Días</button><button class="filter-chip" data-filtro="7dias">7 Días</button></div><div class="table-container"><table><thead><tr><th>Nombre</th><th>Duración</th><th>Precio</th><th>Stock</th><th>Keys Totales</th><th>Acciones</th></tr></thead><tbody id="productosTableBody"></tbody></table></div></div><div class="section" id="proveedoresSection"><h2>🏭 Proveedores</h2><p style="color:var(--text2)">Gestión de proveedores próximamente.</p></div><div class="section" id="reportesSection"><h2>📋 Reportes</h2><p style="color:var(--text2)">Reportes próximamente.</p></div><div class="section" id="configuracionSection"><h2>⚙️ Configuración</h2><p style="color:var(--text2)">Configuración próximamente.</p></div></main></div>
+<div class="modal-overlay" id="productoModalOverlay"><div class="modal"><h3 id="productoModalTitle">Agregar Producto</h3><input type="text" id="prodNombre" placeholder="Nombre del producto"><select id="prodDuracion"><option value="1dia">1 Día</option><option value="3dias">3 Días</option><option value="7dias">7 Días</option></select><input type="number" id="prodPrecio" placeholder="Precio"><input type="text" id="prodKeys" placeholder="Keys (separadas por coma)"><div class="modal-actions"><button class="btn btn-outline" id="cancelProductoBtn">Cancelar</button><button class="btn btn-primary" id="saveProductoBtn">Guardar</button></div></div></div>
+<div class="modal-overlay" id="keysModalOverlay"><div class="modal"><h3>🔑 Keys del Producto</h3><div id="keysList" style="max-height:300px;overflow-y:auto;font-size:0.8rem;background:var(--surface2);padding:1rem;border-radius:var(--radius);"></div><div class="modal-actions"><button class="btn btn-outline" id="closeKeysBtn">Cerrar</button></div></div></div>
+<div class="toast" id="toast"></div>
 <script>
     const firebaseConfig = {
         apiKey: "AIzaSyBsYxEHoS9ta6efEYfAKKOa82r_g4LEbmg",
@@ -118,229 +80,42 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    const loginContainer = document.getElementById('loginContainer');
-    const adminContainer = document.getElementById('adminContainer');
-    const loginBtn = document.getElementById('loginBtn');
-    const loginEmail = document.getElementById('loginEmail');
-    const loginPassword = document.getElementById('loginPassword');
-    const loginError = document.getElementById('loginError');
-    const logoutBtn = document.getElementById('logoutBtn');
-    const navLinks = document.querySelectorAll('#sidebar nav a');
-    const sections = document.querySelectorAll('.section');
-    const dashProductos = document.getElementById('dashProductos');
-    const dashVentasHoy = document.getElementById('dashVentasHoy');
-    const dashClientes = document.getElementById('dashClientes');
-    const dashIngresos = document.getElementById('dashIngresos');
-    const cargarProductosBtn = document.getElementById('cargarProductosBtn');
-    const verTodasKeysBtn = document.getElementById('verTodasKeysBtn');
-    const agregarProductoBtn = document.getElementById('agregarProductoBtn');
-    const productosTableBody = document.getElementById('productosTableBody');
-    const productoModalOverlay = document.getElementById('productoModalOverlay');
-    const productoModalTitle = document.getElementById('productoModalTitle');
-    const prodNombre = document.getElementById('prodNombre');
-    const prodDuracion = document.getElementById('prodDuracion');
-    const prodPrecio = document.getElementById('prodPrecio');
-    const prodKeys = document.getElementById('prodKeys');
-    const cancelProductoBtn = document.getElementById('cancelProductoBtn');
-    const saveProductoBtn = document.getElementById('saveProductoBtn');
-    const keysModalOverlay = document.getElementById('keysModalOverlay');
-    const keysList = document.getElementById('keysList');
-    const closeKeysBtn = document.getElementById('closeKeysBtn');
-    const toast = document.getElementById('toast');
-    const ventasTableBody = document.getElementById('ventasTableBody');
-    const clientesTableBody = document.getElementById('clientesTableBody');
-    let currentUser = null;
-    let productosCache = [];
-    let editProductoId = null;
-    let filtroDur = 'todas';
+    const loginContainer=document.getElementById('loginContainer'),adminContainer=document.getElementById('adminContainer'),loginBtn=document.getElementById('loginBtn'),loginEmail=document.getElementById('loginEmail'),loginPassword=document.getElementById('loginPassword'),loginError=document.getElementById('loginError'),logoutBtn=document.getElementById('logoutBtn'),navLinks=document.querySelectorAll('#sidebar nav a'),sections=document.querySelectorAll('.section'),dashProductos=document.getElementById('dashProductos'),dashVentasHoy=document.getElementById('dashVentasHoy'),dashClientes=document.getElementById('dashClientes'),dashIngresos=document.getElementById('dashIngresos'),cargarProductosBtn=document.getElementById('cargarProductosBtn'),verTodasKeysBtn=document.getElementById('verTodasKeysBtn'),agregarProductoBtn=document.getElementById('agregarProductoBtn'),productosTableBody=document.getElementById('productosTableBody'),productoModalOverlay=document.getElementById('productoModalOverlay'),productoModalTitle=document.getElementById('productoModalTitle'),prodNombre=document.getElementById('prodNombre'),prodDuracion=document.getElementById('prodDuracion'),prodPrecio=document.getElementById('prodPrecio'),prodKeys=document.getElementById('prodKeys'),cancelProductoBtn=document.getElementById('cancelProductoBtn'),saveProductoBtn=document.getElementById('saveProductoBtn'),keysModalOverlay=document.getElementById('keysModalOverlay'),keysList=document.getElementById('keysList'),closeKeysBtn=document.getElementById('closeKeysBtn'),toast=document.getElementById('toast'),ventasTableBody=document.getElementById('ventasTableBody'),clientesTableBody=document.getElementById('clientesTableBody');
+    let currentUser=null,productosCache=[],editProductoId=null,filtroDur='todas';
 
-    loginBtn.addEventListener('click', async () => {
-        let email = loginEmail.value.trim();
-        const password = loginPassword.value.trim();
-        loginError.textContent = '';
-        if (!email || !password) { loginError.textContent = 'Completá todos los campos.'; return; }
-        if (email === 'admin') {
-            const saved = localStorage.getItem('_a');
-            if (saved) { email = saved; }
-            else { loginError.textContent = 'Acceso denegado.'; return; }
-        }
-        try {
-            const userCred = await auth.signInWithEmailAndPassword(email, password);
-            currentUser = userCred.user;
-            loginContainer.style.display = 'none';
-            adminContainer.classList.add('active');
-            cargarDashboard(); cargarProductos(); cargarVentas(); cargarClientes();
-        } catch (e) { loginError.textContent = 'Error: ' + e.message; }
+    loginBtn.addEventListener('click',async()=>{
+        let email=loginEmail.value.trim();
+        const password=loginPassword.value.trim();
+        loginError.textContent='';
+        if(!email||!password){loginError.textContent='Completá todos los campos.';return;}
+        if(email==='admin'){const saved=localStorage.getItem('_a');if(saved){email=saved;}else{loginError.textContent='Acceso denegado.';return;}}
+        try{const userCred=await auth.signInWithEmailAndPassword(email,password);currentUser=userCred.user;loginContainer.style.display='none';adminContainer.classList.add('active');cargarDashboard();cargarProductos();cargarVentas();cargarClientes();}catch(e){loginError.textContent='Error: '+e.message;}
     });
 
-    logoutBtn.addEventListener('click', () => {
-        auth.signOut(); currentUser = null;
-        adminContainer.classList.remove('active');
-        loginContainer.style.display = '';
-        loginEmail.value = ''; loginPassword.value = '';
-    });
-
-    navLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            navLinks.forEach(l => l.classList.remove('active')); this.classList.add('active');
-            const sid = this.getAttribute('data-section');
-            sections.forEach(s => s.classList.remove('active'));
-            document.getElementById(sid + 'Section').classList.add('active');
-            if (sid === 'ventas') cargarVentas();
-            if (sid === 'clientes') cargarClientes();
-            if (sid === 'productos') cargarProductos();
-        });
-    });
-
-    function showToast(msg, type = 'success') {
-        toast.textContent = msg;
-        toast.style.borderColor = type === 'error' ? 'var(--danger)' : 'var(--success)';
-        toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 3000);
-    }
-
-    async function cargarDashboard() {
-        try {
-            const prodSnap = await db.collection('productos').get(); dashProductos.textContent = prodSnap.size;
-            const hoy = new Date(); hoy.setHours(0,0,0,0);
-            const ventasSnap = await db.collection('ventas').where('fecha', '>=', hoy).get();
-            dashVentasHoy.textContent = ventasSnap.size;
-            let total = 0; ventasSnap.forEach(d => { total += d.data().total || 0; });
-            dashIngresos.textContent = '$' + total.toLocaleString('es-AR');
-            const cliSnap = await db.collection('clientes').get(); dashClientes.textContent = cliSnap.size;
-        } catch (e) { console.error(e); }
-    }
-
-    async function cargarProductos() {
-        try {
-            productosTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;">Cargando...</td></tr>';
-            const snap = await db.collection('productos').get(); productosCache = [];
-            snap.forEach(d => { productosCache.push({ id: d.id, ...d.data() }); });
-            renderProductos();
-        } catch (e) { productosTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--danger);">Error</td></tr>'; }
-    }
-
-    function renderProductos() {
-        let lista = filtroDur !== 'todas' ? productosCache.filter(p => p.duracion === filtroDur) : productosCache;
-        if (!lista.length) { productosTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text2);">No hay productos</td></tr>'; return; }
-        productosTableBody.innerHTML = lista.map(p => {
-            const k = Array.isArray(p.keys) ? p.keys : (typeof p.keys === 'string' ? p.keys.split(',').map(x => x.trim()).filter(x => x) : []);
-            return `<tr><td>${p.nombre||''}</td><td>${formatearDuracion(p.duracion)}</td><td>$${(p.precio||0).toLocaleString('es-AR')}</td><td>${k.filter(x=>!x.startsWith('USADA:')).length}</td><td>${k.length}</td><td><button class="btn btn-outline" onclick="verKeys('${p.id}')" style="padding:0.3rem 0.6rem;font-size:0.75rem;">🔑</button> <button class="btn btn-outline" onclick="editarProducto('${p.id}')" style="padding:0.3rem 0.6rem;font-size:0.75rem;">✏️</button> <button class="btn btn-danger" onclick="eliminarProducto('${p.id}')" style="padding:0.3rem 0.6rem;font-size:0.75rem;">🗑️</button></td></tr>`;
-        }).join('');
-    }
-
-    function formatearDuracion(d) { return { '1dia':'1 Día', '3dias':'3 Días', '7dias':'7 Días' }[d] || d || 'N/A'; }
-
-    document.querySelectorAll('#filtroBar .filter-chip').forEach(function(c) {
-        c.addEventListener('click', function() {
-            document.querySelectorAll('#filtroBar .filter-chip').forEach(function(x) { x.classList.remove('active'); });
-            this.classList.add('active'); filtroDur = this.getAttribute('data-filtro') || 'todas'; renderProductos();
-        });
-    });
+    logoutBtn.addEventListener('click',()=>{auth.signOut();currentUser=null;adminContainer.classList.remove('active');loginContainer.style.display='';loginEmail.value='';loginPassword.value='';});
+    navLinks.forEach(link=>{link.addEventListener('click',function(e){e.preventDefault();navLinks.forEach(l=>l.classList.remove('active'));this.classList.add('active');const sid=this.getAttribute('data-section');sections.forEach(s=>s.classList.remove('active'));document.getElementById(sid+'Section').classList.add('active');if(sid==='ventas')cargarVentas();if(sid==='clientes')cargarClientes();if(sid==='productos')cargarProductos();});});
+    function showToast(msg,type='success'){toast.textContent=msg;toast.style.borderColor=type==='error'?'var(--danger)':'var(--success)';toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),3000);}
+    async function cargarDashboard(){try{const prodSnap=await db.collection('productos').get();dashProductos.textContent=prodSnap.size;const hoy=new Date();hoy.setHours(0,0,0,0);const ventasSnap=await db.collection('ventas').where('fecha','>=',hoy).get();dashVentasHoy.textContent=ventasSnap.size;let total=0;ventasSnap.forEach(d=>{total+=d.data().total||0;});dashIngresos.textContent='$'+total.toLocaleString('es-AR');const cliSnap=await db.collection('clientes').get();dashClientes.textContent=cliSnap.size;}catch(e){console.error(e);}}
+    async function cargarProductos(){try{productosTableBody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;">Cargando...</td></tr>';const snap=await db.collection('productos').get();productosCache=[];snap.forEach(d=>{productosCache.push({id:d.id,...d.data()});});renderProductos();}catch(e){productosTableBody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--danger);">Error</td></tr>';}}
+    function renderProductos(){let lista=filtroDur!=='todas'?productosCache.filter(p=>p.duracion===filtroDur):productosCache;if(!lista.length){productosTableBody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text2);">No hay productos</td></tr>';return;}productosTableBody.innerHTML=lista.map(p=>{const k=Array.isArray(p.keys)?p.keys:(typeof p.keys==='string'?p.keys.split(',').map(x=>x.trim()).filter(x=>x):[]);return`<tr><td>${p.nombre||''}</td><td>${formatearDuracion(p.duracion)}</td><td>$${(p.precio||0).toLocaleString('es-AR')}</td><td>${k.filter(x=>!x.startsWith('USADA:')).length}</td><td>${k.length}</td><td><button class="btn btn-outline" onclick="verKeys('${p.id}')" style="padding:0.3rem 0.6rem;font-size:0.75rem;">🔑</button> <button class="btn btn-outline" onclick="editarProducto('${p.id}')" style="padding:0.3rem 0.6rem;font-size:0.75rem;">✏️</button> <button class="btn btn-danger" onclick="eliminarProducto('${p.id}')" style="padding:0.3rem 0.6rem;font-size:0.75rem;">🗑️</button></td></tr>`;}).join('');}
+    function formatearDuracion(d){return{'1dia':'1 Día','3dias':'3 Días','7dias':'7 Días'}[d]||d||'N/A';}
+    document.querySelectorAll('#filtroBar .filter-chip').forEach(function(c){c.addEventListener('click',function(){document.querySelectorAll('#filtroBar .filter-chip').forEach(function(x){x.classList.remove('active');});this.classList.add('active');filtroDur=this.getAttribute('data-filtro')||'todas';renderProductos();});});
+    async function verKeys(pid){try{keysList.innerHTML='Cargando...';keysModalOverlay.classList.add('active');const doc=await db.collection('productos').doc(pid).get();if(!doc.exists){keysList.innerHTML='<p style="color:var(--danger);">No encontrado.</p>';return;}const k=Array.isArray(doc.data().keys)?doc.data().keys:(typeof doc.data().keys==='string'?doc.data().keys.split(',').map(x=>x.trim()).filter(x=>x):[]);if(!k.length){keysList.innerHTML='<p style="color:var(--text2);">Sin keys.</p>';return;}keysList.innerHTML=k.map((x,i)=>`<div style="padding:0.4rem 0;border-bottom:1px solid var(--border);color:${x.startsWith('USADA:')?'var(--danger)':'var(--success)'};">${i+1}. ${x}</div>`).join('');}catch(e){keysList.innerHTML='<p style="color:var(--danger);">Error.</p>';}}
+    verTodasKeysBtn.addEventListener('click',async function(){try{keysList.innerHTML='Cargando...';keysModalOverlay.classList.add('active');let lista=productosCache;if(!lista.length){keysList.innerHTML='<p style="color:var(--text2);">No hay productos.</p>';return;}let html='',totalKeys=0;lista.forEach(p=>{const k=Array.isArray(p.keys)?p.keys:(typeof p.keys==='string'?p.keys.split(',').map(x=>x.trim()).filter(x=>x):[]);totalKeys+=k.length;html+=`<div style="margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:2px solid var(--accent);"><strong>📦 ${p.nombre||''}</strong> (${formatearDuracion(p.duracion)}) - ${k.length} keys</div>`;if(!k.length)html+='<p style="color:var(--text2);font-size:0.8rem;margin-left:1rem;">Sin keys.</p>';else k.forEach((x,i)=>{html+=`<div style="padding:0.3rem 0;margin-left:1rem;border-bottom:1px solid var(--border);color:${x.startsWith('USADA:')?'var(--danger)':'var(--success)'};font-size:0.8rem;">${i+1}. ${x}</div>`;});});html+=`<div style="margin-top:1rem;padding-top:0.5rem;border-top:2px solid var(--accent);text-align:center;font-weight:600;">📊 Total: ${totalKeys} keys en ${lista.length} productos</div>`;keysList.innerHTML=html;}catch(e){keysList.innerHTML='<p style="color:var(--danger);">Error.</p>';}});
+    closeKeysBtn.addEventListener('click',()=>keysModalOverlay.classList.remove('active'));
+    keysModalOverlay.addEventListener('click',function(e){if(e.target===keysModalOverlay)keysModalOverlay.classList.remove('active');});
+    agregarProductoBtn.addEventListener('click',()=>{editProductoId=null;productoModalTitle.textContent='Agregar Producto';prodNombre.value='';prodDuracion.value='1dia';prodPrecio.value='';prodKeys.value='';productoModalOverlay.classList.add('active');});
+    async function editarProducto(id){try{const doc=await db.collection('productos').doc(id).get();if(!doc.exists)return;const d=doc.data();editProductoId=id;productoModalTitle.textContent='Editar Producto';prodNombre.value=d.nombre||'';prodDuracion.value=d.duracion||'1dia';prodPrecio.value=d.precio||'';prodKeys.value=Array.isArray(d.keys)?d.keys.join(', '):(typeof d.keys==='string'?d.keys:'');productoModalOverlay.classList.add('active');}catch(e){showToast('Error','error');}}
+    cancelProductoBtn.addEventListener('click',()=>{productoModalOverlay.classList.remove('active');editProductoId=null;});
+    productoModalOverlay.addEventListener('click',function(e){if(e.target===productoModalOverlay){productoModalOverlay.classList.remove('active');editProductoId=null;}});
+    saveProductoBtn.addEventListener('click',async()=>{const n=prodNombre.value.trim(),d=prodDuracion.value,p=parseFloat(prodPrecio.value),kr=prodKeys.value.trim();if(!n||!d||isNaN(p)||!kr){showToast('Completá todos los campos','error');return;}const ka=kr.split(',').map(x=>x.trim()).filter(x=>x);try{const data={nombre:n,duracion:d,precio:p,keys:ka,updatedAt:firebase.firestore.FieldValue.serverTimestamp()};if(editProductoId){await db.collection('productos').doc(editProductoId).update(data);showToast('Actualizado ✅');}else{data.createdAt=firebase.firestore.FieldValue.serverTimestamp();await db.collection('productos').add(data);showToast('Agregado ✅');}productoModalOverlay.classList.remove('active');editProductoId=null;cargarProductos();cargarDashboard();}catch(e){showToast('Error: '+e.message,'error');}});
+    async function eliminarProducto(id){if(!confirm('¿Eliminar?'))return;try{await db.collection('productos').doc(id).delete();showToast('Eliminado ✅');cargarProductos();cargarDashboard();}catch(e){showToast('Error: '+e.message,'error');}}
+    cargarProductosBtn.addEventListener('click',cargarProductos);
+    async function cargarVentas(){try{ventasTableBody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;">Cargando...</td></tr>';const snap=await db.collection('ventas').orderBy('fecha','desc').limit(50).get();if(snap.empty){ventasTableBody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text2);">Sin ventas</td></tr>';return;}ventasTableBody.innerHTML='';snap.forEach(d=>{const v=d.data(),f=v.fecha?v.fecha.toDate().toLocaleDateString('es-AR'):'N/A';ventasTableBody.innerHTML+=`<tr><td>${d.id.slice(-6)}</td><td>${v.producto||''}</td><td>${v.cliente||''}</td><td style="font-family:monospace;font-size:0.75rem;">${v.key||''}</td><td>${f}</td><td>$${(v.total||0).toLocaleString('es-AR')}</td></tr>`;});}catch(e){ventasTableBody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--danger);">Error</td></tr>';}}
+    async function cargarClientes(){try{clientesTableBody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:2rem;">Cargando...</td></tr>';const snap=await db.collection('clientes').orderBy('totalGastado','desc').get();if(snap.empty){clientesTableBody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text2);">Sin clientes</td></tr>';return;}clientesTableBody.innerHTML='';snap.forEach(d=>{const c=d.data();clientesTableBody.innerHTML+=`<tr><td>${c.email||''}</td><td>${c.nombre||''}</td><td>${c.compras||0}</td><td>$${(c.totalGastado||0).toLocaleString('es-AR')}</td></tr>`;});}catch(e){clientesTableBody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--danger);">Error</td></tr>';}}
+    window.verKeys=verKeys;
+    window.editarProducto=editarProducto;
+    window.eliminarProducto=eliminarProducto;
 </script>
-<script>
-    async function verKeys(pid) {
-        try {
-            keysList.innerHTML = 'Cargando...'; keysModalOverlay.classList.add('active');
-            const doc = await db.collection('productos').doc(pid).get();
-            if (!doc.exists) { keysList.innerHTML = '<p style="color:var(--danger);">No encontrado.</p>'; return; }
-            const k = Array.isArray(doc.data().keys) ? doc.data().keys : (typeof doc.data().keys === 'string' ? doc.data().keys.split(',').map(x => x.trim()).filter(x => x) : []);
-            if (!k.length) { keysList.innerHTML = '<p style="color:var(--text2);">Sin keys.</p>'; return; }
-            keysList.innerHTML = k.map((x, i) => `<div style="padding:0.4rem 0;border-bottom:1px solid var(--border);color:${x.startsWith('USADA:')?'var(--danger)':'var(--success)'};">${i+1}. ${x}</div>`).join('');
-        } catch (e) { keysList.innerHTML = '<p style="color:var(--danger);">Error.</p>'; }
-    }
-
-    verTodasKeysBtn.addEventListener('click', async function() {
-        try {
-            keysList.innerHTML = 'Cargando...'; keysModalOverlay.classList.add('active');
-            let lista = productosCache;
-            if (!lista.length) { keysList.innerHTML = '<p style="color:var(--text2);">No hay productos.</p>'; return; }
-            let html = '', totalKeys = 0;
-            lista.forEach(p => {
-                const k = Array.isArray(p.keys) ? p.keys : (typeof p.keys === 'string' ? p.keys.split(',').map(x => x.trim()).filter(x => x) : []);
-                totalKeys += k.length;
-                html += `<div style="margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:2px solid var(--accent);"><strong>📦 ${p.nombre||''}</strong> (${formatearDuracion(p.duracion)}) - ${k.length} keys</div>`;
-                if (!k.length) html += '<p style="color:var(--text2);font-size:0.8rem;margin-left:1rem;">Sin keys.</p>';
-                else k.forEach((x, i) => { html += `<div style="padding:0.3rem 0;margin-left:1rem;border-bottom:1px solid var(--border);color:${x.startsWith('USADA:')?'var(--danger)':'var(--success)'};font-size:0.8rem;">${i+1}. ${x}</div>`; });
-            });
-            html += `<div style="margin-top:1rem;padding-top:0.5rem;border-top:2px solid var(--accent);text-align:center;font-weight:600;">📊 Total: ${totalKeys} keys en ${lista.length} productos</div>`;
-            keysList.innerHTML = html;
-        } catch (e) { keysList.innerHTML = '<p style="color:var(--danger);">Error.</p>'; }
-    });
-
-    closeKeysBtn.addEventListener('click', () => keysModalOverlay.classList.remove('active'));
-    keysModalOverlay.addEventListener('click', function(e) { if (e.target === keysModalOverlay) keysModalOverlay.classList.remove('active'); });
-
-    agregarProductoBtn.addEventListener('click', () => {
-        editProductoId = null; productoModalTitle.textContent = 'Agregar Producto';
-        prodNombre.value = ''; prodDuracion.value = '1dia'; prodPrecio.value = ''; prodKeys.value = '';
-        productoModalOverlay.classList.add('active');
-    });
-
-    async function editarProducto(id) {
-        try {
-            const doc = await db.collection('productos').doc(id).get();
-            if (!doc.exists) return; const d = doc.data(); editProductoId = id;
-            productoModalTitle.textContent = 'Editar Producto';
-            prodNombre.value = d.nombre || ''; prodDuracion.value = d.duracion || '1dia'; prodPrecio.value = d.precio || '';
-            prodKeys.value = Array.isArray(d.keys) ? d.keys.join(', ') : (typeof d.keys === 'string' ? d.keys : '');
-            productoModalOverlay.classList.add('active');
-        } catch (e) { showToast('Error', 'error'); }
-    }
-
-    cancelProductoBtn.addEventListener('click', () => { productoModalOverlay.classList.remove('active'); editProductoId = null; });
-    productoModalOverlay.addEventListener('click', function(e) { if (e.target === productoModalOverlay) { productoModalOverlay.classList.remove('active'); editProductoId = null; } });
-
-    saveProductoBtn.addEventListener('click', async () => {
-        const n = prodNombre.value.trim(), d = prodDuracion.value, p = parseFloat(prodPrecio.value), kr = prodKeys.value.trim();
-        if (!n || !d || isNaN(p) || !kr) { showToast('Completá todos los campos', 'error'); return; }
-        const ka = kr.split(',').map(x => x.trim()).filter(x => x);
-        try {
-            const data = { nombre: n, duracion: d, precio: p, keys: ka, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
-            if (editProductoId) { await db.collection('productos').doc(editProductoId).update(data); showToast('Actualizado ✅'); }
-            else { data.createdAt = firebase.firestore.FieldValue.serverTimestamp(); await db.collection('productos').add(data); showToast('Agregado ✅'); }
-            productoModalOverlay.classList.remove('active'); editProductoId = null; cargarProductos(); cargarDashboard();
-        } catch (e) { showToast('Error: ' + e.message, 'error'); }
-    });
-
-    async function eliminarProducto(id) {
-        if (!confirm('¿Eliminar?')) return;
-        try { await db.collection('productos').doc(id).delete(); showToast('Eliminado ✅'); cargarProductos(); cargarDashboard(); }
-        catch (e) { showToast('Error: ' + e.message, 'error'); }
-    }
-
-    cargarProductosBtn.addEventListener('click', cargarProductos);
-</script>
-    <script>
-        async function cargarVentas() {
-            try {
-                ventasTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;">Cargando...</td></tr>';
-                const snap = await db.collection('ventas').orderBy('fecha', 'desc').limit(50).get();
-                if (snap.empty) { ventasTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text2);">Sin ventas</td></tr>'; return; }
-                ventasTableBody.innerHTML = '';
-                snap.forEach(d => {
-                    const v = d.data(), f = v.fecha ? v.fecha.toDate().toLocaleDateString('es-AR') : 'N/A';
-                    ventasTableBody.innerHTML += `<tr><td>${d.id.slice(-6)}</td><td>${v.producto||''}</td><td>${v.cliente||''}</td><td style="font-family:monospace;font-size:0.75rem;">${v.key||''}</td><td>${f}</td><td>$${(v.total||0).toLocaleString('es-AR')}</td></tr>`;
-                });
-            } catch (e) { ventasTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--danger);">Error</td></tr>'; }
-        }
-
-        async function cargarClientes() {
-            try {
-                clientesTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;">Cargando...</td></tr>';
-                const snap = await db.collection('clientes').orderBy('totalGastado', 'desc').get();
-                if (snap.empty) { clientesTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text2);">Sin clientes</td></tr>'; return; }
-                clientesTableBody.innerHTML = '';
-                snap.forEach(d => {
-                    const c = d.data();
-                    clientesTableBody.innerHTML += `<tr><td>${c.email||''}</td><td>${c.nombre||''}</td><td>${c.compras||0}</td><td>$${(c.totalGastado||0).toLocaleString('es-AR')}</td></tr>`;
-                });
-            } catch (e) { clientesTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--danger);">Error</td></tr>'; }
-        }
-
-        window.verKeys = verKeys;
-        window.editarProducto = editarProducto;
-        window.eliminarProducto = eliminarProducto;
-    </script>
 </body>
 </html>
