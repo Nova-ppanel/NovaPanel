@@ -427,12 +427,15 @@
     <div class="resplandor"></div>
 
     <!-- ========== LOGIN ========== -->
-    <div id="loginContainer">
-        <div class="logo-icon">⚡</div>
-        <div class="logo-login">NOVAPANEL</div>
-        <p class="subtitle">Panel de Administración</p>
-        <label>Email</label>
-        <input type="email" id="loginEmail" placeholder="admin@novapanel.com">
+ if (email === 'admin') {
+    try {
+        const resp = await fetch('/api/admin-email');
+        email = await resp.text();
+    } catch (e) {
+        loginError.textContent = 'Error de conexión.';
+        return;
+    }
+}
         <label>Contraseña</label>
         <input type="password" id="loginPassword" placeholder="••••••••">
         <button id="loginBtn">Iniciar Sesión</button>
