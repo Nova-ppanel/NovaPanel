@@ -11,158 +11,346 @@
 
     <style>
         :root {
-            --bg: #0a0a12;
-            --surface: #12121c;
-            --surface2: #1a1a2e;
-            --border: #2a2a3e;
-            --text: #e0e0f0;
-            --text2: #8888aa;
-            --accent: #8b5cf6;
-            --accent-hover: #7c3aed;
-            --danger: #ef4444;
-            --success: #22c55e;
-            --warning: #f59e0b;
-            --radius: 12px;
-            --shadow: 0 4px 32px rgba(139, 92, 246, 0.15);
-            --gradient: linear-gradient(135deg, #8b5cf6, #6d28d9);
+            --bg: #03030a;
+            --surface: rgba(8,8,22,0.8);
+            --surface2: rgba(12,12,30,0.9);
+            --border: rgba(139,92,246,0.25);
+            --text: #d0d0f0;
+            --text2: #8888bb;
+            --accent: #a855f7;
+            --accent2: #06b6d4;
+            --danger: #f43f5e;
+            --success: #10b981;
+            --radius: 10px;
+            --glow: 0 0 30px rgba(168,85,247,0.3);
         }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * { margin:0; padding:0; box-sizing:border-box; }
 
         body {
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            font-family: 'Segoe UI', system-ui, sans-serif;
             background: var(--bg);
             color: var(--text);
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-image: radial-gradient(ellipse at top, #1a1a3e 0%, #0a0a12 60%);
+            overflow-x: hidden;
         }
 
+        #particlesCanvas {
+            position: fixed; inset: 0; z-index: 0; pointer-events: none;
+        }
+
+        /* ===== LOGIN ===== */
         #loginContainer {
-            background: var(--surface);
-            padding: 3rem 2.5rem;
-            border-radius: 20px;
-            box-shadow: var(--shadow);
-            width: 100%;
-            max-width: 420px;
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+            background: rgba(8,8,20,0.95);
             border: 1px solid var(--border);
-            text-align: center;
+            padding: 3rem 2.5rem; border-radius: 16px;
+            width: 100%; max-width: 420px; text-align: center;
+            box-shadow: var(--glow), 0 0 60px rgba(6,182,212,0.1);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+        }
+        #loginContainer .logo-icon {
+            font-size: 3.5rem; margin-bottom: 0.5rem;
+            filter: drop-shadow(0 0 15px rgba(168,85,247,0.6));
+            animation: floatIcon 3s ease-in-out infinite;
+        }
+        @keyframes floatIcon {
+            0%,100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
         }
         #loginContainer .logo-login {
-            font-size: 2.5rem;
-            font-weight: 800;
-            margin-bottom: 0.5rem;
-            background: var(--gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            letter-spacing: -1px;
+            font-size: 2.2rem; font-weight: 900; margin-bottom: 0.3rem;
+            background: linear-gradient(135deg, #a855f7, #06b6d4);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text; letter-spacing: 3px; text-transform: uppercase;
         }
-        #loginContainer .logo-icon { font-size: 3rem; margin-bottom: 0.5rem; }
-        #loginContainer .subtitle { color: var(--text2); font-size: 0.9rem; margin-bottom: 2rem; }
-        #loginContainer label { display: block; font-size: 0.85rem; color: var(--text2); margin-bottom: 0.3rem; text-align: left; }
+        #loginContainer .subtitle {
+            color: var(--accent2); font-size: 0.8rem; margin-bottom: 2rem;
+            letter-spacing: 4px; text-transform: uppercase;
+        }
+        #loginContainer label {
+            display: block; font-size: 0.7rem; color: var(--accent2);
+            margin-bottom: 0.3rem; text-align: left; text-transform: uppercase; letter-spacing: 2px;
+        }
         #loginContainer input {
-            width: 100%; padding: 0.8rem 1rem; background: var(--surface2);
-            border: 1px solid var(--border); border-radius: var(--radius);
-            color: var(--text); margin-bottom: 1.2rem; font-size: 0.95rem; transition: border-color 0.2s;
+            width: 100%; padding: 0.85rem 1rem;
+            background: rgba(0,0,0,0.5); border: 1px solid var(--border);
+            border-radius: var(--radius); color: var(--text);
+            margin-bottom: 1.2rem; font-size: 0.95rem; transition: all 0.3s;
         }
-        #loginContainer input:focus { outline: none; border-color: var(--accent); }
+        #loginContainer input:focus {
+            outline: none; border-color: var(--accent);
+            box-shadow: 0 0 20px rgba(168,85,247,0.25);
+        }
         #loginContainer button {
-            width: 100%; padding: 0.85rem; background: var(--gradient);
+            width: 100%; padding: 0.9rem;
+            background: linear-gradient(135deg, #a855f7, #06b6d4);
             border: none; border-radius: var(--radius); color: #fff;
-            font-weight: 600; cursor: pointer; font-size: 1rem; transition: opacity 0.2s; margin-top: 0.5rem;
+            font-weight: 700; cursor: pointer; font-size: 1rem;
+            letter-spacing: 2px; transition: all 0.3s; margin-top: 0.5rem;
+            box-shadow: 0 4px 25px rgba(168,85,247,0.4);
+            text-transform: uppercase;
         }
-        #loginContainer button:hover { opacity: 0.9; }
-        .login-error { color: var(--danger); font-size: 0.85rem; margin-top: 0.8rem; text-align: center; }
+        #loginContainer button:hover {
+            transform: translateY(-2px); box-shadow: 0 6px 35px rgba(168,85,247,0.6);
+        }
+        .login-error {
+            color: var(--danger); font-size: 0.8rem; margin-top: 0.8rem;
+            text-align: center; min-height: 1.2rem;
+        }
 
-        #adminContainer { display: none; width: 100%; min-height: 100vh; }
+        /* ===== ADMIN PANEL ===== */
+        #adminContainer {
+            display: none; width: 100%; min-height: 100vh;
+            position: relative; z-index: 2;
+        }
         #adminContainer.active { display: flex; }
 
         #sidebar {
-            width: 250px; background: var(--surface); border-right: 1px solid var(--border);
-            padding: 1.5rem 1rem; display: flex; flex-direction: column; gap: 1.5rem; min-height: 100vh;
+            width: 270px;
+            background: rgba(5,5,18,0.9);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-right: 1px solid var(--border);
+            padding: 1.5rem 1rem;
+            display: flex; flex-direction: column; gap: 1.5rem;
+            min-height: 100vh;
+            box-shadow: 2px 0 40px rgba(168,85,247,0.1);
+            transition: all 0.3s;
         }
         #sidebar .logo {
-            font-size: 1.4rem; font-weight: 700; text-align: center;
-            background: var(--gradient); -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent; background-clip: text;
+            font-size: 1.2rem; font-weight: 900; text-align: center;
+            background: linear-gradient(135deg, #a855f7, #06b6d4);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text; letter-spacing: 3px; text-transform: uppercase;
         }
-        #sidebar nav { display: flex; flex-direction: column; gap: 0.3rem; }
+        #sidebar .logo-divider {
+            height: 1px; background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            margin: 0.5rem 0;
+        }
+        #sidebar nav { display: flex; flex-direction: column; gap: 0.2rem; }
         #sidebar nav a {
-            color: var(--text2); text-decoration: none; padding: 0.7rem 1rem;
-            border-radius: var(--radius); transition: all 0.2s; cursor: pointer; font-size: 0.9rem;
+            color: var(--text2); text-decoration: none;
+            padding: 0.75rem 1rem; border-radius: 8px;
+            transition: all 0.3s; cursor: pointer; font-size: 0.85rem;
+            border: 1px solid transparent;
+            display: flex; align-items: center; gap: 0.6rem;
         }
-        #sidebar nav a:hover, #sidebar nav a.active { background: var(--surface2); color: var(--text); }
+        #sidebar nav a .nav-icon { font-size: 1rem; width: 20px; text-align: center; }
+        #sidebar nav a:hover {
+            background: rgba(168,85,247,0.08);
+            border-color: rgba(139,92,246,0.3);
+            color: #fff; transform: translateX(4px);
+        }
+        #sidebar nav a.active {
+            background: rgba(168,85,247,0.12);
+            color: #fff; border-color: var(--accent);
+            box-shadow: 0 0 15px rgba(168,85,247,0.2);
+        }
         #logoutBtn {
-            margin-top: auto; background: transparent; border: 1px solid var(--border);
-            color: var(--text2); padding: 0.7rem; border-radius: var(--radius); cursor: pointer; transition: all 0.2s;
+            margin-top: auto;
+            background: transparent;
+            border: 1px solid rgba(244,63,94,0.3);
+            color: var(--text2); padding: 0.75rem;
+            border-radius: 8px; cursor: pointer;
+            transition: all 0.3s; font-size: 0.85rem;
+            display: flex; align-items: center; gap: 0.5rem; justify-content: center;
         }
-        #logoutBtn:hover { border-color: var(--danger); color: var(--danger); }
+        #logoutBtn:hover {
+            border-color: var(--danger); color: var(--danger);
+            box-shadow: 0 0 25px rgba(244,63,94,0.2);
+            background: rgba(244,63,94,0.05);
+        }
 
-        #mainContent { flex: 1; padding: 2rem; overflow-y: auto; }
-        .section { display: none; } .section.active { display: block; }
-        .section h2 { margin-bottom: 1.5rem; font-size: 1.4rem; font-weight: 600; }
+        #mainContent {
+            flex: 1; padding: 2rem;
+            overflow-y: auto; max-height: 100vh;
+            background: transparent;
+        }
+        .section { display: none; }
+        .section.active { display: block; animation: fadeSlide 0.4s ease; }
+        @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .section h2 {
+            margin-bottom: 1.5rem; font-size: 1.6rem; font-weight: 700;
+            letter-spacing: 1px;
+            background: linear-gradient(135deg, #fff, #a855f7);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: inline-block;
+        }
 
-        .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
-        .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; }
-        .card .label { font-size: 0.8rem; color: var(--text2); margin-bottom: 0.4rem; }
-        .card .value { font-size: 1.8rem; font-weight: 700; }
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.2rem; margin-bottom: 2rem;
+        }
+        .card {
+            background: var(--surface);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            border-radius: 12px; padding: 1.5rem;
+            transition: all 0.3s;
+            position: relative; overflow: hidden;
+        }
+        .card::before {
+            content: ''; position: absolute; top: 0; left: 0;
+            width: 100%; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), var(--accent2), transparent);
+        }
+        .card:hover {
+            border-color: var(--accent2);
+            box-shadow: 0 0 30px rgba(6,182,212,0.15);
+            transform: translateY(-3px);
+        }
+        .card .label {
+            font-size: 0.7rem; color: var(--text2);
+            text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.5rem;
+        }
+        .card .value {
+            font-size: 2.2rem; font-weight: 700;
+            background: linear-gradient(135deg, #a855f7, #06b6d4);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
 
-        .table-container { overflow-x: auto; background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); }
+        .table-container {
+            overflow-x: auto;
+            background: var(--surface);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 12px; border: 1px solid var(--border);
+        }
         table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 0.8rem 1rem; text-align: left; font-size: 0.85rem; border-bottom: 1px solid var(--border); }
-        th { color: var(--text2); font-weight: 600; background: var(--surface2); }
-        tr:hover td { background: var(--surface2); }
+        th, td {
+            padding: 0.9rem 1rem; text-align: left; font-size: 0.8rem;
+            border-bottom: 1px solid rgba(139,92,246,0.08);
+        }
+        th {
+            color: var(--accent2); font-weight: 600;
+            background: rgba(15,15,35,0.6);
+            text-transform: uppercase; letter-spacing: 1px; font-size: 0.7rem;
+        }
+        tr:hover td { background: rgba(168,85,247,0.04); }
+        tr:last-child td { border-bottom: none; }
 
-        .btn { padding: 0.5rem 1rem; border-radius: var(--radius); border: none; cursor: pointer; font-size: 0.85rem; font-weight: 500; transition: all 0.2s; }
-        .btn-primary { background: var(--accent); color: #fff; } .btn-primary:hover { background: var(--accent-hover); }
+        .btn {
+            padding: 0.5rem 1.1rem; border-radius: 8px; border: none;
+            cursor: pointer; font-size: 0.8rem; font-weight: 600;
+            transition: all 0.3s; letter-spacing: 0.5px;
+            display: inline-flex; align-items: center; gap: 0.3rem;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #a855f7, #06b6d4);
+            color: #fff; box-shadow: 0 2px 15px rgba(168,85,247,0.3);
+        }
+        .btn-primary:hover { box-shadow: 0 4px 25px rgba(168,85,247,0.5); transform: translateY(-2px); }
         .btn-danger { background: var(--danger); color: #fff; }
+        .btn-danger:hover { box-shadow: 0 0 20px rgba(244,63,94,0.4); }
         .btn-success { background: var(--success); color: #fff; }
-        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+        .btn-outline {
+            background: transparent; border: 1px solid var(--border); color: var(--text);
+        }
+        .btn-outline:hover {
+            border-color: var(--accent2); background: rgba(6,182,212,0.08);
+            box-shadow: 0 0 15px rgba(6,182,212,0.1);
+        }
+        .btn-sm { padding: 0.3rem 0.6rem; font-size: 0.7rem; }
 
-        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; align-items: center; justify-content: center; }
+        .modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.85); z-index: 100;
+            align-items: center; justify-content: center;
+            backdrop-filter: blur(4px);
+        }
         .modal-overlay.active { display: flex; }
-        .modal { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; width: 90%; max-width: 500px; }
-        .modal h3 { margin-bottom: 1rem; }
-        .modal input, .modal select { width: 100%; padding: 0.6rem; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); margin-bottom: 0.8rem; }
+        .modal {
+            background: rgba(10,10,28,0.98);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 16px; padding: 2rem;
+            width: 90%; max-width: 500px;
+            box-shadow: var(--glow), 0 0 40px rgba(6,182,212,0.1);
+            animation: modalIn 0.3s ease;
+        }
+        @keyframes modalIn { from { opacity:0; transform:scale(0.95); } to { opacity:1; transform:scale(1); } }
+        .modal h3 {
+            margin-bottom: 1.2rem; font-size: 1.2rem;
+            background: linear-gradient(135deg, #fff, #a855f7);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .modal input, .modal select {
+            width: 100%; padding: 0.7rem;
+            background: rgba(0,0,0,0.4); border: 1px solid var(--border);
+            border-radius: 8px; color: var(--text); margin-bottom: 0.8rem;
+            transition: all 0.3s; font-size: 0.9rem;
+        }
+        .modal input:focus, .modal select:focus {
+            outline: none; border-color: var(--accent);
+            box-shadow: 0 0 15px rgba(168,85,247,0.2);
+        }
         .modal-actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem; }
 
-        .toast { position: fixed; bottom: 2rem; right: 2rem; background: var(--surface); border: 1px solid var(--border); padding: 1rem 1.5rem; border-radius: var(--radius); z-index: 200; display: none; }
+        .toast {
+            position: fixed; bottom: 2rem; right: 2rem;
+            background: rgba(10,10,28,0.95); border: 1px solid var(--border);
+            padding: 1rem 1.5rem; border-radius: 10px;
+            z-index: 200; display: none; backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: var(--glow); font-size: 0.9rem;
+        }
         .toast.show { display: block; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         .filter-bar { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
-        .filter-chip { padding: 0.4rem 1rem; border-radius: 20px; border: 1px solid var(--border); background: transparent; color: var(--text2); cursor: pointer; font-size: 0.8rem; transition: all 0.2s; }
-        .filter-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+        .filter-chip {
+            padding: 0.4rem 1rem; border-radius: 20px;
+            border: 1px solid var(--border); background: transparent;
+            color: var(--text2); cursor: pointer; font-size: 0.75rem;
+            transition: all 0.3s;
+        }
+        .filter-chip:hover { border-color: var(--accent); color: #fff; }
+        .filter-chip.active {
+            background: linear-gradient(135deg, #a855f7, #06b6d4);
+            border-color: transparent; color: #fff;
+            box-shadow: 0 0 15px rgba(168,85,247,0.3);
+        }
+
+        #keysList { font-family: 'Consolas', 'Monaco', monospace; }
     </style>
 </head>
 <body>
 
+    <canvas id="particlesCanvas"></canvas>
+
     <div id="loginContainer">
         <div class="logo-icon">⚡</div>
         <div class="logo-login">NOVAPANEL</div>
-        <p class="subtitle">Panel de Administración</p>
-        <label>Email</label>
-        <input type="email" id="loginEmail" placeholder="admin@novapanel.com">
+        <p class="subtitle">Admin Access</p>
+        <label>Usuario</label>
+        <input type="email" id="loginEmail" placeholder="admin">
         <label>Contraseña</label>
         <input type="password" id="loginPassword" placeholder="••••••••">
-        <button id="loginBtn">Iniciar Sesión</button>
+        <button id="loginBtn">Acceder</button>
         <p class="login-error" id="loginError"></p>
     </div>
 
     <div id="adminContainer">
         <aside id="sidebar">
             <div class="logo">⚡ NOVAPANEL</div>
+            <div class="logo-divider"></div>
             <nav>
-                <a class="active" data-section="dashboard">📊 Inicio</a>
-                <a data-section="ventas">💰 Ventas</a>
-                <a data-section="clientes">👥 Clientes</a>
-                <a data-section="productos">📦 Productos</a>
-                <a data-section="proveedores">🏭 Proveedores</a>
-                <a data-section="reportes">📋 Reportes</a>
-                <a data-section="configuracion">⚙️ Configuración</a>
+                <a class="active" data-section="dashboard"><span class="nav-icon">📊</span> Dashboard</a>
+                <a data-section="ventas"><span class="nav-icon">💰</span> Ventas</a>
+                <a data-section="clientes"><span class="nav-icon">👥</span> Clientes</a>
+                <a data-section="productos"><span class="nav-icon">📦</span> Productos</a>
+                <a data-section="proveedores"><span class="nav-icon">🏭</span> Proveedores</a>
+                <a data-section="reportes"><span class="nav-icon">📋</span> Reportes</a>
+                <a data-section="configuracion"><span class="nav-icon">⚙️</span> Configuración</a>
             </nav>
             <button id="logoutBtn">🚪 Cerrar Sesión</button>
         </aside>
@@ -185,12 +373,12 @@
                 <div class="table-container"><table><thead><tr><th>Email</th><th>Nombre</th><th>Compras</th><th>Total Gastado</th></tr></thead><tbody id="clientesTableBody"></tbody></table></div>
             </div>
             <div class="section" id="productosSection">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
                     <h2>📦 Productos</h2>
-                    <div style="display:flex;gap:0.5rem;">
-                        <button class="btn btn-outline" id="cargarProductosBtn">🔄 Cargar Productos</button>
-                        <button class="btn btn-outline" id="verTodasKeysBtn">🔑 Ver Todas las Keys</button>
-                        <button class="btn btn-primary" id="agregarProductoBtn">+ Agregar Producto</button>
+                    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                        <button class="btn btn-outline" id="cargarProductosBtn">🔄 Cargar</button>
+                        <button class="btn btn-outline" id="verTodasKeysBtn">🔑 Ver Keys</button>
+                        <button class="btn btn-primary" id="agregarProductoBtn">+ Agregar</button>
                     </div>
                 </div>
                 <div class="filter-bar" id="filtroBar">
@@ -199,11 +387,11 @@
                     <button class="filter-chip" data-filtro="3dias">3 Días</button>
                     <button class="filter-chip" data-filtro="7dias">7 Días</button>
                 </div>
-                <div class="table-container"><table><thead><tr><th>Nombre</th><th>Duración</th><th>Precio</th><th>Stock</th><th>Keys Totales</th><th>Acciones</th></tr></thead><tbody id="productosTableBody"></tbody></table></div>
+                <div class="table-container"><table><thead><tr><th>Nombre</th><th>Duración</th><th>Precio</th><th>Stock</th><th>Keys</th><th>Acciones</th></tr></thead><tbody id="productosTableBody"></tbody></table></div>
             </div>
-            <div class="section" id="proveedoresSection"><h2>🏭 Proveedores</h2><p style="color:var(--text2)">Gestión de proveedores próximamente.</p></div>
-            <div class="section" id="reportesSection"><h2>📋 Reportes</h2><p style="color:var(--text2)">Reportes próximamente.</p></div>
-            <div class="section" id="configuracionSection"><h2>⚙️ Configuración</h2><p style="color:var(--text2)">Configuración próximamente.</p></div>
+            <div class="section" id="proveedoresSection"><h2>🏭 Proveedores</h2><p style="color:var(--text2)">Próximamente.</p></div>
+            <div class="section" id="reportesSection"><h2>📋 Reportes</h2><p style="color:var(--text2)">Próximamente.</p></div>
+            <div class="section" id="configuracionSection"><h2>⚙️ Configuración</h2><p style="color:var(--text2)">Próximamente.</p></div>
         </main>
     </div>
 
@@ -218,7 +406,7 @@
         </div>
     </div>
     <div class="modal-overlay" id="keysModalOverlay">
-        <div class="modal"><h3>🔑 Keys del Producto</h3><div id="keysList" style="max-height:300px;overflow-y:auto;font-size:0.8rem;background:var(--surface2);padding:1rem;border-radius:var(--radius);"></div><div class="modal-actions"><button class="btn btn-outline" id="closeKeysBtn">Cerrar</button></div></div>
+        <div class="modal"><h3>🔑 Keys</h3><div id="keysList" style="max-height:300px;overflow-y:auto;font-size:0.8rem;background:rgba(0,0,0,0.3);padding:1rem;border-radius:8px;"></div><div class="modal-actions"><button class="btn btn-outline" id="closeKeysBtn">Cerrar</button></div></div>
     </div>
     <div class="toast" id="toast"></div>
 <script>
@@ -234,6 +422,49 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
 
+    // ===== PARTÍCULAS =====
+    const canvas = document.getElementById('particlesCanvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [], mouseX = -1000, mouseY = -1000;
+    function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    resizeCanvas(); window.addEventListener('resize', resizeCanvas);
+    document.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
+
+    class Particle {
+        constructor() { this.reset(); }
+        reset() {
+            this.x = Math.random() * canvas.width;
+            this.y = Math.random() * canvas.height + canvas.height;
+            this.size = Math.random() * 2.5 + 0.5;
+            this.speedY = Math.random() * 0.6 + 0.2;
+            this.speedX = Math.random() * 0.3 - 0.15;
+            this.opacity = Math.random() * 0.6 + 0.2;
+            this.hue = Math.random() > 0.5 ? 168 : 270;
+        }
+        update() {
+            this.y -= this.speedY;
+            this.x += this.speedX + (mouseX - this.x) * 0.0001;
+            if (this.y < -10) { this.y = canvas.height + 10; this.x = Math.random() * canvas.width; }
+            if (this.x < -10) this.x = canvas.width + 10;
+            if (this.x > canvas.width + 10) this.x = -10;
+        }
+        draw() {
+            const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size * 3);
+            grad.addColorStop(0, `hsla(${this.hue}, 80%, 65%, ${this.opacity})`);
+            grad.addColorStop(1, `hsla(${this.hue}, 80%, 65%, 0)`);
+            ctx.beginPath(); ctx.arc(this.x, this.y, this.size * 3, 0, Math.PI*2);
+            ctx.fillStyle = grad; ctx.fill();
+        }
+    }
+    for (let i = 0; i < 100; i++) { const p = new Particle(); p.y = Math.random() * canvas.height; particles.push(p); }
+    function animateParticles() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => { p.update(); p.draw(); });
+        requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+    // ===== DOM =====
     const loginContainer = document.getElementById('loginContainer');
     const adminContainer = document.getElementById('adminContainer');
     const loginBtn = document.getElementById('loginBtn');
@@ -268,15 +499,17 @@
 
     let currentUser = null, productosCache = [], editProductoId = null, filtroDur = 'todas';
 
-    // ===== LOGIN (con "admin" desde Firestore) =====
+    // ===== LOGIN (admin secreto vía localStorage) =====
     loginBtn.addEventListener('click', async () => {
         let email = loginEmail.value.trim();
         const password = loginPassword.value.trim();
         loginError.textContent = '';
         if (!email || !password) { loginError.textContent = 'Completá todos los campos.'; return; }
-      if (email === 'admin') {
-    email = 'admin@admin.com';
-}
+        if (email === 'admin') {
+            const saved = localStorage.getItem('_a');
+            if (saved) { email = saved; }
+            else { loginError.textContent = 'Acceso denegado.'; return; }
+        }
         try {
             const userCred = await auth.signInWithEmailAndPassword(email, password);
             currentUser = userCred.user;
@@ -338,7 +571,7 @@
         if (!lista.length) { productosTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text2);">No hay productos</td></tr>'; return; }
         productosTableBody.innerHTML = lista.map(p => {
             const k = Array.isArray(p.keys) ? p.keys : (typeof p.keys === 'string' ? p.keys.split(',').map(x => x.trim()).filter(x => x) : []);
-            return `<tr><td>${p.nombre||''}</td><td>${formatearDuracion(p.duracion)}</td><td>$${(p.precio||0).toLocaleString('es-AR')}</td><td>${k.filter(x => !x.startsWith('USADA:')).length}</td><td>${k.length}</td><td><button class="btn btn-outline" onclick="verKeys('${p.id}')" style="padding:0.3rem 0.6rem;font-size:0.75rem;">🔑</button> <button class="btn btn-outline" onclick="editarProducto('${p.id}')" style="padding:0.3rem 0.6rem;font-size:0.75rem;">✏️</button> <button class="btn btn-danger" onclick="eliminarProducto('${p.id}')" style="padding:0.3rem 0.6rem;font-size:0.75rem;">🗑️</button></td></tr>`;
+            return `<tr><td>${p.nombre||''}</td><td>${formatearDuracion(p.duracion)}</td><td>$${(p.precio||0).toLocaleString('es-AR')}</td><td>${k.filter(x => !x.startsWith('USADA:')).length}</td><td>${k.length}</td><td><button class="btn btn-outline btn-sm" onclick="verKeys('${p.id}')">🔑</button> <button class="btn btn-outline btn-sm" onclick="editarProducto('${p.id}')">✏️</button> <button class="btn btn-danger btn-sm" onclick="eliminarProducto('${p.id}')">🗑️</button></td></tr>`;
         }).join('');
     }
 
