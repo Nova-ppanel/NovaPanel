@@ -142,11 +142,11 @@
         }
 
         try{
-            const snap=await db.collection('vendedores').where('nombre','==',usuario).get();
-            if(snap.empty){loginError.textContent='Usuario no encontrado.';return;}
-            const vend=snap.docs[0].data();
-            if(vend.password!==password){loginError.textContent='Contraseña incorrecta.';return;}
-            vendedorActual={id:snap.docs[0].id,...vend};
+            const emailVend=usuario+'@nova.com';
+            const userCred=await auth.signInWithEmailAndPassword(emailVend,password);
+            const snap=await db.collection('vendedores').where('userId','==',userCred.user.uid).get();
+            const vend=snap.empty?{saldo:0,nombre:usuario}:snap.docs[0].data();
+            vendedorActual={id:snap.empty?'':snap.docs[0].id,...vend,userId:userCred.user.uid};
             loginContainer.style.display='none';
             vendedorContainer.classList.add('active');
             vSaldo.textContent='$'+(vendedorActual.saldo||0).toLocaleString('es-AR');
@@ -178,7 +178,6 @@
     async function eliminarProducto(id){if(!confirm('¿Eliminar?'))return;try{await db.collection('productos').doc(id).delete();showToast('Eliminado ✅');cargarProductos();cargarDashboard();}catch(e){showToast('Error: '+e.message,'error');}}
     cargarProductosBtn.addEventListener('click',cargarProductos);
 
-    // ===== EXPORTAR =====
     exportarBtn.addEventListener('click',async()=>{
         try{
             const snap=await db.collection('productos').get();
@@ -195,7 +194,6 @@
         }catch(e){showToast('Error: '+e.message,'error');}
     });
 
-    // ===== IMPORTAR =====
     importarBtn.addEventListener('click',()=>{
         const input=document.createElement('input');
         input.type='file';
@@ -264,13 +262,16 @@ saveVendedorBtn.addEventListener('click',async()=>{
         return;
     }
     try{
+        const emailVend=nombre+'@nova.com';
+        const userCred=await auth.createUserWithEmailAndPassword(emailVend,pass);
         const data={
             nombre:nombre,
             password:pass,
             saldo:saldo,
+            userId:userCred.user.uid,
             createdAt:firebase.firestore.FieldValue.serverTimestamp()
         };
-        await db.collection('vendedores').add(data);
+        await db.collection('vendedores').doc(userCred.user.uid).set(data);
         showToast('Vendedor agregado');
         vendedorModalOverlay.classList.remove('active');
         cargarVendedores();
