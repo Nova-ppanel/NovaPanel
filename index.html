@@ -4,11 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NovaPanel - Admin</title>
-    
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-
     <style>
         :root {
             --bg: #0a0a12; --surface: #12121c; --surface2: #1a1a2e; --border: #2a2a3e;
@@ -69,7 +67,6 @@
     </style>
 </head>
 <body>
-
     <div id="loginContainer">
         <div class="logo-icon">⚡</div>
         <div class="logo-login">NOVAPANEL</div>
@@ -97,7 +94,15 @@
             <button id="logoutBtn">🚪 Cerrar Sesión</button>
         </aside>
         <main id="mainContent">
-            <div class="section active" id="dashboardSection"><h2>Dashboard</h2><div class="cards-grid" id="dashCards"><div class="card"><div class="label">Productos</div><div class="value" id="dashProductos">0</div></div><div class="card"><div class="label">Ventas Hoy</div><div class="value" id="dashVentasHoy">0</div></div><div class="card"><div class="label">Clientes</div><div class="value" id="dashClientes">0</div></div><div class="card"><div class="label">Ingresos</div><div class="value" id="dashIngresos">$0</div></div></div></div>
+            <div class="section active" id="dashboardSection">
+                <h2>Dashboard</h2>
+                <div class="cards-grid" id="dashCards">
+                    <div class="card"><div class="label">Productos</div><div class="value" id="dashProductos">0</div></div>
+                    <div class="card"><div class="label">Ventas Hoy</div><div class="value" id="dashVentasHoy">0</div></div>
+                    <div class="card"><div class="label">Clientes</div><div class="value" id="dashClientes">0</div></div>
+                    <div class="card"><div class="label">Ingresos</div><div class="value" id="dashIngresos">$0</div></div>
+                </div>
+            </div>
             <div class="section" id="ventasSection"><h2>💰 Ventas</h2><div class="table-container"><table><thead><tr><th>ID</th><th>Producto</th><th>Cliente</th><th>Key</th><th>Fecha</th><th>Total</th></tr></thead><tbody id="ventasTableBody"></tbody></table></div></div>
             <div class="section" id="clientesSection"><h2>👥 Clientes</h2><div class="table-container"><table><thead><tr><th>Email</th><th>Nombre</th><th>Compras</th><th>Total Gastado</th></tr></thead><tbody id="clientesTableBody"></tbody></table></div></div>
             <div class="section" id="productosSection">
@@ -127,6 +132,7 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
 
+    // ===== ELEMENTOS DOM =====
     const loginContainer = document.getElementById('loginContainer');
     const adminContainer = document.getElementById('adminContainer');
     const loginBtn = document.getElementById('loginBtn');
@@ -158,12 +164,13 @@
     const toast = document.getElementById('toast');
     const ventasTableBody = document.getElementById('ventasTableBody');
     const clientesTableBody = document.getElementById('clientesTableBody');
+
     let currentUser = null;
     let productosCache = [];
     let editProductoId = null;
     let filtroDur = 'todas';
 
-    // ===== LOGIN (con "admin" secreto vía localStorage) =====
+    // ===== LOGIN (admin secreto vía localStorage) =====
     loginBtn.addEventListener('click', async () => {
         let email = loginEmail.value.trim();
         const password = loginPassword.value.trim();
@@ -179,10 +186,7 @@
             currentUser = userCred.user;
             loginContainer.style.display = 'none';
             adminContainer.classList.add('active');
-            cargarDashboard();
-            cargarProductos();
-            cargarVentas();
-            cargarClientes();
+            cargarDashboard(); cargarProductos(); cargarVentas(); cargarClientes();
         } catch (e) { loginError.textContent = 'Error: ' + e.message; }
     });
 
@@ -220,8 +224,7 @@
         try {
             const prodSnap = await db.collection('productos').get();
             dashProductos.textContent = prodSnap.size;
-            const hoy = new Date();
-            hoy.setHours(0,0,0,0);
+            const hoy = new Date(); hoy.setHours(0,0,0,0);
             const ventasSnap = await db.collection('ventas').where('fecha', '>=', hoy).get();
             dashVentasHoy.textContent = ventasSnap.size;
             let totalIngresos = 0;
@@ -231,7 +234,8 @@
             dashClientes.textContent = clientesSnap.size;
         } catch (e) { console.error('Error cargando dashboard:', e); }
     }
-
+</script>
+<script>
     async function cargarProductos() {
         try {
             productosTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;">Cargando...</td></tr>';
@@ -239,9 +243,7 @@
             productosCache = [];
             snap.forEach(doc => { productosCache.push({ id: doc.id, ...doc.data() }); });
             renderProductos();
-        } catch (e) {
-            productosTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--danger);">Error al cargar productos</td></tr>';
-        }
+        } catch (e) { productosTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--danger);">Error al cargar productos</td></tr>'; }
     }
 
     function renderProductos() {
@@ -251,7 +253,19 @@
         productosTableBody.innerHTML = lista.map(p => {
             const keysArray = Array.isArray(p.keys) ? p.keys : (typeof p.keys === 'string' ? p.keys.split(',').map(k => k.trim()).filter(k => k) : []);
             const stock = keysArray.filter(k => !k.startsWith('USADA:')).length;
-            return `<tr><td>${p.nombre || 'Sin nombre'}</td><td>${formatearDuracion(p.duracion)}</td><td>$${(p.precio || 0).toLocaleString('es-AR')}</td><td>${stock}</td><td>${keysArray.length}</td><td><button class="btn btn-outline" onclick="verKeys('${p.id}')" style="padding:0.3rem 0.6rem;font-size:0.75rem;">🔑 Keys</button> <button class="btn btn-outline" onclick="editarProducto('${p.id}')" style="padding:0.3rem 0.6rem;font-size:0.75rem;">✏️</button> <button class="btn btn-danger" onclick="eliminarProducto('${p.id}')" style="padding:0.3rem 0.6rem;font-size:0.75rem;">🗑️</button></td></tr>`;
+            return `
+            <tr>
+                <td>${p.nombre || 'Sin nombre'}</td>
+                <td>${formatearDuracion(p.duracion)}</td>
+                <td>$${(p.precio || 0).toLocaleString('es-AR')}</td>
+                <td>${stock}</td>
+                <td>${keysArray.length}</td>
+                <td>
+                    <button class="btn btn-outline" onclick="verKeys('${p.id}')" style="padding:0.3rem 0.6rem;font-size:0.75rem;">🔑 Keys</button>
+                    <button class="btn btn-outline" onclick="editarProducto('${p.id}')" style="padding:0.3rem 0.6rem;font-size:0.75rem;">✏️</button>
+                    <button class="btn btn-danger" onclick="eliminarProducto('${p.id}')" style="padding:0.3rem 0.6rem;font-size:0.75rem;">🗑️</button>
+                </td>
+            </tr>`;
         }).join('');
     }
 
@@ -282,7 +296,7 @@
             if (keysArray.length === 0) { keysList.innerHTML = '<p style="color:var(--text2);">No hay keys cargadas.</p>'; return; }
             keysList.innerHTML = keysArray.map((k, i) => {
                 const usada = k.startsWith('USADA:');
-                return `<div style="padding:0.4rem 0; border-bottom:1px solid var(--border); color:${usada ? 'var(--danger)' : 'var(--success)'}; font-family:monospace;">${i+1}. ${k}</div>`;
+                return `<div style="padding:0.4rem 0;border-bottom:1px solid var(--border);color:${usada ? 'var(--danger)' : 'var(--success)'};font-family:monospace;">${i+1}. ${k}</div>`;
             }).join('');
         } catch (e) { keysList.innerHTML = '<p style="color:var(--danger);">Error al cargar keys.</p>'; }
     }
@@ -293,23 +307,23 @@
             keysModalOverlay.classList.add('active');
             let lista = productosCache;
             if (lista.length === 0) { keysList.innerHTML = '<p style="color:var(--text2);">No hay productos para mostrar.</p>'; return; }
-            let html = '';
-            let totalKeys = 0;
+            let html = ''; let totalKeys = 0;
             lista.forEach(p => {
                 const keysArray = Array.isArray(p.keys) ? p.keys : (typeof p.keys === 'string' ? p.keys.split(',').map(k => k.trim()).filter(k => k) : []);
                 totalKeys += keysArray.length;
-                html += `<div style="margin-bottom:1rem; padding-bottom:0.5rem; border-bottom:2px solid var(--accent);"><strong>📦 ${p.nombre || 'Sin nombre'}</strong> (${formatearDuracion(p.duracion)}) - ${keysArray.length} keys</div>`;
-                if (keysArray.length === 0) { html += '<p style="color:var(--text2); font-size:0.8rem; margin-left:1rem;">Sin keys.</p>'; }
-                else { keysArray.forEach((k, i) => { const usada = k.startsWith('USADA:'); html += `<div style="padding:0.3rem 0; margin-left:1rem; border-bottom:1px solid var(--border); color:${usada ? 'var(--danger)' : 'var(--success)'}; font-family:monospace; font-size:0.8rem;">${i+1}. ${k}</div>`; }); }
+                html += `<div style="margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:2px solid var(--accent);"><strong>📦 ${p.nombre || 'Sin nombre'}</strong> (${formatearDuracion(p.duracion)}) - ${keysArray.length} keys</div>`;
+                if (keysArray.length === 0) { html += '<p style="color:var(--text2);font-size:0.8rem;margin-left:1rem;">Sin keys.</p>'; }
+                else { keysArray.forEach((k, i) => { const usada = k.startsWith('USADA:'); html += `<div style="padding:0.3rem 0;margin-left:1rem;border-bottom:1px solid var(--border);color:${usada ? 'var(--danger)' : 'var(--success)'};font-family:monospace;font-size:0.8rem;">${i+1}. ${k}</div>`; }); }
             });
-            html += `<div style="margin-top:1rem; padding-top:0.5rem; border-top:2px solid var(--accent); text-align:center; font-weight:600;">📊 Total: ${totalKeys} keys en ${lista.length} productos</div>`;
+            html += `<div style="margin-top:1rem;padding-top:0.5rem;border-top:2px solid var(--accent);text-align:center;font-weight:600;">📊 Total: ${totalKeys} keys en ${lista.length} productos</div>`;
             keysList.innerHTML = html;
         } catch (e) { keysList.innerHTML = '<p style="color:var(--danger);">Error al cargar las keys.</p>'; }
     });
 
     closeKeysBtn.addEventListener('click', () => { keysModalOverlay.classList.remove('active'); });
     keysModalOverlay.addEventListener('click', function(e) { if (e.target === keysModalOverlay) keysModalOverlay.classList.remove('active'); });
-
+</script>
+<script>
     agregarProductoBtn.addEventListener('click', () => {
         editProductoId = null;
         productoModalTitle.textContent = 'Agregar Producto';
@@ -366,34 +380,49 @@
 
     cargarProductosBtn.addEventListener('click', cargarProductos);
 </script>
+<script>
+    async function cargarVentas() {
+        try {
+            ventasTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;">Cargando...</td></tr>';
+            const snap = await db.collection('ventas').orderBy('fecha', 'desc').limit(50).get();
+            if (snap.empty) { ventasTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text2);">No hay ventas</td></tr>'; return; }
+            ventasTableBody.innerHTML = '';
+            snap.forEach(doc => {
+                const v = doc.data();
+                const fecha = v.fecha ? v.fecha.toDate().toLocaleDateString('es-AR') : 'N/A';
+                ventasTableBody.innerHTML += `
+                <tr>
+                    <td>${doc.id.slice(-6)}</td>
+                    <td>${v.producto || 'N/A'}</td>
+                    <td>${v.cliente || 'N/A'}</td>
+                    <td style="font-family:monospace;font-size:0.75rem;">${v.key || 'N/A'}</td>
+                    <td>${fecha}</td>
+                    <td>$${(v.total || 0).toLocaleString('es-AR')}</td>
+                </tr>`;
+            });
+        } catch (e) { ventasTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--danger);">Error al cargar ventas</td></tr>'; }
+    }
+
+    async function cargarClientes() {
+        try {
+            clientesTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;">Cargando...</td></tr>';
+            const snap = await db.collection('clientes').orderBy('totalGastado', 'desc').get();
+            if (snap.empty) { clientesTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text2);">No hay clientes</td></tr>'; return; }
+            clientesTableBody.innerHTML = '';
+            snap.forEach(doc => {
+                const c = doc.data();
+                clientesTableBody.innerHTML += `
+                <tr>
+                    <td>${c.email || 'N/A'}</td>
+                    <td>${c.nombre || 'N/A'}</td>
+                    <td>${c.compras || 0}</td>
+                    <td>$${(c.totalGastado || 0).toLocaleString('es-AR')}</td>
+                </tr>`;
+            });
+        } catch (e) { clientesTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--danger);">Error al cargar clientes</td></tr>'; }
+    }
+</script>
     <script>
-        async function cargarVentas() {
-            try {
-                ventasTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;">Cargando...</td></tr>';
-                const snap = await db.collection('ventas').orderBy('fecha', 'desc').limit(50).get();
-                if (snap.empty) { ventasTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text2);">No hay ventas</td></tr>'; return; }
-                ventasTableBody.innerHTML = '';
-                snap.forEach(doc => {
-                    const v = doc.data();
-                    const fecha = v.fecha ? v.fecha.toDate().toLocaleDateString('es-AR') : 'N/A';
-                    ventasTableBody.innerHTML += `<tr><td>${doc.id.slice(-6)}</td><td>${v.producto || 'N/A'}</td><td>${v.cliente || 'N/A'}</td><td style="font-family:monospace;font-size:0.75rem;">${v.key || 'N/A'}</td><td>${fecha}</td><td>$${(v.total || 0).toLocaleString('es-AR')}</td></tr>`;
-                });
-            } catch (e) { ventasTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--danger);">Error al cargar ventas</td></tr>'; }
-        }
-
-        async function cargarClientes() {
-            try {
-                clientesTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;">Cargando...</td></tr>';
-                const snap = await db.collection('clientes').orderBy('totalGastado', 'desc').get();
-                if (snap.empty) { clientesTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text2);">No hay clientes</td></tr>'; return; }
-                clientesTableBody.innerHTML = '';
-                snap.forEach(doc => {
-                    const c = doc.data();
-                    clientesTableBody.innerHTML += `<tr><td>${c.email || 'N/A'}</td><td>${c.nombre || 'N/A'}</td><td>${c.compras || 0}</td><td>$${(c.totalGastado || 0).toLocaleString('es-AR')}</td></tr>`;
-                });
-            } catch (e) { clientesTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--danger);">Error al cargar clientes</td></tr>'; }
-        }
-
         window.verKeys = verKeys;
         window.editarProducto = editarProducto;
         window.eliminarProducto = eliminarProducto;
