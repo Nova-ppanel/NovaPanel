@@ -93,14 +93,13 @@
     <div id="loginContainer">
         <div class="logo-icon">⚡</div>
         <div class="logo-login">NOVAPANEL</div>
-        <p class="subtitle">Panel de Administración</p>
-        <label>Email</label>
-        <input type="email" id="loginEmail" placeholder="admin@novapanel.com">
+        <p class="subtitle">Acceso al Sistema</p>
+        <label>Usuario</label>
+        <input type="text" id="loginEmail" placeholder="Usuario">
         <label>Contraseña</label>
         <input type="password" id="loginPassword" placeholder="••••••••">
-        <button id="loginBtn">Iniciar Sesión</button>
+        <button id="loginBtn">Acceder</button>
         <p class="login-error" id="loginError"></p>
-        <p style="margin-top:1rem;"><button id="activarBtn" style="background:none;border:none;color:var(--text2);font-size:0.7rem;cursor:pointer;text-decoration:underline;">🔑 Activar Admin</button></p>
     </div>
 
     <div id="adminContainer">
@@ -127,7 +126,8 @@
 
     <div class="modal-overlay" id="productoModalOverlay"><div class="modal"><h3 id="productoModalTitle">Agregar Producto</h3><input type="text" id="prodNombre" placeholder="Nombre"><select id="prodDuracion"><option value="1dia">1 Día</option><option value="3dias">3 Días</option><option value="7dias">7 Días</option></select><input type="number" id="prodPrecio" placeholder="Precio"><input type="text" id="prodKeys" placeholder="Keys (separadas por coma)"><div class="modal-actions"><button class="btn btn-outline" id="cancelProductoBtn">Cancelar</button><button class="btn btn-primary" id="saveProductoBtn">Guardar</button></div></div></div>
     <div class="modal-overlay" id="keysModalOverlay"><div class="modal"><h3>🔑 Keys</h3><div id="keysList" style="max-height:300px;overflow-y:auto;font-size:0.8rem;background:rgba(0,0,0,0.3);padding:1rem;border-radius:8px;"></div><div class="modal-actions"><button class="btn btn-outline" id="closeKeysBtn">Cerrar</button></div></div></div>
-    <div class="modal-overlay" id="vendedorModalOverlay"><div class="modal"><h3 id="vendedorModalTitle">Agregar Vendedor</h3><input type="text" id="vendNombre" placeholder="Nombre de usuario"><input type="password" id="vendPassword" placeholder="Contraseña"><input type="number" id="vendSaldo" placeholder="Saldo inicial"><div class="modal-actions"><button class="btn btn-outline" id="cance
+    <div class="modal-overlay" id="vendedorModalOverlay"><div class="modal"><h3 id="vendedorModalTitle">Agregar Vendedor</h3><input type="text" id="vendNombre" placeholder="Nombre de usuario"><input type="password" id="vendPassword" placeholder="Contraseña"><input type="number" id="vendSaldo" placeholder="Saldo inicial"><div class="modal-actions"><button class="btn btn-outline" id="cancelVendedorBtn">Cancelar</button><button class="btn btn-primary" id="saveVendedorBtn">Guardar</button></div></div></div>
+    <div class="toast" id="toast"></div>
 <script>
     const firebaseConfig = {
         apiKey: "AIzaSyBsYxEHoS9ta6efEYfAKKOa82r_g4LEbmg",
@@ -158,11 +158,6 @@
     const loginContainer=document.getElementById('loginContainer'),adminContainer=document.getElementById('adminContainer'),vendedorContainer=document.getElementById('vendedorContainer'),loginBtn=document.getElementById('loginBtn'),loginEmail=document.getElementById('loginEmail'),loginPassword=document.getElementById('loginPassword'),loginError=document.getElementById('loginError'),logoutBtn=document.getElementById('logoutBtn'),vendedorLogoutBtn=document.getElementById('vendedorLogoutBtn'),navLinks=document.querySelectorAll('#sidebar nav a'),sections=document.querySelectorAll('.section'),dashProductos=document.getElementById('dashProductos'),dashVentasHoy=document.getElementById('dashVentasHoy'),dashClientes=document.getElementById('dashClientes'),dashIngresos=document.getElementById('dashIngresos'),cargarProductosBtn=document.getElementById('cargarProductosBtn'),verTodasKeysBtn=document.getElementById('verTodasKeysBtn'),agregarProductoBtn=document.getElementById('agregarProductoBtn'),productosTableBody=document.getElementById('productosTableBody'),productoModalOverlay=document.getElementById('productoModalOverlay'),productoModalTitle=document.getElementById('productoModalTitle'),prodNombre=document.getElementById('prodNombre'),prodDuracion=document.getElementById('prodDuracion'),prodPrecio=document.getElementById('prodPrecio'),prodKeys=document.getElementById('prodKeys'),cancelProductoBtn=document.getElementById('cancelProductoBtn'),saveProductoBtn=document.getElementById('saveProductoBtn'),keysModalOverlay=document.getElementById('keysModalOverlay'),keysList=document.getElementById('keysList'),closeKeysBtn=document.getElementById('closeKeysBtn'),toast=document.getElementById('toast'),ventasTableBody=document.getElementById('ventasTableBody'),clientesTableBody=document.getElementById('clientesTableBody'),sidebarToggle=document.getElementById('sidebarToggle'),sidebar=document.getElementById('sidebar'),agregarVendedorBtn=document.getElementById('agregarVendedorBtn'),vendedorModalOverlay=document.getElementById('vendedorModalOverlay'),vendedorModalTitle=document.getElementById('vendedorModalTitle'),vendNombre=document.getElementById('vendNombre'),vendPassword=document.getElementById('vendPassword'),vendSaldo=document.getElementById('vendSaldo'),cancelVendedorBtn=document.getElementById('cancelVendedorBtn'),saveVendedorBtn=document.getElementById('saveVendedorBtn'),vendedoresTableBody=document.getElementById('vendedoresTableBody'),vSaldo=document.getElementById('vSaldo'),vVentas=document.getElementById('vVentas'),vVentasBody=document.getElementById('vVentasBody');
     let currentUser=null,productosCache=[],editProductoId=null,filtroDur='todas',vendedorActual=null;
 
-    document.getElementById('activarBtn').addEventListener('click',function(){
-        localStorage.setItem('_k','admin');
-        alert('Admin activado. Ahora pone admin y tu contraseña real.');
-    });
-
     sidebarToggle.addEventListener('click',()=>{sidebar.classList.toggle('closed');sidebarToggle.textContent=sidebar.classList.contains('closed')?'☰':'✕';});
     navLinks.forEach(link=>{link.addEventListener('click',()=>{if(window.innerWidth<=768){sidebar.classList.add('closed');sidebarToggle.textContent='☰';}});});
 
@@ -173,10 +168,7 @@
         if(!usuario||!password){loginError.textContent='Completá todos los campos.';return;}
 
         if(usuario==='admin'){
-            let email;
-            const saved=localStorage.getItem('_k');
-            if(saved){email=saved+'@admin.com';}
-            else{loginError.textContent='Tocá "Activar Admin" abajo primero.';return;}
+            let email='ad'+'min'+'@'+'ad'+'min'+'.'+'com';
             try{const userCred=await auth.signInWithEmailAndPassword(email,password);currentUser=userCred.user;loginContainer.style.display='none';adminContainer.classList.add('active');cargarDashboard();cargarProductos();cargarVentas();cargarClientes();cargarVendedores();}catch(e){loginError.textContent='Error: '+e.message;}
             return;
         }
