@@ -101,7 +101,6 @@
     </main></div>
     <div id="vendedorContainer"><button id="vendedorLogoutBtn">🚪 Salir</button><h2>Panel de Vendedor</h2><div class="cards-grid" style="display:flex;gap:1rem;margin-bottom:2rem;"><div class="card"><div class="label">Mi Saldo</div><div class="value" id="vSaldo">$0</div></div><div class="card"><div class="label">Mis Ventas</div><div class="value" id="vVentas">0</div></div></div><div style="display:flex;gap:0.5rem;margin-bottom:1rem;"><button class="btn btn-primary" id="vRetirarBtn">💰 Retirar</button><button class="btn btn-outline" id="vRecargarBtn">➕ Recargar</button></div><div class="table-container"><table><thead><tr><th>ID</th><th>Producto</th><th>Key</th><th>Fecha</th><th>Total</th></tr></thead><tbody id="vVentasBody"></tbody></table></div></div>
     <div class="modal-overlay" id="productoModalOverlay"><div class="modal"><h3 id="productoModalTitle">Agregar Producto</h3><input type="text" id="prodNombre" placeholder="Nombre"><select id="prodDuracion"><option value="1dia">1 Día</option><option value="3dias">3 Días</option><option value="7dias">7 Días</option></select><input type="number" id="prodPrecio" placeholder="Precio"><input type="text" id="prodKeys" placeholder="Keys (separadas por coma)"><div class="modal-actions"><button class="btn btn-outline" id="cancelProductoBtn">Cancelar</button><button class="btn btn-primary" id
-
 <script>
     const firebaseConfig = {
         apiKey: "AIzaSyBsYxEHoS9ta6efEYfAKKOa82r_g4LEbmg",
@@ -244,7 +243,6 @@
     importarBtn.addEventListener('click',()=>{var input=document.createElement('input');input.type='file';input.accept='.json';input.onchange=async function(e){try{var file=e.target.files[0];var text=await file.text();var datos=JSON.parse(text);for(var item of datos){var id=item.id;delete item.id;if(id){await db.collection('productos').doc(id).set(item);}else{await db.collection('productos').add(item);}}showToast('Importado');cargarProductos();cargarDashboard();}catch(e){showToast('Error: '+e.message,'error');}};input.click();});
     async function cargarVentas(){try{ventasTableBody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2rem;">Cargando...</td></tr>';var snap=await db.collection('ventas').orderBy('fecha','desc').limit(50).get();if(snap.empty){ventasTableBody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text2);">Sin ventas</td></tr>';return;}ventasTableBody.innerHTML='';snap.forEach(d=>{var v=d.data(),f=v.fecha?v.fecha.toDate().toLocaleDateString('es-AR'):'N/A';ventasTableBody.innerHTML+='<tr><td>'+d.id.slice(-6)+'</td><td>'+(v.producto||'')+'</td><td>'+(v.cliente||'')+'</td><td>'+(v.vendedor||'')+'</td><td style="font-family:monospace;font-size:0.75rem;">'+(v.key||'')+'</td><td>'+f+'</td><td>$'+(v.total||0).toLocaleString('es-AR')+'</td></tr>';});}catch(e){ventasTableBody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--danger);">Error</td></tr>';}}
     async function cargarClientes(){try{clientesTableBody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:2rem;">Cargando...</td></tr>';var snap=await db.collection('clientes').orderBy('totalGastado','desc').get();if(snap.empty){clientesTableBody.innerHTML='<tr><td colspan="4" style="text-align:center;p
-
 async function cargarVendedores(){
     try {
         vendedoresTableBody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:2rem;">Cargando...</td></tr>';
@@ -439,7 +437,6 @@ savePPBtn.addEventListener('click',async()=>{
         showToast('PayPal guardado');
     } catch(e) { showToast('Error: '+e.message,'error'); }
 });
-
         window.verKeys = verKeys;
         window.editarProducto = editarProducto;
         window.eliminarProducto = eliminarProducto;
