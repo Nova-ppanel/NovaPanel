@@ -96,6 +96,7 @@
     <div class="modal-overlay" id="keysModalOverlay"><div class="modal"><h3>🔑 Keys</h3><div id="keysList" style="max-height:300px;overflow-y:auto;font-size:0.8rem;background:rgba(0,0,0,0.3);padding:1rem;border-radius:8px;"></div><div class="modal-actions"><button class="btn btn-outline" id="closeKeysBtn">Cerrar</button></div></div></div>
     <div class="modal-overlay" id="vendedorModalOverlay"><div class="modal"><h3 id="vendedorModalTitle">Agregar Vendedor</h3><input type="text" id="vendNombre" placeholder="Nombre de usuario"><input type="password" id="vendPassword" placeholder="Contraseña"><input type="number" id="vendSaldo" placeholder="Saldo inicial"><div class="modal-actions"><button class="btn btn-outline" id="cancelVendedorBtn">Cancelar</button><button class="btn btn-primary" id="saveVendedorBtn">Guardar</button></div></div></div>
     <div class="toast" id="toast"></div>
+
 <script>
     const firebaseConfig = {
         apiKey: "AIzaSyBsYxEHoS9ta6efEYfAKKOa82r_g4LEbmg",
@@ -142,11 +143,10 @@
         }
 
         try{
-            const email=usuario+'@nova.com';
-            const userCred=await auth.signInWithEmailAndPassword(email,password);
-            const snap=await db.collection('vendedores').where('userId','==',userCred.user.uid).get();
-            if(snap.empty){loginError.textContent='Vendedor no encontrado.';return;}
+            const snap=await db.collection('vendedores').where('nombre','==',usuario).get();
+            if(snap.empty){loginError.textContent='Usuario no encontrado.';return;}
             const vend=snap.docs[0].data();
+            if(vend.password!==password){loginError.textContent='Contraseña incorrecta.';return;}
             vendedorActual={id:snap.docs[0].id,...vend};
             loginContainer.style.display='none';
             vendedorContainer.classList.add('active');
@@ -225,17 +225,13 @@ saveVendedorBtn.addEventListener('click',async()=>{
         return;
     }
     try{
-        const email=nombre+'@nova.com';
-        const userCred=await auth.createUserWithEmailAndPassword(email,pass);
         const data={
             nombre:nombre,
-            email:email,
             password:pass,
             saldo:saldo,
-            userId:userCred.user.uid,
             createdAt:firebase.firestore.FieldValue.serverTimestamp()
         };
-        await db.collection('vendedores').doc(userCred.user.uid).set(data);
+        await db.collection('vendedores').add(data);
         showToast('Vendedor agregado');
         vendedorModalOverlay.classList.remove('active');
         cargarVendedores();
