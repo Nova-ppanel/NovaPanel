@@ -6,9 +6,12 @@
     <title>NovaPanel - Admin</title>
     
     <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js">
+    </script>
 
     <style>
         :root {
@@ -515,6 +518,7 @@
 
     <!-- TOAST -->
     <div class="toast" id="toast"></div>
+
     <script>
         // ===== FIREBASE CONFIG =====
         const firebaseConfig = {
@@ -531,6 +535,7 @@
         const db = firebase.firestore();
 
         // ===== ELEMENTOS DOM =====
+        // Login
         const loginContainer = document.getElementById('loginContainer');
         const adminContainer = document.getElementById('adminContainer');
         const loginBtn = document.getElementById('loginBtn');
@@ -538,12 +543,18 @@
         const loginPassword = document.getElementById('loginPassword');
         const loginError = document.getElementById('loginError');
         const logoutBtn = document.getElementById('logoutBtn');
+
+        // Sidebar
         const navLinks = document.querySelectorAll('#sidebar nav a');
         const sections = document.querySelectorAll('.section');
+
+        // Dashboard
         const dashProductos = document.getElementById('dashProductos');
         const dashVentasHoy = document.getElementById('dashVentasHoy');
         const dashClientes = document.getElementById('dashClientes');
         const dashIngresos = document.getElementById('dashIngresos');
+
+        // Productos
         const cargarProductosBtn = document.getElementById('cargarProductosBtn');
         const verTodasKeysBtn = document.getElementById('verTodasKeysBtn');
         const agregarProductoBtn = document.getElementById('agregarProductoBtn');
@@ -560,6 +571,8 @@
         const keysList = document.getElementById('keysList');
         const closeKeysBtn = document.getElementById('closeKeysBtn');
         const toast = document.getElementById('toast');
+
+        // Ventas
         const ventasTableBody = document.getElementById('ventasTableBody');
         const clientesTableBody = document.getElementById('clientesTableBody');
 
@@ -568,7 +581,7 @@
         let editProductoId = null;
         let filtroDur = 'todas';
 
-        // ===== AUTH (con email oculto en Firestore) =====
+        // ===== AUTH (con "admin" y email oculto en Firestore) =====
         loginBtn.addEventListener('click', async () => {
             let email = loginEmail.value.trim();
             const password = loginPassword.value.trim();
@@ -642,14 +655,25 @@
             try {
                 const prodSnap = await db.collection('productos').get();
                 dashProductos.textContent = prodSnap.size;
-                const hoy = new Date(); hoy.setHours(0,0,0,0);
-                const ventasSnap = await db.collection('ventas').where('fecha', '>=', hoy).get();
+                
+                const hoy = new Date();
+                hoy.setHours(0,0,0,0);
+                const ventasSnap = await db.collection('ventas')
+                    .where('fecha', '>=', hoy)
+                    .get();
                 dashVentasHoy.textContent = ventasSnap.size;
-                let total = 0; ventasSnap.forEach(d => { total += d.data().total || 0; });
-                dashIngresos.textContent = '$' + total.toLocaleString('es-AR');
-                const cliSnap = await db.collection('clientes').get();
-                dashClientes.textContent = cliSnap.size;
-            } catch (e) { console.error(e); }
+                
+                let totalIngresos = 0;
+                ventasSnap.forEach(doc => {
+                    totalIngresos += doc.data().total || 0;
+                });
+                dashIngresos.textContent = '$' + totalIngresos.toLocaleString('es-AR');
+
+                const clientesSnap = await db.collection('clientes').get();
+                dashClientes.textContent = clientesSnap.size;
+            } catch (e) {
+                console.error('Error cargando dashboard:', e);
+            }
         }
 
         // ===== CARGAR PRODUCTOS =====
@@ -658,111 +682,249 @@
                 productosTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:2rem;">Cargando...</td></tr>';
                 const snap = await db.collection('productos').get();
                 productosCache = [];
-                snap.forEach(doc => { productosCache.push({ id: doc.id, ...doc.data() }); });
+                snap.forEach(doc => {
+                    productosCache.push({ id: doc.id, ...doc.data() });
+                });
                 renderProductos();
             } catch (e) {
+                console.error('Error cargando productos:', e);
                 productosTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:2rem; color:var(--danger);">Error al cargar productos</td></tr>';
             }
         }
 
         function renderProductos() {
-            let lista = filtroDur !== 'todas' ? productosCache.filter(p => p.duracion === filtroDur) : productosCache;
+            let lista = productosCache;
+            if (filtroDur !== 'todas') {
+                lista = productosCache.filter(p => p.duracion === filtroDur);
+            }
+            
             if (lista.length === 0) {
                 productosTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:2rem; color:var(--text2);">No hay productos</td></tr>';
                 return;
             }
+            
             productosTableBody.innerHTML = lista.map(p => {
-                const k = Array.isArray(p.keys) ? p.keys : (typeof p.keys === 'string' ? p.keys.split(',').map(x => x.trim()).filter(x => x) : []);
-                return `<tr><td>${p.nombre||'Sin nombre'}</td><td>${formatearDuracion(p.duracion)}</td><td>$${(p.precio||0).toLocaleString('es-AR')}</td><td>${k.filter(x => !x.startsWith('USADA:')).length}</td><td>${k.length}</td><td><button class="btn btn-outline" onclick="verKeys('${p.id}')" style="padding:0.3rem 0.6rem; font-size:0.75rem;">🔑 Keys</button> <button class="btn btn-outline" onclick="editarProducto('${p.id}')" style="padding:0.3rem 0.6rem; font-size:0.75rem;">✏️</button> <button class="btn btn-danger" onclick="eliminarProducto('${p.id}')" style="padding:0.3rem 0.6rem; font-size:0.75rem;">🗑️</button></td></tr>`;
+                const keysArray = Array.isArray(p.keys) ? p.keys : 
+                    (typeof p.keys === 'string' ? p.keys.split(',').map(k => k.trim()).filter(k => k) : []);
+                const stock = keysArray.filter(k => !k.startsWith('USADA:')).length;
+                return `
+                <tr>
+                    <td>${p.nombre || 'Sin nombre'}</td>
+                    <td>${formatearDuracion(p.duracion)}</td>
+                    <td>$${(p.precio || 0).toLocaleString('es-AR')}</td>
+                    <td>${stock}</td>
+                    <td>${keysArray.length}</td>
+                    <td>
+                        <button class="btn btn-outline" onclick="verKeys('${p.id}')" style="padding:0.3rem 0.6rem; font-size:0.75rem;">🔑 Keys</button>
+                        <button class="btn btn-outline" onclick="editarProducto('${p.id}')" style="padding:0.3rem 0.6rem; font-size:0.75rem;">✏️</button>
+                        <button class="btn btn-danger" onclick="eliminarProducto('${p.id}')" style="padding:0.3rem 0.6rem; font-size:0.75rem;">🗑️</button>
+                    </td>
+                </tr>`;
             }).join('');
         }
 
-        function formatearDuracion(d) { return { '1dia':'1 Día', '3dias':'3 Días', '7dias':'7 Días' }[d] || d || 'N/A'; }
+        function formatearDuracion(dur) {
+            const map = { '1dia': '1 Día', '3dias': '3 Días', '7dias': '7 Días' };
+            return map[dur] || dur || 'N/A';
+        }
 
+        // ===== FILTROS DE DURACIÓN =====
         document.querySelectorAll('#filtroBar .filter-chip').forEach(function(c) {
             c.addEventListener('click', function() {
-                document.querySelectorAll('#filtroBar .filter-chip').forEach(function(x) { x.classList.remove('active'); });
+                document.querySelectorAll('#filtroBar .filter-chip').forEach(function(x) {
+                    x.classList.remove('active');
+                });
                 this.classList.add('active');
-                filtroDur = this.getAttribute('data-filtro') || 'todas';
+                let f = this.getAttribute('data-filtro');
+                if (f) {
+                    filtroDur = f;
+                } else {
+                    filtroDur = 'todas';
+                }
                 renderProductos();
             });
         });
 
         // ===== VER KEYS =====
-        async function verKeys(pid) {
+        async function verKeys(productoId) {
             try {
-                keysList.innerHTML = 'Cargando keys...'; keysModalOverlay.classList.add('active');
-                const doc = await db.collection('productos').doc(pid).get();
-                if (!doc.exists) { keysList.innerHTML = '<p style="color:var(--danger);">Producto no encontrado.</p>'; return; }
-                const k = Array.isArray(doc.data().keys) ? doc.data().keys : (typeof doc.data().keys === 'string' ? doc.data().keys.split(',').map(x => x.trim()).filter(x => x) : []);
-                if (!k.length) { keysList.innerHTML = '<p style="color:var(--text2);">No hay keys cargadas.</p>'; return; }
-                keysList.innerHTML = k.map((x, i) => `<div style="padding:0.4rem 0;border-bottom:1px solid var(--border);color:${x.startsWith('USADA:')?'var(--danger)':'var(--success)'};font-family:monospace;">${i+1}. ${x}</div>`).join('');
-            } catch (e) { keysList.innerHTML = '<p style="color:var(--danger);">Error al cargar keys.</p>'; }
+                keysList.innerHTML = 'Cargando keys...';
+                keysModalOverlay.classList.add('active');
+                
+                const doc = await db.collection('productos').doc(productoId).get();
+                if (!doc.exists) {
+                    keysList.innerHTML = '<p style="color:var(--danger);">Producto no encontrado.</p>';
+                    return;
+                }
+                
+                const data = doc.data();
+                const keysArray = Array.isArray(data.keys) ? data.keys : 
+                    (typeof data.keys === 'string' ? data.keys.split(',').map(k => k.trim()).filter(k => k) : []);
+                
+                if (keysArray.length === 0) {
+                    keysList.innerHTML = '<p style="color:var(--text2);">No hay keys cargadas.</p>';
+                    return;
+                }
+                
+                keysList.innerHTML = keysArray.map((k, i) => {
+                    const usada = k.startsWith('USADA:');
+                    return `<div style="padding:0.4rem 0; border-bottom:1px solid var(--border); color:${usada ? 'var(--danger)' : 'var(--success)'}; font-family:monospace;">
+                        ${i+1}. ${k}
+                    </div>`;
+                }).join('');
+            } catch (e) {
+                console.error('Error cargando keys:', e);
+                keysList.innerHTML = '<p style="color:var(--danger);">Error al cargar keys.</p>';
+            }
         }
 
-        // ===== VER TODAS LAS KEYS (ARREGLADO) =====
+        // ===== VER TODAS LAS KEYS (ARREGLADO - MUESTRA TODOS LOS PRODUCTOS) =====
         verTodasKeysBtn.addEventListener('click', async function() {
             try {
                 keysList.innerHTML = 'Cargando todas las keys...';
                 keysModalOverlay.classList.add('active');
+                
                 let lista = productosCache;
+                
                 if (lista.length === 0) {
                     keysList.innerHTML = '<p style="color:var(--text2);">No hay productos. Cargalos primero.</p>';
                     return;
                 }
-                let html = '', totalKeys = 0;
+                
+                let html = '';
+                let totalKeys = 0;
                 lista.forEach(p => {
-                    const k = Array.isArray(p.keys) ? p.keys : (typeof p.keys === 'string' ? p.keys.split(',').map(x => x.trim()).filter(x => x) : []);
-                    totalKeys += k.length;
-                    html += `<div style="margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:2px solid var(--accent);"><strong>📦 ${p.nombre||'Sin nombre'}</strong> (${formatearDuracion(p.duracion)}) - ${k.length} keys</div>`;
-                    if (!k.length) html += '<p style="color:var(--text2);font-size:0.8rem;margin-left:1rem;">Sin keys.</p>';
-                    else k.forEach((x, i) => { html += `<div style="padding:0.3rem 0;margin-left:1rem;border-bottom:1px solid var(--border);color:${x.startsWith('USADA:')?'var(--danger)':'var(--success)'};font-family:monospace;font-size:0.8rem;">${i+1}. ${x}</div>`; });
+                    const keysArray = Array.isArray(p.keys) ? p.keys : 
+                        (typeof p.keys === 'string' ? p.keys.split(',').map(k => k.trim()).filter(k => k) : []);
+                    totalKeys += keysArray.length;
+                    html += `<div style="margin-bottom:1rem; padding-bottom:0.5rem; border-bottom:2px solid var(--accent);">
+                        <strong>📦 ${p.nombre || 'Sin nombre'}</strong> (${formatearDuracion(p.duracion)}) - ${keysArray.length} keys
+                    </div>`;
+                    if (keysArray.length === 0) {
+                        html += '<p style="color:var(--text2); font-size:0.8rem; margin-left:1rem;">Sin keys.</p>';
+                    } else {
+                        keysArray.forEach((k, i) => {
+                            const usada = k.startsWith('USADA:');
+                            html += `<div style="padding:0.3rem 0; margin-left:1rem; border-bottom:1px solid var(--border); color:${usada ? 'var(--danger)' : 'var(--success)'}; font-family:monospace; font-size:0.8rem;">
+                                ${i+1}. ${k}
+                            </div>`;
+                        });
+                    }
                 });
-                html += `<div style="margin-top:1rem;padding-top:0.5rem;border-top:2px solid var(--accent);text-align:center;font-weight:600;">📊 Total: ${totalKeys} keys en ${lista.length} productos</div>`;
+                
+                html += `<div style="margin-top:1rem; padding-top:0.5rem; border-top:2px solid var(--accent); text-align:center; font-weight:600;">
+                    📊 Total: ${totalKeys} keys en ${lista.length} productos
+                </div>`;
+                
                 keysList.innerHTML = html;
-            } catch (e) { keysList.innerHTML = '<p style="color:var(--danger);">Error.</p>'; }
+            } catch (e) {
+                console.error('Error cargando todas las keys:', e);
+                keysList.innerHTML = '<p style="color:var(--danger);">Error al cargar las keys.</p>';
+            }
         });
 
-        closeKeysBtn.addEventListener('click', () => keysModalOverlay.classList.remove('active'));
-        keysModalOverlay.addEventListener('click', function(e) { if (e.target === keysModalOverlay) keysModalOverlay.classList.remove('active'); });
+        closeKeysBtn.addEventListener('click', () => {
+            keysModalOverlay.classList.remove('active');
+        });
+        keysModalOverlay.addEventListener('click', function(e) {
+            if (e.target === keysModalOverlay) {
+                keysModalOverlay.classList.remove('active');
+            }
+        });
 
         // ===== AGREGAR / EDITAR PRODUCTO =====
         agregarProductoBtn.addEventListener('click', () => {
-            editProductoId = null; productoModalTitle.textContent = 'Agregar Producto';
-            prodNombre.value = ''; prodDuracion.value = '1dia'; prodPrecio.value = ''; prodKeys.value = '';
+            editProductoId = null;
+            productoModalTitle.textContent = 'Agregar Producto';
+            prodNombre.value = '';
+            prodDuracion.value = '1dia';
+            prodPrecio.value = '';
+            prodKeys.value = '';
             productoModalOverlay.classList.add('active');
         });
 
         async function editarProducto(id) {
             try {
                 const doc = await db.collection('productos').doc(id).get();
-                if (!doc.exists) return; const d = doc.data(); editProductoId = id;
+                if (!doc.exists) return;
+                const data = doc.data();
+                editProductoId = id;
                 productoModalTitle.textContent = 'Editar Producto';
-                prodNombre.value = d.nombre || ''; prodDuracion.value = d.duracion || '1dia'; prodPrecio.value = d.precio || '';
-                prodKeys.value = Array.isArray(d.keys) ? d.keys.join(', ') : (typeof d.keys === 'string' ? d.keys : '');
+                prodNombre.value = data.nombre || '';
+                prodDuracion.value = data.duracion || '1dia';
+                prodPrecio.value = data.precio || '';
+                const keysArray = Array.isArray(data.keys) ? data.keys.join(', ') : (typeof data.keys === 'string' ? data.keys : '');
+                prodKeys.value = keysArray;
                 productoModalOverlay.classList.add('active');
-            } catch (e) { showToast('Error al cargar producto', 'error'); }
+            } catch (e) {
+                console.error('Error editando:', e);
+                showToast('Error al cargar producto', 'error');
+            }
         }
 
-        cancelProductoBtn.addEventListener('click', () => { productoModalOverlay.classList.remove('active'); editProductoId = null; });
-        productoModalOverlay.addEventListener('click', function(e) { if (e.target === productoModalOverlay) { productoModalOverlay.classList.remove('active'); editProductoId = null; } });
+        cancelProductoBtn.addEventListener('click', () => {
+            productoModalOverlay.classList.remove('active');
+            editProductoId = null;
+        });
+        productoModalOverlay.addEventListener('click', function(e) {
+            if (e.target === productoModalOverlay) {
+                productoModalOverlay.classList.remove('active');
+                editProductoId = null;
+            }
+        });
 
         saveProductoBtn.addEventListener('click', async () => {
-            const n = prodNombre.value.trim(), d = prodDuracion.value, p = parseFloat(prodPrecio.value), kr = prodKeys.value.trim();
-            if (!n || !d || isNaN(p) || !kr) { showToast('Completá todos los campos', 'error'); return; }
-            const ka = kr.split(',').map(x => x.trim()).filter(x => x);
+            const nombre = prodNombre.value.trim();
+            const duracion = prodDuracion.value;
+            const precio = parseFloat(prodPrecio.value);
+            const keysRaw = prodKeys.value.trim();
+
+            if (!nombre || !duracion || isNaN(precio) || !keysRaw) {
+                showToast('Completá todos los campos', 'error');
+                return;
+            }
+
+            const keysArray = keysRaw.split(',').map(k => k.trim()).filter(k => k);
+
             try {
-                const data = { nombre: n, duracion: d, precio: p, keys: ka, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
-                if (editProductoId) { await db.collection('productos').doc(editProductoId).update(data); showToast('Producto actualizado ✅'); }
-                else { data.createdAt = firebase.firestore.FieldValue.serverTimestamp(); await db.collection('productos').add(data); showToast('Producto agregado ✅'); }
-                productoModalOverlay.classList.remove('active'); editProductoId = null; cargarProductos(); cargarDashboard();
-            } catch (e) { showToast('Error: ' + e.message, 'error'); }
+                const data = {
+                    nombre,
+                    duracion,
+                    precio,
+                    keys: keysArray,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+
+                if (editProductoId) {
+                    await db.collection('productos').doc(editProductoId).update(data);
+                    showToast('Producto actualizado ✅');
+                } else {
+                    data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+                    await db.collection('productos').add(data);
+                    showToast('Producto agregado ✅');
+                }
+
+                productoModalOverlay.classList.remove('active');
+                editProductoId = null;
+                cargarProductos();
+                cargarDashboard();
+            } catch (e) {
+                console.error('Error guardando:', e);
+                showToast('Error: ' + e.message, 'error');
+            }
         });
 
         async function eliminarProducto(id) {
             if (!confirm('¿Eliminar este producto?')) return;
-            try { await db.collection('productos').doc(id).delete(); showToast('Producto eliminado ✅'); cargarProductos(); cargarDashboard(); }
-            catch (e) { showToast('Error: ' + e.message, 'error'); }
+            try {
+                await db.collection('productos').doc(id).delete();
+                showToast('Producto eliminado ✅');
+                cargarProductos();
+                cargarDashboard();
+            } catch (e) {
+                console.error('Error eliminando:', e);
+                showToast('Error: ' + e.message, 'error');
+            }
         }
 
         cargarProductosBtn.addEventListener('click', cargarProductos);
@@ -772,13 +934,28 @@
             try {
                 ventasTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:2rem;">Cargando...</td></tr>';
                 const snap = await db.collection('ventas').orderBy('fecha', 'desc').limit(50).get();
-                if (snap.empty) { ventasTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:2rem; color:var(--text2);">No hay ventas</td></tr>'; return; }
+                if (snap.empty) {
+                    ventasTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:2rem; color:var(--text2);">No hay ventas</td></tr>';
+                    return;
+                }
                 ventasTableBody.innerHTML = '';
                 snap.forEach(doc => {
-                    const v = doc.data(), f = v.fecha ? v.fecha.toDate().toLocaleDateString('es-AR') : 'N/A';
-                    ventasTableBody.innerHTML += `<tr><td>${doc.id.slice(-6)}</td><td>${v.producto||'N/A'}</td><td>${v.cliente||'N/A'}</td><td style="font-family:monospace; font-size:0.75rem;">${v.key||'N/A'}</td><td>${f}</td><td>$${(v.total||0).toLocaleString('es-AR')}</td></tr>`;
+                    const v = doc.data();
+                    const fecha = v.fecha ? v.fecha.toDate().toLocaleDateString('es-AR') : 'N/A';
+                    ventasTableBody.innerHTML += `
+                    <tr>
+                        <td>${doc.id.slice(-6)}</td>
+                        <td>${v.producto || 'N/A'}</td>
+                        <td>${v.cliente || 'N/A'}</td>
+                        <td style="font-family:monospace; font-size:0.75rem;">${v.key || 'N/A'}</td>
+                        <td>${fecha}</td>
+                        <td>$${(v.total || 0).toLocaleString('es-AR')}</td>
+                    </tr>`;
                 });
-            } catch (e) { ventasTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:2rem; color:var(--danger);">Error al cargar ventas</td></tr>'; }
+            } catch (e) {
+                console.error('Error cargando ventas:', e);
+                ventasTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:2rem; color:var(--danger);">Error al cargar ventas</td></tr>';
+            }
         }
 
         // ===== CLIENTES =====
@@ -786,15 +963,28 @@
             try {
                 clientesTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:2rem;">Cargando...</td></tr>';
                 const snap = await db.collection('clientes').orderBy('totalGastado', 'desc').get();
-                if (snap.empty) { clientesTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:2rem; color:var(--text2);">No hay clientes</td></tr>'; return; }
+                if (snap.empty) {
+                    clientesTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:2rem; color:var(--text2);">No hay clientes</td></tr>';
+                    return;
+                }
                 clientesTableBody.innerHTML = '';
                 snap.forEach(doc => {
                     const c = doc.data();
-                    clientesTableBody.innerHTML += `<tr><td>${c.email||'N/A'}</td><td>${c.nombre||'N/A'}</td><td>${c.compras||0}</td><td>$${(c.totalGastado||0).toLocaleString('es-AR')}</td></tr>`;
+                    clientesTableBody.innerHTML += `
+                    <tr>
+                        <td>${c.email || 'N/A'}</td>
+                        <td>${c.nombre || 'N/A'}</td>
+                        <td>${c.compras || 0}</td>
+                        <td>$${(c.totalGastado || 0).toLocaleString('es-AR')}</td>
+                    </tr>`;
                 });
-            } catch (e) { clientesTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:2rem; color:var(--danger);">Error al cargar clientes</td></tr>'; }
+            } catch (e) {
+                console.error('Error cargando clientes:', e);
+                clientesTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:2rem; color:var(--danger);">Error al cargar clientes</td></tr>';
+            }
         }
 
+        // ===== HACER FUNCIONES GLOBALES =====
         window.verKeys = verKeys;
         window.editarProducto = editarProducto;
         window.eliminarProducto = eliminarProducto;
