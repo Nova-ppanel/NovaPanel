@@ -1,7 +1,0 @@
-{
-  "functions": {
-    "api/admin-email.js": {
-      "memory": 128
-    }
-  }
-}
