@@ -427,15 +427,12 @@
     <div class="resplandor"></div>
 
     <!-- ========== LOGIN ========== -->
- if (email === 'admin') {
-    try {
-        const resp = await fetch('/api/admin-email');
-        email = await resp.text();
-    } catch (e) {
-        loginError.textContent = 'Error de conexión.';
-        return;
-    }
-}
+    <div id="loginContainer">
+        <div class="logo-icon">⚡</div>
+        <div class="logo-login">NOVAPANEL</div>
+        <p class="subtitle">Panel de Administración</p>
+        <label>Email</label>
+        <input type="email" id="loginEmail" placeholder="admin@novapanel.com">
         <label>Contraseña</label>
         <input type="password" id="loginPassword" placeholder="••••••••">
         <button id="loginBtn">Iniciar Sesión</button>
@@ -577,15 +574,14 @@
     <div class="toast" id="toast"></div>
 <script>
     // ===== FIREBASE CONFIG =====
-    // ⚠️ REEMPLAZÁ LOS ASTERISCOS POR TU API KEY REAL
     const firebaseConfig = {
-  apiKey: "AIzaSyBsYxEHoS9ta6efEYfAKKOa82r_g4LEbmg",
-  authDomain: "novapanelsocios-2152c.firebaseapp.com",
-  projectId: "novapanelsocios-2152c",
-  storageBucket: "novapanelsocios-2152c.firebasestorage.app",
-  messagingSenderId: "216473572181",
-  appId: "1:216473572181:web:9488830339d010133755dc"
-};
+        apiKey: "***************************************",
+        authDomain: "novapanel-2d72b.firebaseapp.com",
+        projectId: "novapanel-2d72b",
+        storageBucket: "novapanel-2d72b.appspot.com",
+        messagingSenderId: "317388043186",
+        appId: "1:317388043186:web:3fc4f4c8d63b1c92e5e1ab"
+    };
 
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
@@ -633,14 +629,17 @@
     let editProductoId = null;
     let filtroDur = 'todas';
 
-    // ===== AUTH =====
+    // ===== AUTH (CON "admin") =====
     loginBtn.addEventListener('click', async () => {
-        const email = loginEmail.value.trim();
+        let email = loginEmail.value.trim();
         const password = loginPassword.value.trim();
         loginError.textContent = '';
         if (!email || !password) {
             loginError.textContent = 'Completá todos los campos.';
             return;
+        }
+        if (email === 'admin') {
+            email = 'admin@admin.com';
         }
         try {
             const userCred = await auth.signInWithEmailAndPassword(email, password);
