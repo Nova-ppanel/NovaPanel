@@ -274,13 +274,9 @@
         const password = loginPassword.value.trim();
         loginError.textContent = '';
         if (!email || !password) { loginError.textContent = 'Completá todos los campos.'; return; }
-        if (email === 'admin') {
-            try {
-                const snap = await db.collection('config').doc('admin').get();
-                if (snap.exists) { email = snap.data().email; }
-                else { loginError.textContent = 'Configuración no encontrada.'; return; }
-            } catch (e) { loginError.textContent = 'Error de conexión.'; return; }
-        }
+      if (email === 'admin') {
+    email = 'admin@admin.com';
+}
         try {
             const userCred = await auth.signInWithEmailAndPassword(email, password);
             currentUser = userCred.user;
