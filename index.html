@@ -96,6 +96,7 @@
     <div class="modal-overlay" id="keysModalOverlay"><div class="modal"><h3>🔑 Keys</h3><div id="keysList" style="max-height:300px;overflow-y:auto;font-size:0.8rem;background:rgba(0,0,0,0.3);padding:1rem;border-radius:8px;"></div><div class="modal-actions"><button class="btn btn-outline" id="closeKeysBtn">Cerrar</button></div></div></div>
     <div class="modal-overlay" id="vendedorModalOverlay"><div class="modal"><h3 id="vendedorModalTitle">Agregar Vendedor</h3><input type="text" id="vendNombre" placeholder="Nombre de usuario"><input type="password" id="vendPassword" placeholder="Contraseña"><input type="number" id="vendSaldo" placeholder="Saldo inicial"><div class="modal-actions"><button class="btn btn-outline" id="cancelVendedorBtn">Cancelar</button><button class="btn btn-primary" id="saveVendedorBtn">Guardar</button></div></div></div>
     <div class="toast" id="toast"></div>
+
 <script>
     const firebaseConfig = {
         apiKey: "AIzaSyBsYxEHoS9ta6efEYfAKKOa82r_g4LEbmg",
@@ -179,13 +180,100 @@
     cargarProductosBtn.addEventListener('click',cargarProductos);
     async function cargarVentas(){try{ventasTableBody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;">Cargando...</td></tr>';const snap=await db.collection('ventas').orderBy('fecha','desc').limit(50).get();if(snap.empty){ventasTableBody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text2);">Sin ventas</td></tr>';return;}ventasTableBody.innerHTML='';snap.forEach(d=>{const v=d.data(),f=v.fecha?v.fecha.toDate().toLocaleDateString('es-AR'):'N/A';ventasTableBody.innerHTML+=`<tr><td>${d.id.slice(-6)}</td><td>${v.producto||''}</td><td>${v.cliente||''}</td><td style="font-family:monospace;font-size:0.75rem;">${v.key||''}</td><td>${f}</td><td>$${(v.total||0).toLocaleString('es-AR')}</td></tr>`;});}catch(e){ventasTableBody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--danger);">Error</td></tr>';}}
     async function cargarClientes(){try{clientesTableBody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:2rem;">Cargando...</td></tr>';const snap=await db.collection('clientes').orderBy('totalGastado','desc').get();if(snap.empty){clientesTableBody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text2);">Sin clientes</td></tr>';return;}clientesTableBody.innerHTML='';snap.forEach(d=>{const c=d.data();clientesTableBody.innerHTML+=`<tr><td>${c.email||''}</td><td>${c.nombre||''}</td><td>${c.compras||0}</td><td>$${(c.totalGastado||0).toLocaleString('es-AR')}</td></tr>`;});}catch(e){clientesTableBody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--danger);">Error</td></tr>';}}
-        async function cargarVendedores(){try{vendedoresTableBody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:2rem;">Cargando...</td></tr>';const snap=await db.collection('vendedores').get();if(snap.empty){vendedoresTableBody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text2);">Sin vendedores</td></tr>';return;}vendedoresTableBody.innerHTML='';snap.forEach(d=>{const v=d.data();vendedoresTableBody.innerHTML+=`<tr><td>${v.nombre||''}</td><td>••••••</td><td>$${(v.saldo||0).toLocaleString('es-AR')}</td><td><button class="btn btn-outline btn-sm" onclick="acreditarSaldo('${d.id}')">💵 Acreditar</button> <button class="btn btn-danger btn-sm" onclick="eliminarVendedor('${d.id}')">🗑️</button></td></tr>`;});}catch(e){vendedoresTableBody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--danger);">Error</td></tr>';}}
-        agregarVendedorBtn.addEventListener('click',()=>{vendedorModalTitle.textContent='Agregar Vendedor';vendNombre.value='';vendPassword.value='';vendSaldo.value='';vendedorModalOverlay.classList.add('active');});
-        cancelVendedorBtn.addEventListener('click',()=>{vendedorModalOverlay.classList.remove('active');});
-        vendedorModalOverlay.addEventListener('click',function(e){if(e.target===vendedorModalOverlay)vendedorModalOverlay.classList.remove('active');});
-        saveVendedorBtn.addEventListener('click',async()=>{const nombre=vendNombre.value.trim(),pass=vendPassword.value.trim(),saldo=parseFloat(vendSaldo.value);if(!nombre||!pass||isNaN(saldo)){showToast('Completá todos los campos','error');return;}try{const data={nombre,password:pass,saldo,createdAt:firebase.firestore.FieldValue.serverTimestamp()};await db.collection('vendedores').add(data);showToast('Vendedor agregado ✅');vendedorModalOverlay.classList.remove('active');cargarVendedores();}catch(e){showToast('Error: '+e.message,'error');}});
-        async function acreditarSaldo(id){const monto=prompt('Monto (+):');if(monto===null)return;const cantidad=parseFloat(monto);if(isNaN(cantidad)){showToast('Inválido','error');return;}try{const doc=await db.collection('vendedores').doc(id).get();if(!doc.exists){showToast('No encontrado','error');return;}await db.collection('vendedores').doc(id).update({saldo:(doc.data().saldo||0)+cantidad,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});showToast('Saldo actualizado ✅');cargarVendedores();}catch(e){showToast('Error: '+e.message,'error');}}
-        async function eliminarVendedor(id){if(!confirm('¿Eliminar?'))return;try{await db.collection('vendedores').doc(id).delete();showToast('Eliminado ✅');cargarVendedores();}catch(e){showToast('Error: '+e.message,'error');}}
+
+async function cargarVendedores(){
+    try{
+        vendedoresTableBody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:2rem;">Cargando...</td></tr>';
+        const snap=await db.collection('vendedores').get();
+        if(snap.empty){
+            vendedoresTableBody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text2);">Sin vendedores</td></tr>';
+            return;
+        }
+        vendedoresTableBody.innerHTML='';
+        snap.forEach(d=>{
+            const v=d.data();
+            vendedoresTableBody.innerHTML+=`<tr><td>${v.nombre||''}</td><td>••••••</td><td>$${(v.saldo||0).toLocaleString('es-AR')}</td><td><button class="btn btn-outline btn-sm" onclick="acreditarSaldo('${d.id}')">💵 Acreditar</button> <button class="btn btn-danger btn-sm" onclick="eliminarVendedor('${d.id}')">🗑️</button></td></tr>`;
+        });
+    }catch(e){
+        vendedoresTableBody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--danger);">Error al cargar vendedores</td></tr>';
+    }
+}
+
+agregarVendedorBtn.addEventListener('click',()=>{
+    vendedorModalTitle.textContent='Agregar Vendedor';
+    vendNombre.value='';
+    vendPassword.value='';
+    vendSaldo.value='';
+    vendedorModalOverlay.classList.add('active');
+});
+
+cancelVendedorBtn.addEventListener('click',()=>{
+    vendedorModalOverlay.classList.remove('active');
+});
+
+vendedorModalOverlay.addEventListener('click',function(e){
+    if(e.target===vendedorModalOverlay)vendedorModalOverlay.classList.remove('active');
+});
+
+saveVendedorBtn.addEventListener('click',async()=>{
+    const nombre=vendNombre.value.trim();
+    const pass=vendPassword.value.trim();
+    const saldo=parseFloat(vendSaldo.value);
+    if(!nombre||!pass||isNaN(saldo)){
+        showToast('Completá todos los campos','error');
+        return;
+    }
+    try{
+        const data={
+            nombre:nombre,
+            password:pass,
+            saldo:saldo,
+            createdAt:firebase.firestore.FieldValue.serverTimestamp()
+        };
+        await db.collection('vendedores').add(data);
+        showToast('Vendedor agregado');
+        vendedorModalOverlay.classList.remove('active');
+        cargarVendedores();
+    }catch(e){
+        showToast('Error: '+e.message,'error');
+    }
+});
+
+async function acreditarSaldo(id){
+    const monto=prompt('Monto (+):');
+    if(monto===null)return;
+    const cantidad=parseFloat(monto);
+    if(isNaN(cantidad)){
+        showToast('Inválido','error');
+        return;
+    }
+    try{
+        const doc=await db.collection('vendedores').doc(id).get();
+        if(!doc.exists){
+            showToast('No encontrado','error');
+            return;
+        }
+        await db.collection('vendedores').doc(id).update({
+            saldo:(doc.data().saldo||0)+cantidad,
+            updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+        });
+        showToast('Saldo actualizado');
+        cargarVendedores();
+    }catch(e){
+        showToast('Error: '+e.message,'error');
+    }
+}
+
+async function eliminarVendedor(id){
+    if(!confirm('¿Eliminar?'))return;
+    try{
+        await db.collection('vendedores').doc(id).delete();
+        showToast('Eliminado');
+        cargarVendedores();
+    }catch(e){
+        showToast('Error: '+e.message,'error');
+    }
+}
 
         window.verKeys=verKeys;
         window.editarProducto=editarProducto;
