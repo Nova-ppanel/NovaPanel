@@ -23,6 +23,11 @@
         .login-error { color: var(--danger); font-size: 0.85rem; margin-top: 0.8rem; text-align: center; }
         #adminContainer { display: none; width: 100%; min-height: 100vh; }
         #adminContainer.active { display: flex; }
+        #vendedorContainer { display: none; width: 100%; min-height: 100vh; padding: 2rem; }
+        #vendedorContainer.active { display: block; }
+        #vendedorContainer h2 { margin-bottom: 1.5rem; font-size: 1.4rem; font-weight: 600; }
+        #vendedorLogoutBtn { display: inline-flex; align-items: center; gap: 0.5rem; margin-bottom: 1.5rem; padding: 0.5rem 1rem; background: transparent; border: 1px solid rgba(244,63,94,0.3); color: var(--text2); border-radius: 8px; cursor: pointer; font-size: 0.85rem; }
+        #vendedorLogoutBtn:hover { border-color: var(--danger); color: var(--danger); }
         #sidebar { width: 250px; background: var(--surface); border-right: 1px solid var(--border); padding: 1.5rem 1rem; display: flex; flex-direction: column; gap: 1.5rem; min-height: 100vh; }
         #sidebar .logo { font-size: 1.4rem; font-weight: 700; text-align: center; background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
         #sidebar nav { display: flex; flex-direction: column; gap: 0.3rem; }
@@ -64,10 +69,10 @@
 <body>
     <div id="loginContainer">
         <div class="logo-icon">⚡</div>
-        <div class="logo-login">NOVAPANEL</div>
+        <div class="logo-login">NOVA</div>
         <p class="subtitle">Panel de Administración</p>
-        <label>Email</label>
-        <input type="email" id="loginEmail" placeholder="admin@novapanel.com">
+        <label>Usuario</label>
+        <input type="text" id="loginEmail" placeholder="admin">
         <label>Contraseña</label>
         <input type="password" id="loginPassword" placeholder="••••••••">
         <button id="loginBtn">Iniciar Sesión</button>
@@ -75,391 +80,131 @@
     </div>
     <div id="adminContainer">
         <aside id="sidebar">
-            <div class="logo">⚡ NOVAPANEL</div>
+            <div class="logo">⚡ NOVA</div>
             <nav>
                 <a class="active" data-section="dashboard">📊 Inicio</a>
                 <a data-section="ventas">💰 Ventas</a>
                 <a data-section="clientes">👥 Clientes</a>
                 <a data-section="productos">📦 Productos</a>
-                <a data-section="proveedores">🏭 Proveedores</a>
-                <a data-section="reportes">📋 Reportes</a>
+                <a data-section="vendedores">👤 Vendedores</a>
+                <a data-section="pagos">💳 Pagos</a>
                 <a data-section="configuracion">⚙️ Configuración</a>
             </nav>
             <button id="logoutBtn">🚪 Cerrar Sesión</button>
         </aside>
         <main id="mainContent">
             <div class="section active" id="dashboardSection"><h2>Dashboard</h2><div class="cards-grid" id="dashCards"><div class="card"><div class="label">Productos</div><div class="value" id="dashProductos">0</div></div><div class="card"><div class="label">Ventas Hoy</div><div class="value" id="dashVentasHoy">0</div></div><div class="card"><div class="label">Clientes</div><div class="value" id="dashClientes">0</div></div><div class="card"><div class="label">Ingresos</div><div class="value" id="dashIngresos">$0</div></div></div></div>
-            <div class="section" id="ventasSection"><h2>💰 Ventas</h2><div class="table-container"><table><thead><tr><th>ID</th><th>Producto</th><th>Cliente</th><th>Key</th><th>Fecha</th><th>Total</th></tr></thead><tbody id="ventasTableBody"></tbody></table></div></div>
+            <div class="section" id="ventasSection"><h2>💰 Ventas</h2><div class="table-container"><table><thead><tr><th>ID</th><th>Producto</th><th>Cliente</th><th>Vendedor</th><th>Key</th><th>Fecha</th><th>Total</th></tr></thead><tbody id="ventasTableBody"></tbody></table></div></div>
             <div class="section" id="clientesSection"><h2>👥 Clientes</h2><div class="table-container"><table><thead><tr><th>Email</th><th>Nombre</th><th>Compras</th><th>Total Gastado</th></tr></thead><tbody id="clientesTableBody"></tbody></table></div></div>
-            <div class="section" id="productosSection"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;"><h2>📦 Productos</h2><div style="display:flex;gap:0.5rem;"><button class="btn btn-outline" id="cargarProductosBtn">🔄 Cargar Productos</button><button class="btn btn-outline" id="verTodasKeysBtn">🔑 Ver Todas las Keys</button><button class="btn btn-primary" id="agregarProductoBtn">+ Agregar Producto</button></div></div><div class="filter-bar" id="filtroBar"><button class="filter-chip active" data-filtro="todas">📋 Todas</button><button class="filter-chip" data-filtro="1dia">1 Día</button><button class="filter-chip" data-filtro="3dias">3 Días</button><button class="filter-chip" data-filtro="7dias">7 Días</button></div><div class="table-container"><table><thead><tr><th>Nombre</th><th>Duración</th><th>Precio</th><th>Stock</th><th>Keys Totales</th><th>Acciones</th></tr></thead><tbody id="productosTableBody"></tbody></table></div></div>
-            <div class="section" id="proveedoresSection"><h2>🏭 Proveedores</h2><p style="color:var(--text2)">Gestión de proveedores próximamente.</p></div>
-            <div class="section" id="reportesSection"><h2>📋 Reportes</h2><p style="color:var(--text2)">Reportes próximamente.</p></div>
-            <div class="section" id="configuracionSection"><h2>⚙️ Configuración</h2><p style="color:var(--text2)">Configuración próximamente.</p></div>
+            <div class="section" id="productosSection"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;"><h2>📦 Productos</h2><div style="display:flex;gap:0.5rem;"><button class="btn btn-outline" id="cargarProductosBtn">🔄 Cargar Productos</button><button class="btn btn-outline" id="verTodasKeysBtn">🔑 Ver Todas las Keys</button><button class="btn btn-primary" id="agregarProductoBtn">+ Agregar Producto</button><button class="btn btn-outline" id="exportarBtn">📤 Exportar</button><button class="btn btn-outline" id="importarBtn">📥 Importar</button></div></div><div class="filter-bar" id="filtroBar"><button class="filter-chip active" data-filtro="todas">📋 Todas</button><button class="filter-chip" data-filtro="1dia">1 Día</button><button class="filter-chip" data-filtro="3dias">3 Días</button><button class="filter-chip" data-filtro="7dias">7 Días</button></div><div class="table-container"><table><thead><tr><th>Nombre</th><th>Duración</th><th>Precio</th><th>Stock</th><th>Keys Totales</th><th>Acciones</th></tr></thead><tbody id="productosTableBody"></tbody></table></div></div>
+            <div class="section" id="vendedoresSection"><h2>👤 Vendedores</h2><div style="display:flex;gap:0.5rem;margin-bottom:1rem;"><button class="btn btn-primary" id="agregarVendedorBtn">+ Agregar Vendedor</button></div><div class="table-container"><table><thead><tr><th>Nombre</th><th>Saldo</th><th>Acciones</th></tr></thead><tbody id="vendedoresTableBody"></tbody></table></div></div>
+            <div class="section" id="pagosSection"><h2>💳 Métodos de Pago</h2><div style="display:flex;gap:0.5rem;margin-bottom:1rem;"><button class="btn btn-primary" id="agregarPagoBtn">+ Agregar Método</button></div><div class="table-container"><table><thead><tr><th>Nombre</th><th>Tipo</th><th>Datos</th><th>Acciones</th></tr></thead><tbody id="pagosTableBody"></tbody></table></div></div>
+            <div class="section" id="configuracionSection"><h2>⚙️ Configuración</h2><div class="card"><div class="label">Mercado Pago</div><input type="text" id="mpToken" placeholder="Access Token" style="width:100%;padding:0.5rem;margin:0.5rem 0;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:6px;"><button class="btn btn-primary" id="saveMPBtn">Guardar MP</button></div><br><div class="card"><div class="label">PayPal</div><input type="text" id="ppClient" placeholder="Client ID" style="width:100%;padding:0.5rem;margin:0.5rem 0;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:6px;"><input type="text" id="ppSecret" placeholder="Secret" style="width:100%;padding:0.5rem;margin:0.5rem 0;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:6px;"><button class="btn btn-primary" id="savePPBtn">Guardar PayPal</button></div></div>
         </main>
+    </div>
+    <div id="vendedorContainer">
+        <button id="vendedorLogoutBtn">🚪 Salir</button>
+        <h2>Panel de Vendedor</h2>
+        <div class="cards-grid" style="display:flex;gap:1rem;margin-bottom:2rem;"><div class="card"><div class="label">Mi Saldo</div><div class="value" id="vSaldo">$0</div></div><div class="card"><div class="label">Mis Ventas</div><div class="value" id="vVentas">0</div></div></div>
+        <div style="display:flex;gap:0.5rem;margin-bottom:1rem;"><button class="btn btn-primary" id="vRetirarBtn">💰 Retirar</button><button class="btn btn-outline" id="vRecargarBtn">➕ Recargar</button></div>
+        <div class="table-container"><table><thead><tr><th>ID</th><th>Producto</th><th>Key</th><th>Fecha</th><th>Total</th></tr></thead><tbody id="vVentasBody"></tbody></table></div>
     </div>
     <div class="modal-overlay" id="productoModalOverlay"><div class="modal"><h3 id="productoModalTitle">Agregar Producto</h3><input type="text" id="prodNombre" placeholder="Nombre del producto"><select id="prodDuracion"><option value="1dia">1 Día</option><option value="3dias">3 Días</option><option value="7dias">7 Días</option></select><input type="number" id="prodPrecio" placeholder="Precio"><input type="text" id="prodKeys" placeholder="Keys (separadas por coma)"><div class="modal-actions"><button class="btn btn-outline" id="cancelProductoBtn">Cancelar</button><button class="btn btn-primary" id="saveProductoBtn">Guardar</button></div></div></div>
     <div class="modal-overlay" id="keysModalOverlay"><div class="modal"><h3>🔑 Keys del Producto</h3><div id="keysList" style="max-height:300px;overflow-y:auto;font-size:0.8rem;background:var(--surface2);padding:1rem;border-radius:var(--radius);"></div><div class="modal-actions"><button class="btn btn-outline" id="closeKeysBtn">Cerrar</button></div></div></div>
+    <div class="modal-overlay" id="vendedorModalOverlay"><div class="modal"><h3 id="vendedorModalTitle">Agregar Vendedor</h3><input type="text" id="vendNombre" placeholder="Nombre de usuario"><input type="password" id="vendPassword" placeholder="Contraseña"><input type="number" id="vendSaldo" placeholder="Saldo inicial"><div class="modal-actions"><button class="btn btn-outline" id="cancelVendedorBtn">Cancelar</button><button class="btn btn-primary" id="saveVendedorBtn">Guardar</button></div></div></div>
+    <div class="modal-overlay" id="pagoModalOverlay"><div class="modal"><h3 id="pagoModalTitle">Agregar Método</h3><input type="text" id="pagoNombre" placeholder="Nombre"><select id="pagoTipo"><option value="Mercado Pago">Mercado Pago</option><option value="PayPal">PayPal</option><option value="Transferencia">Transferencia</option></select><input type="text" id="pagoDatos" placeholder="Datos"><div class="modal-actions"><button class="btn btn-outline" id="cancelPagoBtn">Cancelar</button><button class="btn btn-primary" id="savePagoBtn">Guardar</button></div></div></div>
     <div class="toast" id="toast"></div>
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyBsYxEHoS9ta6efEYfAKKOa82r_g4LEbmg",
+        authDomain: "novapanel-2d72b.firebaseapp.com",
+        projectId: "novapanel-2d72b",
+        storageBucket: "novapanel-2d72b.appspot.com",
+        messagingSenderId: "317388043186",
+        appId: "1:317388043186:web:3fc4f4c8d63b1c92e5e1ab"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
 
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyBsYxEHoS9ta6efEYfAKKOa82r_g4LEbmg",
-            authDomain: "novapanel-2d72b.firebaseapp.com",
-            projectId: "novapanel-2d72b",
-            storageBucket: "novapanel-2d72b.appspot.com",
-            messagingSenderId: "317388043186",
-            appId: "1:317388043186:web:3fc4f4c8d63b1c92e5e1ab"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
+    const loginContainer=document.getElementById('loginContainer'),adminContainer=document.getElementById('adminContainer'),vendedorContainer=document.getElementById('vendedorContainer'),loginBtn=document.getElementById('loginBtn'),loginEmail=document.getElementById('loginEmail'),loginPassword=document.getElementById('loginPassword'),loginError=document.getElementById('loginError'),logoutBtn=document.getElementById('logoutBtn'),vendedorLogoutBtn=document.getElementById('vendedorLogoutBtn'),navLinks=document.querySelectorAll('#sidebar nav a'),sections=document.querySelectorAll('.section'),dashProductos=document.getElementById('dashProductos'),dashVentasHoy=document.getElementById('dashVentasHoy'),dashClientes=document.getElementById('dashClientes'),dashIngresos=document.getElementById('dashIngresos'),cargarProductosBtn=document.getElementById('cargarProductosBtn'),verTodasKeysBtn=document.getElementById('verTodasKeysBtn'),agregarProductoBtn=document.getElementById('agregarProductoBtn'),exportarBtn=document.getElementById('exportarBtn'),importarBtn=document.getElementById('importarBtn'),productosTableBody=document.getElementById('productosTableBody'),productoModalOverlay=document.getElementById('productoModalOverlay'),productoModalTitle=document.getElementById('productoModalTitle'),prodNombre=document.getElementById('prodNombre'),prodDuracion=document.getElementById('prodDuracion'),prodPrecio=document.getElementById('prodPrecio'),prodKeys=document.getElementById('prodKeys'),cancelProductoBtn=document.getElementById('cancelProductoBtn'),saveProductoBtn=document.getElementById('saveProductoBtn'),keysModalOverlay=document.getElementById('keysModalOverlay'),keysList=document.getElementById('keysList'),closeKeysBtn=document.getElementById('closeKeysBtn'),toast=document.getElementById('toast'),ventasTableBody=document.getElementById('ventasTableBody'),clientesTableBody=document.getElementById('clientesTableBody'),agregarVendedorBtn=document.getElementById('agregarVendedorBtn'),vendedorModalOverlay=document.getElementById('vendedorModalOverlay'),vendedorModalTitle=document.getElementById('vendedorModalTitle'),vendNombre=document.getElementById('vendNombre'),vendPassword=document.getElementById('vendPassword'),vendSaldo=document.getElementById('vendSaldo'),cancelVendedorBtn=document.getElementById('cancelVendedorBtn'),saveVendedorBtn=document.getElementById('saveVendedorBtn'),vendedoresTableBody=document.getElementById('vendedoresTableBody'),vSaldo=document.getElementById('vSaldo'),vVentas=document.getElementById('vVentas'),vVentasBody=document.getElementById('vVentasBody'),vRetirarBtn=document.getElementById('vRetirarBtn'),vRecargarBtn=document.getElementById('vRecargarBtn'),agregarPagoBtn=document.getElementById('agregarPagoBtn'),pagoModalOverlay=document.getElementById('pagoModalOverlay'),pagoModalTitle=document.getElementById('pagoModalTitle'),pagoNombre=document.getElementById('pagoNombre'),pagoTipo=document.getElementById('pagoTipo'),pagoDatos=document.getElementById('pagoDatos'),cancelPagoBtn=document.getElementById('cancelPagoBtn'),savePagoBtn=document.getElementById('savePagoBtn'),pagosTableBody=document.getElementById('pagosTableBody'),mpToken=document.getElementById('mpToken'),saveMPBtn=document.getElementById('saveMPBtn'),ppClient=document.getElementById('ppClient'),ppSecret=document.getElementById('ppSecret'),savePPBtn=document.getElementById('savePPBtn');
+    let currentUser=null,productosCache=[],editProductoId=null,filtroDur='todas',vendedorActual=null;
 
-        const loginContainer = document.getElementById('loginContainer');
-        const adminContainer = document.getElementById('adminContainer');
-        const loginBtn = document.getElementById('loginBtn');
-        const loginEmail = document.getElementById('loginEmail');
-        const loginPassword = document.getElementById('loginPassword');
-        const loginError = document.getElementById('loginError');
-        const logoutBtn = document.getElementById('logoutBtn');
-        const navLinks = document.querySelectorAll('#sidebar nav a');
-        const sections = document.querySelectorAll('.section');
-        const dashProductos = document.getElementById('dashProductos');
-        const dashVentasHoy = document.getElementById('dashVentasHoy');
-        const dashClientes = document.getElementById('dashClientes');
-        const dashIngresos = document.getElementById('dashIngresos');
-        const cargarProductosBtn = document.getElementById('cargarProductosBtn');
-        const verTodasKeysBtn = document.getElementById('verTodasKeysBtn');
-        const agregarProductoBtn = document.getElementById('agregarProductoBtn');
-        const productosTableBody = document.getElementById('productosTableBody');
-        const productoModalOverlay = document.getElementById('productoModalOverlay');
-        const productoModalTitle = document.getElementById('productoModalTitle');
-        const prodNombre = document.getElementById('prodNombre');
-        const prodDuracion = document.getElementById('prodDuracion');
-        const prodPrecio = document.getElementById('prodPrecio');
-        const prodKeys = document.getElementById('prodKeys');
-        const cancelProductoBtn = document.getElementById('cancelProductoBtn');
-        const saveProductoBtn = document.getElementById('saveProductoBtn');
-        const keysModalOverlay = document.getElementById('keysModalOverlay');
-        const keysList = document.getElementById('keysList');
-        const closeKeysBtn = document.getElementById('closeKeysBtn');
-        const toast = document.getElementById('toast');
-        const ventasTableBody = document.getElementById('ventasTableBody');
-        const clientesTableBody = document.getElementById('clientesTableBody');
-        let currentUser = null;
-        let productosCache = [];
-        let editProductoId = null;
-        let filtroDur = 'todas';
-
-        // ===== LOGIN =====
-        loginBtn.addEventListener('click', async () => {
-            var email = loginEmail.value.trim();
-            var password = loginPassword.value.trim();
-            loginError.textContent = '';
-            if (!email || !password) {
-                loginError.textContent = 'Completá todos los campos.';
-                return;
-            }
-            if (email === 'admin') {
-                email = 'admin@admin.com';
-            }
-            try {
-                var userCred = await auth.signInWithEmailAndPassword(email, password);
-                currentUser = userCred.user;
-                loginContainer.style.display = 'none';
-                adminContainer.classList.add('active');
-                cargarDashboard();
-                cargarProductos();
-                cargarVentas();
-                cargarClientes();
-            } catch (e) {
-                loginError.textContent = 'Error: ' + e.message;
-            }
-        });
-
-        logoutBtn.addEventListener('click', () => {
-            auth.signOut();
-            currentUser = null;
-            adminContainer.classList.remove('active');
-            loginContainer.style.display = '';
-            loginEmail.value = '';
-            loginPassword.value = '';
-        });
-
-        navLinks.forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                navLinks.forEach(l => l.classList.remove('active'));
-                this.classList.add('active');
-                var sectionId = this.getAttribute('data-section');
-                sections.forEach(s => s.classList.remove('active'));
-                document.getElementById(sectionId + 'Section').classList.add('active');
-                if (sectionId === 'ventas') cargarVentas();
-                if (sectionId === 'clientes') cargarClientes();
-                if (sectionId === 'productos') cargarProductos();
-            });
-        });
-
-        function showToast(msg, type) {
-            type = type || 'success';
-            toast.textContent = msg;
-            toast.style.borderColor = type === 'error' ? 'var(--danger)' : 'var(--success)';
-            toast.classList.add('show');
-            setTimeout(function() { toast.classList.remove('show'); }, 3000);
+    // ===== LOGIN =====
+    loginBtn.addEventListener('click',async()=>{
+        var usuario=loginEmail.value.trim();
+        var password=loginPassword.value.trim();
+        loginError.textContent='';
+        if(!usuario||!password){loginError.textContent='Completá todos los campos.';return;}
+        if(usuario==='admin'){
+            var email='admin@admin.com';
+            try{var userCred=await auth.signInWithEmailAndPassword(email,password);currentUser=userCred.user;loginContainer.style.display='none';adminContainer.classList.add('active');cargarDashboard();cargarProductos();cargarVentas();cargarClientes();cargarVendedores();cargarPagos();cargarConfig();}catch(e){loginError.textContent='Error: '+e.message;}
+            return;
         }
+        try{var emailVend=usuario+'@nova.com';var userCred=await auth.signInWithEmailAndPassword(emailVend,password);var snap=await db.collection('vendedores').where('userId','==',userCred.user.uid).get();var vend=snap.empty?{saldo:0,nombre:usuario}:snap.docs[0].data();vendedorActual={id:snap.empty?'':snap.docs[0].id,...vend,userId:userCred.user.uid};loginContainer.style.display='none';vendedorContainer.classList.add('active');vSaldo.textContent='$'+(vendedorActual.saldo||0).toLocaleString('es-AR');cargarVentasVendedor();}catch(e){loginError.textContent='Error: '+e.message;}
+    });
 
-        async function cargarDashboard() {
-            try {
-                var prodSnap = await db.collection('productos').get();
-                dashProductos.textContent = prodSnap.size;
-                var hoy = new Date();
-                hoy.setHours(0,0,0,0);
-                var ventasSnap = await db.collection('ventas').where('fecha', '>=', hoy).get();
-                dashVentasHoy.textContent = ventasSnap.size;
-                var total = 0;
-                ventasSnap.forEach(function(doc) { total += doc.data().total || 0; });
-                dashIngresos.textContent = '$' + total.toLocaleString('es-AR');
-                var cliSnap = await db.collection('clientes').get();
-                dashClientes.textContent = cliSnap.size;
-            } catch (e) {
-                console.error(e);
-            }
-        }
+    logoutBtn.addEventListener('click',()=>{auth.signOut();currentUser=null;adminContainer.classList.remove('active');loginContainer.style.display='';loginEmail.value='';loginPassword.value='';});
+    vendedorLogoutBtn.addEventListener('click',()=>{vendedorActual=null;vendedorContainer.classList.remove('active');loginContainer.style.display='';loginEmail.value='';loginPassword.value='';});
 
-        async function cargarProductos() {
-            try {
-                productosTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;">Cargando...</td></tr>';
-                var snap = await db.collection('productos').get();
-                productosCache = [];
-                snap.forEach(function(doc) {
-                    productosCache.push({ id: doc.id, ...doc.data() });
-                });
-                renderProductos();
-            } catch (e) {
-                productosTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--danger);">Error</td></tr>';
-            }
-        }
+    // ===== VENDEDOR RETIRAR/RECARGAR =====
+    vRetirarBtn.addEventListener('click',async()=>{var monto=parseFloat(prompt('Monto a retirar:'));if(!monto||monto<=0)return;if(monto>vendedorActual.saldo){showToast('Saldo insuficiente','error');return;}try{await db.collection('vendedores').doc(vendedorActual.id).update({saldo:vendedorActual.saldo-monto,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});vendedorActual.saldo-=monto;vSaldo.textContent='$'+vendedorActual.saldo.toLocaleString('es-AR');showToast('Retiro solicitado');}catch(e){showToast('Error: '+e.message,'error');}});
+    vRecargarBtn.addEventListener('click',async()=>{var monto=parseFloat(prompt('Monto a recargar:'));if(!monto||monto<=0)return;try{await db.collection('vendedores').doc(vendedorActual.id).update({saldo:vendedorActual.saldo+monto,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});vendedorActual.saldo+=monto;vSaldo.textContent='$'+vendedorActual.saldo.toLocaleString('es-AR');showToast('Recarga exitosa');}catch(e){showToast('Error: '+e.message,'error');}});
 
-        function renderProductos() {
-            var lista = productosCache;
-            if (filtroDur !== 'todas') {
-                lista = productosCache.filter(function(p) { return p.duracion === filtroDur; });
-            }
-            if (lista.length === 0) {
-                productosTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text2);">No hay productos</td></tr>';
-                return;
-            }
-            var html = '';
-            lista.forEach(function(p) {
-                var keysArray = Array.isArray(p.keys) ? p.keys : (typeof p.keys === 'string' ? p.keys.split(',').map(function(k) { return k.trim(); }).filter(function(k) { return k; }) : []);
-                var stock = keysArray.filter(function(k) { return !k.startsWith('USADA:'); }).length;
-                html += '<tr>';
-                html += '<td>' + (p.nombre || 'Sin nombre') + '</td>';
-                html += '<td>' + formatearDuracion(p.duracion) + '</td>';
-                html += '<td>$' + (p.precio || 0).toLocaleString('es-AR') + '</td>';
-                html += '<td>' + stock + '</td>';
-                html += '<td>' + keysArray.length + '</td>';
-                html += '<td>';
-                html += '<button class="btn btn-outline" onclick="verKeys(\'' + p.id + '\')" style="padding:0.3rem 0.6rem;font-size:0.75rem;">🔑 Keys</button> ';
-                html += '<button class="btn btn-outline" onclick="editarProducto(\'' + p.id + '\')" style="padding:0.3rem 0.6rem;font-size:0.75rem;">✏️</button> ';
-                html += '<button class="btn btn-danger" onclick="eliminarProducto(\'' + p.id + '\')" style="padding:0.3rem 0.6rem;font-size:0.75rem;">🗑️</button>';
-                html += '</td></tr>';
-            });
-            productosTableBody.innerHTML = html;
-        }
+    navLinks.forEach(link=>{link.addEventListener('click',function(e){e.preventDefault();navLinks.forEach(l=>l.classList.remove('active'));this.classList.add('active');var sid=this.getAttribute('data-section');sections.forEach(s=>s.classList.remove('active'));document.getElementById(sid+'Section').classList.add('active');if(sid==='ventas')cargarVentas();if(sid==='clientes')cargarClientes();if(sid==='productos')cargarProductos();if(sid==='vendedores')cargarVendedores();if(sid==='pagos')cargarPagos();if(sid==='configuracion')cargarConfig();});});
+    function showToast(msg,type){type=type||'success';toast.textContent=msg;toast.style.borderColor=type==='error'?'var(--danger)':'var(--success)';toast.classList.add('show');setTimeout(function(){toast.classList.remove('show');},3000);}
 
-        function formatearDuracion(dur) {
-            var map = { '1dia': '1 Día', '3dias': '3 Días', '7dias': '7 Días' };
-            return map[dur] || dur || 'N/A';
-        }
+    async function cargarVentasVendedor(){try{vVentasBody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:2rem;">Cargando...</td></tr>';var snap=await db.collection('ventas').where('vendedor','==',vendedorActual.nombre).orderBy('fecha','desc').limit(50).get();if(snap.empty){vVentasBody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text2);">Sin ventas</td></tr>';vVentas.textContent='0';return;}vVentas.textContent=snap.size;vVentasBody.innerHTML='';snap.forEach(function(d){var v=d.data(),f=v.fecha?v.fecha.toDate().toLocaleDateString('es-AR'):'N/A';vVentasBody.innerHTML+='<tr><td>'+d.id.slice(-6)+'</td><td>'+(v.producto||'')+'</td><td>'+(v.key||'')+'</td><td>'+f+'</td><td>$'+(v.total||0).toLocaleString('es-AR')+'</td></tr>';});}catch(e){vVentasBody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--danger);">Error</td></tr>';}}
 
-        document.querySelectorAll('#filtroBar .filter-chip').forEach(function(c) {
-            c.addEventListener('click', function() {
-                document.querySelectorAll('#filtroBar .filter-chip').forEach(function(x) { x.classList.remove('active'); });
-                this.classList.add('active');
-                var f = this.getAttribute('data-filtro');
-                if (f) { filtroDur = f; } else { filtroDur = 'todas'; }
-                renderProductos();
-            });
-        });
+    async function cargarDashboard(){try{var prodSnap=await db.collection('productos').get();dashProductos.textContent=prodSnap.size;var hoy=new Date();hoy.setHours(0,0,0,0);var ventasSnap=await db.collection('ventas').where('fecha','>=',hoy).get();dashVentasHoy.textContent=ventasSnap.size;var total=0;ventasSnap.forEach(function(d){total+=d.data().total||0;});dashIngresos.textContent='$'+total.toLocaleString('es-AR');var cliSnap=await db.collection('clientes').get();dashClientes.textContent=cliSnap.size;}catch(e){console.error(e);}}
+    async function cargarProductos(){try{productosTableBody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;">Cargando...</td></tr>';var snap=await db.collection('productos').get();productosCache=[];snap.forEach(function(d){productosCache.push({id:d.id,...d.data()});});renderProductos();}catch(e){productosTableBody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--danger);">Error</td></tr>';}}
+    function renderProductos(){var lista=productosCache;if(filtroDur!=='todas'){lista=productosCache.filter(function(p){return p.duracion===filtroDur;});}if(lista.length===0){productosTableBody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text2);">No hay productos</td></tr>';return;}var html='';lista.forEach(function(p){var keysArray=Array.isArray(p.keys)?p.keys:(typeof p.keys==='string'?p.keys.split(',').map(function(k){return k.trim();}).filter(function(k){return k;}):[]);var stock=keysArray.filter(function(k){return !k.startsWith('USADA:');}).length;html+='<tr><td>'+(p.nombre||'Sin nombre')+'</td><td>'+formatearDuracion(p.duracion)+'</td><td>$'+(p.precio||0).toLocaleString('es-AR')+'</td><td>'+stock+'</td><td>'+keysArray.length+'</td><td><button class="btn btn-outline" onclick="verKeys(\''+p.id+'\')" style="padding:0.3rem 0.6rem;font-size:0.75rem;">🔑 Keys</button> <button class="btn btn-outline" onclick="editarProducto(\''+p.id+'\')" style="padding:0.3rem 0.6rem;font-size:0.75rem;">✏️</button> <button class="btn btn-danger" onclick="eliminarProducto(\''+p.id+'\')" style="padding:0.3rem 0.6rem;font-size:0.75rem;">🗑️</button></td></tr>';});productosTableBody.innerHTML=html;}
+    function formatearDuracion(dur){var map={'1dia':'1 Día','3dias':'3 Días','7dias':'7 Días'};return map[dur]||dur||'N/A';}
+    document.querySelectorAll('#filtroBar .filter-chip').forEach(function(c){c.addEventListener('click',function(){document.querySelectorAll('#filtroBar .filter-chip').forEach(function(x){x.classList.remove('active');});this.classList.add('active');var f=this.getAttribute('data-filtro');if(f){filtroDur=f;}else{filtroDur='todas';}renderProductos();});});
+    async function verKeys(pid){try{keysList.innerHTML='Cargando keys...';keysModalOverlay.classList.add('active');var doc=await db.collection('productos').doc(pid).get();if(!doc.exists){keysList.innerHTML='<p style="color:var(--danger);">Producto no encontrado.</p>';return;}var data=doc.data();var keysArray=Array.isArray(data.keys)?data.keys:(typeof data.keys==='string'?data.keys.split(',').map(function(k){return k.trim();}).filter(function(k){return k;}):[]);if(keysArray.length===0){keysList.innerHTML='<p style="color:var(--text2);">No hay keys cargadas.</p>';return;}keysList.innerHTML=keysArray.map(function(k,i){var usada=k.startsWith('USADA:');return'<div style="padding:0.4rem 0;border-bottom:1px solid var(--border);color:'+(usada?'var(--danger)':'var(--success)')+';font-family:monospace;">'+(i+1)+'. '+k+'</div>';}).join('');}catch(e){keysList.innerHTML='<p style="color:var(--danger);">Error al cargar keys.</p>';}}
+    verTodasKeysBtn.addEventListener('click',async function(){try{keysList.innerHTML='Cargando todas las keys...';keysModalOverlay.classList.add('active');var lista=productosCache;if(lista.length===0){keysList.innerHTML='<p style="color:var(--text2);">No hay productos para mostrar.</p>';return;}var html='';var totalKeys=0;lista.forEach(function(p){var keysArray=Array.isArray(p.keys)?p.keys:(typeof p.keys==='string'?p.keys.split(',').map(function(k){return k.trim();}).filter(function(k){return k;}):[]);totalKeys+=keysArray.length;html+='<div style="margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:2px solid var(--accent);"><strong>📦 '+(p.nombre||'Sin nombre')+'</strong> ('+formatearDuracion(p.duracion)+') - '+keysArray.length+' keys</div>';if(keysArray.length===0){html+='<p style="color:var(--text2);font-size:0.8rem;margin-left:1rem;">Sin keys.</p>';}else{keysArray.forEach(function(k,i){var usada=k.startsWith('USADA:');html+='<div style="padding:0.3rem 0;margin-left:1rem;border-bottom:1px solid var(--border);color:'+(usada?'var(--danger)':'var(--success)')+';font-family:monospace;font-size:0.8rem;">'+(i+1)+'. '+k+'</div>';});}});html+='<div style="margin-top:1rem;padding-top:0.5rem;border-top:2px solid var(--accent);text-align:center;font-weight:600;">📊 Total: '+totalKeys+' keys en '+lista.length+' productos</div>';keysList.innerHTML=html;}catch(e){keysList.innerHTML='<p style="color:var(--danger);">Error al cargar las keys.</p>';}});
+    closeKeysBtn.addEventListener('click',function(){keysModalOverlay.classList.remove('active');});
+    keysModalOverlay.addEventListener('click',function(e){if(e.target===keysModalOverlay)keysModalOverlay.classList.remove('active');});
+    agregarProductoBtn.addEventListener('click',function(){editProductoId=null;productoModalTitle.textContent='Agregar Producto';prodNombre.value='';prodDuracion.value='1dia';prodPrecio.value='';prodKeys.value='';productoModalOverlay.classList.add('active');});
+    async function editarProducto(id){try{var doc=await db.collection('productos').doc(id).get();if(!doc.exists)return;var data=doc.data();editProductoId=id;productoModalTitle.textContent='Editar Producto';prodNombre.value=data.nombre||'';prodDuracion.value=data.duracion||'1dia';prodPrecio.value=data.precio||'';var keysArray=Array.isArray(data.keys)?data.keys.join(', '):(typeof data.keys==='string'?data.keys:'');prodKeys.value=keysArray;productoModalOverlay.classList.add('active');}catch(e){showToast('Error al cargar producto','error');}}
+    cancelProductoBtn.addEventListener('click',function(){productoModalOverlay.classList.remove('active');editProductoId=null;});
+    productoModalOverlay.addEventListener('click',function(e){if(e.target===productoModalOverlay){productoModalOverlay.classList.remove('active');editProductoId=null;}});
+    saveProductoBtn.addEventListener('click',async function(){var nombre=prodNombre.value.trim();var duracion=prodDuracion.value;var precio=parseFloat(prodPrecio.value);var keysRaw=prodKeys.value.trim();if(!nombre||!duracion||isNaN(precio)||!keysRaw){showToast('Completá todos los campos','error');return;}var keysArray=keysRaw.split(',').map(function(k){return k.trim();}).filter(function(k){return k;});try{var data={nombre:nombre,duracion:duracion,precio:precio,keys:keysArray,updatedAt:firebase.firestore.FieldValue.serverTimestamp()};if(editProductoId){await db.collection('productos').doc(editProductoId).update(data);showToast('Producto actualizado ✅');}else{data.createdAt=firebase.firestore.FieldValue.serverTimestamp();await db.collection('productos').add(data);showToast('Producto agregado ✅');}productoModalOverlay.classList.remove('active');editProductoId=null;cargarProductos();cargarDashboard();}catch(e){showToast('Error: '+e.message,'error');}});
+    async function eliminarProducto(id){if(!confirm('¿Eliminar este producto?'))return;try{await db.collection('productos').doc(id).delete();showToast('Producto eliminado ✅');cargarProductos();cargarDashboard();}catch(e){showToast('Error: '+e.message,'error');}}
+    cargarProductosBtn.addEventListener('click',cargarProductos);
 
-        async function verKeys(productoId) {
-            try {
-                keysList.innerHTML = 'Cargando keys...';
-                keysModalOverlay.classList.add('active');
-                var doc = await db.collection('productos').doc(productoId).get();
-                if (!doc.exists) {
-                    keysList.innerHTML = '<p style="color:var(--danger);">Producto no encontrado.</p>';
-                    return;
-                }
-                var data = doc.data();
-                var keysArray = Array.isArray(data.keys) ? data.keys : (typeof data.keys === 'string' ? data.keys.split(',').map(function(k) { return k.trim(); }).filter(function(k) { return k; }) : []);
-                if (keysArray.length === 0) {
-                    keysList.innerHTML = '<p style="color:var(--text2);">No hay keys cargadas.</p>';
-                    return;
-                }
-                keysList.innerHTML = keysArray.map(function(k, i) {
-                    var usada = k.startsWith('USADA:');
-                    return '<div style="padding:0.4rem 0;border-bottom:1px solid var(--border);color:' + (usada ? 'var(--danger)' : 'var(--success)') + ';font-family:monospace;">' + (i+1) + '. ' + k + '</div>';
-                }).join('');
-            } catch (e) {
-                keysList.innerHTML = '<p style="color:var(--danger);">Error al cargar keys.</p>';
-            }
-        }
+    // ===== EXPORTAR / IMPORTAR =====
+    exportarBtn.addEventListener('click',async function(){try{var snap=await db.collection('productos').get();var datos=[];snap.forEach(function(d){datos.push({id:d.id,...d.data()});});var json=JSON.stringify(datos,null,2);var blob=new Blob([json],{type:'application/json'});var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download='productos.json';a.click();URL.revokeObjectURL(url);showToast('Exportado ✅');}catch(e){showToast('Error: '+e.message,'error');}});
+    importarBtn.addEventListener('click',function(){var input=document.createElement('input');input.type='file';input.accept='.json';input.onchange=async function(e){try{var file=e.target.files[0];var text=await file.text();var datos=JSON.parse(text);for(var i=0;i<datos.length;i++){var item=datos[i];var id=item.id;delete item.id;if(id){await db.collection('productos').doc(id).set(item);}else{await db.collection('productos').add(item);}}showToast('Importado ✅');cargarProductos();cargarDashboard();}catch(e){showToast('Error: '+e.message,'error');}};input.click();});
 
-        verTodasKeysBtn.addEventListener('click', async function() {
-            try {
-                keysList.innerHTML = 'Cargando todas las keys...';
-                keysModalOverlay.classList.add('active');
-                var lista = productosCache;
-                if (lista.length === 0) {
-                    keysList.innerHTML = '<p style="color:var(--text2);">No hay productos para mostrar.</p>';
-                    return;
-                }
-                var html = '';
-                var totalKeys = 0;
-                lista.forEach(function(p) {
-                    var keysArray = Array.isArray(p.keys) ? p.keys : (typeof p.keys === 'string' ? p.keys.split(',').map(function(k) { return k.trim(); }).filter(function(k) { return k; }) : []);
-                    totalKeys += keysArray.length;
-                    html += '<div style="margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:2px solid var(--accent);"><strong>📦 ' + (p.nombre || 'Sin nombre') + '</strong> (' + formatearDuracion(p.duracion) + ') - ' + keysArray.length + ' keys</div>';
-                    if (keysArray.length === 0) {
-                        html += '<p style="color:var(--text2);font-size:0.8rem;margin-left:1rem;">Sin keys.</p>';
-                    } else {
-                        keysArray.forEach(function(k, i) {
-                            var usada = k.startsWith('USADA:');
-                            html += '<div style="padding:0.3rem 0;margin-left:1rem;border-bottom:1px solid var(--border);color:' + (usada ? 'var(--danger)' : 'var(--success)') + ';font-family:monospace;font-size:0.8rem;">' + (i+1) + '. ' + k + '</div>';
-                        });
-                    }
-                });
-                html += '<div style="margin-top:1rem;padding-top:0.5rem;border-top:2px solid var(--accent);text-align:center;font-weight:600;">📊 Total: ' + totalKeys + ' keys en ' + lista.length + ' productos</div>';
-                keysList.innerHTML = html;
-            } catch (e) {
-                keysList.innerHTML = '<p style="color:var(--danger);">Error al cargar las keys.</p>';
-            }
-        });
+    async function cargarVentas(){try{ventasTableBody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2rem;">Cargando...</td></tr>';var snap=await db.collection('ventas').orderBy('fecha','desc').limit(50).get();if(snap.empty){ventasTableBody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text2);">No hay ventas</td></tr>';return;}ventasTableBody.innerHTML='';snap.forEach(function(doc){var v=doc.data();var fecha=v.fecha?v.fecha.toDate().toLocaleDateString('es-AR'):'N/A';ventasTableBody.innerHTML+='<tr><td>'+doc.id.slice(-6)+'</td><td>'+(v.producto||'N/A')+'</td><td>'+(v.cliente||'N/A')+'</td><td>'+(v.vendedor||'')+'</td><td style="font-family:monospace;font-size:0.75rem;">'+(v.key||'N/A')+'</td><td>'+fecha+'</td><td>$'+(v.total||0).toLocaleString('es-AR')+'</td></tr>';});}catch(e){ventasTableBody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--danger);">Error</td></tr>';}}
+    async function cargarClientes(){try{clientesTableBody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:2rem;">Cargando...</td></tr>';var snap=await db.collection('clientes').orderBy('totalGastado','desc').get();if(snap.empty){clientesTableBody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text2);">No hay clientes</td></tr>';return;}clientesTableBody.innerHTML='';snap.forEach(function(doc){var c=doc.data();clientesTableBody.innerHTML+='<tr><td>'+(c.email||'N/A')+'</td><td>'+(c.nombre||'N/A')+'</td><td>'+(c.compras||0)+'</td><td>$'+(c.totalGastado||0).toLocaleString('es-AR')+'</td></tr>';});}catch(e){clientesTableBody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--danger);">Error</td></tr>';}}
+async function cargarVendedores(){try{vendedoresTableBody.innerHTML='<tr><td colspan="3" style="text-align:center;padding:2rem;">Cargando...</td></tr>';var snap=await db.collection('vendedores').get();if(snap.empty){vendedoresTableBody.innerHTML='<tr><td colspan="3" style="text-align:center;padding:2rem;color:var(--text2);">Sin vendedores</td></tr>';return;}vendedoresTableBody.innerHTML='';snap.forEach(function(d){var v=d.data();if(v.nombre==='test')return;vendedoresTableBody.innerHTML+='<tr><td>'+(v.nombre||'')+'</td><td>$'+(v.saldo||0).toLocaleString('es-AR')+'</td><td><button class="btn btn-outline" onclick="acreditarSaldo(\''+d.id+'\')" style="padding:0.3rem 0.6rem;font-size:0.75rem;">💵 Acreditar</button> <button class="btn btn-danger" onclick="eliminarVendedor(\''+d.id+'\')" style="padding:0.3rem 0.6rem;font-size:0.75rem;">🗑️</button></td></tr>';});}catch(e){vendedoresTableBody.innerHTML='<tr><td colspan="3" style="text-align:center;padding:2rem;color:var(--danger);">Error</td></tr>';}}
+agregarVendedorBtn.addEventListener('click',function(){vendedorModalTitle.textContent='Agregar Vendedor';vendNombre.value='';vendPassword.value='';vendSaldo.value='';vendedorModalOverlay.classList.add('active');});
+cancelVendedorBtn.addEventListener('click',function(){vendedorModalOverlay.classList.remove('active');});
+vendedorModalOverlay.addEventListener('click',function(e){if(e.target===vendedorModalOverlay)vendedorModalOverlay.classList.remove('active');});
+saveVendedorBtn.addEventListener('click',async function(){var nombre=vendNombre.value.trim();var pass=vendPassword.value.trim();var saldo=parseFloat(vendSaldo.value);if(!nombre||!pass||isNaN(saldo)){showToast('Completá todos los campos','error');return;}try{var emailVend=nombre+'@nova.com';var userCred=await auth.createUserWithEmailAndPassword(emailVend,pass);var data={nombre:nombre,password:pass,saldo:saldo,userId:userCred.user.uid,createdAt:firebase.firestore.FieldValue.serverTimestamp()};await db.collection('vendedores').doc(userCred.user.uid).set(data);showToast('Vendedor agregado ✅');vendedorModalOverlay.classList.remove('active');cargarVendedores();}catch(e){showToast('Error: '+e.message,'error');}});
+async function acreditarSaldo(id){var monto=prompt('Monto a acreditar (+):');if(monto===null)return;var cantidad=parseFloat(monto);if(isNaN(cantidad)){showToast('Monto inválido','error');return;}try{var doc=await db.collection('vendedores').doc(id).get();if(!doc.exists){showToast('Vendedor no encontrado','error');return;}await db.collection('vendedores').doc(id).update({saldo:(doc.data().saldo||0)+cantidad,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});showToast('Saldo actualizado ✅');cargarVendedores();}catch(e){showToast('Error: '+e.message,'error');}}
+async function eliminarVendedor(id){if(!confirm('¿Eliminar este vendedor?'))return;try{await db.collection('vendedores').doc(id).delete();showToast('Vendedor eliminado ✅');cargarVendedores();}catch(e){showToast('Error: '+e.message,'error');}}
 
-        closeKeysBtn.addEventListener('click', function() { keysModalOverlay.classList.remove('active'); });
-        keysModalOverlay.addEventListener('click', function(e) { if (e.target === keysModalOverlay) keysModalOverlay.classList.remove('active'); });
+// ===== PAGOS =====
+async function cargarPagos(){try{pagosTableBody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:2rem;">Cargando...</td></tr>';var snap=await db.collection('metodos_pago').get();if(snap.empty){pagosTableBody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text2);">Sin métodos de pago</td></tr>';return;}pagosTableBody.innerHTML='';snap.forEach(function(d){var p=d.data();pagosTableBody.innerHTML+='<tr><td>'+(p.nombre||'')+'</td><td>'+(p.tipo||'')+'</td><td>'+(p.datos||'')+'</td><td><button class="btn btn-danger" onclick="eliminarPago(\''+d.id+'\')" style="padding:0.3rem 0.6rem;font-size:0.75rem;">🗑️</button></td></tr>';});}catch(e){pagosTableBody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--danger);">Error</td></tr>';}}
+agregarPagoBtn.addEventListener('click',function(){pagoModalTitle.textContent='Agregar Método de Pago';pagoNombre.value='';pagoTipo.value='Mercado Pago';pagoDatos.value='';pagoModalOverlay.classList.add('active');});
+cancelPagoBtn.addEventListener('click',function(){pagoModalOverlay.classList.remove('active');});
+pagoModalOverlay.addEventListener('click',function(e){if(e.target===pagoModalOverlay)pagoModalOverlay.classList.remove('active');});
+savePagoBtn.addEventListener('click',async function(){var nombre=pagoNombre.value.trim();var tipo=pagoTipo.value;var datos=pagoDatos.value.trim();if(!nombre||!datos){showToast('Completá todos los campos','error');return;}try{await db.collection('metodos_pago').add({nombre:nombre,tipo:tipo,datos:datos,createdAt:firebase.firestore.FieldValue.serverTimestamp()});showToast('Método agregado ✅');pagoModalOverlay.classList.remove('active');cargarPagos();}catch(e){showToast('Error: '+e.message,'error');}});
+async function eliminarPago(id){if(!confirm('¿Eliminar este método?'))return;try{await db.collection('metodos_pago').doc(id).delete();showToast('Método eliminado ✅');cargarPagos();}catch(e){showToast('Error: '+e.message,'error');}}
+        // ===== CONFIGURACIÓN =====
+        async function cargarConfig(){try{var doc=await db.collection('config').doc('pagos').get();if(doc.exists){var d=doc.data();if(d.mpToken)mpToken.value=d.mpToken;if(d.ppClient)ppClient.value=d.ppClient;if(d.ppSecret)ppSecret.value=d.ppSecret;}}catch(e){}}
+        saveMPBtn.addEventListener('click',async function(){try{await db.collection('config').doc('pagos').set({mpToken:mpToken.value.trim()},{merge:true});showToast('Mercado Pago guardado ✅');}catch(e){showToast('Error: '+e.message,'error');}});
+        savePPBtn.addEventListener('click',async function(){try{await db.collection('config').doc('pagos').set({ppClient:ppClient.value.trim(),ppSecret:ppSecret.value.trim()},{merge:true});showToast('PayPal guardado ✅');}catch(e){showToast('Error: '+e.message,'error');}});
 
-        agregarProductoBtn.addEventListener('click', function() {
-            editProductoId = null;
-            productoModalTitle.textContent = 'Agregar Producto';
-            prodNombre.value = '';
-            prodDuracion.value = '1dia';
-            prodPrecio.value = '';
-            prodKeys.value = '';
-            productoModalOverlay.classList.add('active');
-        });
-
-        async function editarProducto(id) {
-            try {
-                var doc = await db.collection('productos').doc(id).get();
-                if (!doc.exists) return;
-                var data = doc.data();
-                editProductoId = id;
-                productoModalTitle.textContent = 'Editar Producto';
-                prodNombre.value = data.nombre || '';
-                prodDuracion.value = data.duracion || '1dia';
-                prodPrecio.value = data.precio || '';
-                var keysArray = Array.isArray(data.keys) ? data.keys.join(', ') : (typeof data.keys === 'string' ? data.keys : '');
-                prodKeys.value = keysArray;
-                productoModalOverlay.classList.add('active');
-            } catch (e) {
-                showToast('Error al cargar producto', 'error');
-            }
-        }
-
-        cancelProductoBtn.addEventListener('click', function() { productoModalOverlay.classList.remove('active'); editProductoId = null; });
-        productoModalOverlay.addEventListener('click', function(e) { if (e.target === productoModalOverlay) { productoModalOverlay.classList.remove('active'); editProductoId = null; } });
-
-        saveProductoBtn.addEventListener('click', async function() {
-            var nombre = prodNombre.value.trim();
-            var duracion = prodDuracion.value;
-            var precio = parseFloat(prodPrecio.value);
-            var keysRaw = prodKeys.value.trim();
-            if (!nombre || !duracion || isNaN(precio) || !keysRaw) {
-                showToast('Completá todos los campos', 'error');
-                return;
-            }
-            var keysArray = keysRaw.split(',').map(function(k) { return k.trim(); }).filter(function(k) { return k; });
-            try {
-                var data = {
-                    nombre: nombre,
-                    duracion: duracion,
-                    precio: precio,
-                    keys: keysArray,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                };
-                if (editProductoId) {
-                    await db.collection('productos').doc(editProductoId).update(data);
-                    showToast('Producto actualizado ✅');
-                } else {
-                    data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-                    await db.collection('productos').add(data);
-                    showToast('Producto agregado ✅');
-                }
-                productoModalOverlay.classList.remove('active');
-                editProductoId = null;
-                cargarProductos();
-                cargarDashboard();
-            } catch (e) {
-                showToast('Error: ' + e.message, 'error');
-            }
-        });
-
-        async function eliminarProducto(id) {
-            if (!confirm('¿Eliminar este producto?')) return;
-            try {
-                await db.collection('productos').doc(id).delete();
-                showToast('Producto eliminado ✅');
-                cargarProductos();
-                cargarDashboard();
-            } catch (e) {
-                showToast('Error: ' + e.message, 'error');
-            }
-        }
-
-        cargarProductosBtn.addEventListener('click', cargarProductos);
-
-        async function cargarVentas() {
-            try {
-                ventasTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;">Cargando...</td></tr>';
-                var snap = await db.collection('ventas').orderBy('fecha', 'desc').limit(50).get();
-                if (snap.empty) {
-                    ventasTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text2);">No hay ventas</td></tr>';
-                    return;
-                }
-                ventasTableBody.innerHTML = '';
-                snap.forEach(function(doc) {
-                    var v = doc.data();
-                    var fecha = v.fecha ? v.fecha.toDate().toLocaleDateString('es-AR') : 'N/A';
-                    ventasTableBody.innerHTML += '<tr><td>' + doc.id.slice(-6) + '</td><td>' + (v.producto || 'N/A') + '</td><td>' + (v.cliente || 'N/A') + '</td><td style="font-family:monospace;font-size:0.75rem;">' + (v.key || 'N/A') + '</td><td>' + fecha + '</td><td>$' + (v.total || 0).toLocaleString('es-AR') + '</td></tr>';
-                });
-            } catch (e) {
-                ventasTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--danger);">Error</td></tr>';
-            }
-        }
-
-        async function cargarClientes() {
-            try {
-                clientesTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;">Cargando...</td></tr>';
-                var snap = await db.collection('clientes').orderBy('totalGastado', 'desc').get();
-                if (snap.empty) {
-                    clientesTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text2);">No hay clientes</td></tr>';
-                    return;
-                }
-                clientesTableBody.innerHTML = '';
-                snap.forEach(function(doc) {
-                    var c = doc.data();
-                    clientesTableBody.innerHTML += '<tr><td>' + (c.email || 'N/A') + '</td><td>' + (c.nombre || 'N/A') + '</td><td>' + (c.compras || 0) + '</td><td>$' + (c.totalGastado || 0).toLocaleString('es-AR') + '</td></tr>';
-                });
-            } catch (e) {
-                clientesTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--danger);">Error</td></tr>';
-            }
-        }
-
-        window.verKeys = verKeys;
-        window.editarProducto = editarProducto;
-        window.eliminarProducto = eliminarProducto;
+        window.verKeys=verKeys;
+        window.editarProducto=editarProducto;
+        window.eliminarProducto=eliminarProducto;
+        window.acreditarSaldo=acreditarSaldo;
+        window.eliminarVendedor=eliminarVendedor;
+        window.eliminarPago=eliminarPago;
     </script>
 </body>
 </html>
