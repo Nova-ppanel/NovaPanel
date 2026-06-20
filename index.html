@@ -264,6 +264,7 @@ loginBtn.addEventListener('click',function(){
 logoutBtn.addEventListener('click',function(){auth.signOut();currentUser=null;adminContainer.classList.remove('active');loginContainer.style.display='';loginEmail.value='';loginPassword.value='';});
 vendedorLogoutBtn.addEventListener('click',function(){vendedorActual=null;vendedorContainer.classList.remove('active');loginContainer.style.display='';loginEmail.value='';loginPassword.value='';});
 
+// ===== RETIRAR (WhatsApp directo) =====
 vRetirarBtn.addEventListener('click',function(){
     var m=parseFloat(prompt('Monto a retirar:'));
     if(!m||m<=0||isNaN(m))return;
@@ -275,16 +276,56 @@ vRetirarBtn.addEventListener('click',function(){
     msg+='📅 Fecha: '+new Date().toLocaleDateString('es-AR');
     window.open('https://wa.me/5491154141893?text='+msg,'_blank');
 });
+
+// ===== RECARGAR (mostrar métodos de pago, elegir, subir comprobante) =====
 vRecargarBtn.addEventListener('click',function(){
-    var m=parseFloat(prompt('Monto a recargar:'));
-    if(!m||m<=0||isNaN(m))return;
-    var msg='*SOLICITUD DE RECARGA*%0A%0A';
-    msg+='👤 Vendedor: '+vendedorActual.nombre+'%0A';
-    msg+='💰 Monto a recargar: $'+m.toLocaleString('es-AR')+'%0A';
-    msg+='💳 Saldo actual: $'+vendedorActual.saldo.toLocaleString('es-AR')+'%0A';
-    msg+='📅 Fecha: '+new Date().toLocaleDateString('es-AR');
-    window.open('https://wa.me/5491154141893?text='+msg,'_blank');
+    var html='<div style="background:rgba(10,10,28,0.98);padding:1rem;border-radius:8px;max-width:400px;width:90%;">';
+    html+='<h3 style="margin-bottom:0.5rem;">Métodos de Pago</h3>';
+    db.collection('metodos_pago').get().then(function(snap){
+        if(snap.empty){html+='<p style="color:var(--text2);">No hay métodos de pago.</p>';}
+        else{
+            snap.forEach(function(d){
+                var p=d.data();
+                html+='<div style="padding:0.5rem;border:1px solid var(--border);border-radius:6px;margin-bottom:0.4rem;cursor:pointer;background:rgba(168,85,247,0.05);" onclick="seleccionarMetodo(\''+d.id+'\',\''+(p.nombre||'').replace(/'/g,"\\'")+'\',\''+(p.datos||'').replace(/'/g,"\\'")+'\',\''+(p.tipo||'').replace(/'/g,"\\'")+'\')">';
+                html+='<strong>'+(p.nombre||'')+'</strong> ('+(p.tipo||'')+')<br><small>'+(p.datos||'')+'</small></div>';
+            });
+        }
+        html+='<button class="btn btn-outline btn-sm" style="margin-top:0.5rem;width:100%;" onclick="document.getElementById(\'metodoOverlay\').remove()">Cancelar</button></div>';
+        var div=document.createElement('div');
+        div.innerHTML=html;
+        div.style.position='fixed';div.style.inset='0';div.style.zIndex='300';
+        div.style.background='rgba(0,0,0,0.85)';div.style.display='flex';
+        div.style.alignItems='center';div.style.justifyContent='center';
+        div.id='metodoOverlay';
+        document.body.appendChild(div);
+    });
 });
+window.seleccionarMetodo=function(id,nombre,datos,tipo){
+    var overlay=document.getElementById('metodoOverlay');
+    if(overlay)overlay.remove();
+    var monto=parseFloat(prompt('Monto a recargar (método: '+nombre+'):'));
+    if(!monto||monto<=0||isNaN(monto))return;
+    var input=document.createElement('input');
+    input.type='file';input.accept='image/*';
+    input.onchange=function(e){
+        var file=e.target.files[0];
+        if(!file)return;
+        var reader=new FileReader();
+        reader.onload=function(e){
+            var msg='*SOLICITUD DE RECARGA*%0A%0A';
+            msg+='👤 Vendedor: '+vendedorActual.nombre+'%0A';
+            msg+='💰 Monto: $'+monto.toLocaleString('es-AR')+'%0A';
+            msg+='💳 Saldo actual: $'+vendedorActual.saldo.toLocaleString('es-AR')+'%0A';
+            msg+='🏦 Método: '+nombre+' ('+tipo+')%0A';
+            msg+='📋 Datos: '+datos+'%0A';
+            msg+='📅 Fecha: '+new Date().toLocaleDateString('es-AR');
+            window.open('https://wa.me/5491154141893?text='+msg,'_blank');
+            showToast('Solicitud enviada a WhatsApp');
+        };
+        reader.readAsDataURL(file);
+    };
+    input.click();
+};
 
 navLinks.forEach(function(link){link.addEventListener('click',function(e){e.preventDefault();navLinks.forEach(function(l){l.classList.remove('active');});this.classList.add('active');var sid=this.getAttribute('data-section');sections.forEach(function(s){s.classList.remove('active');});document.getElementById(sid+'Section').classList.add('active');if(sid==='ventas')cargarVentas();if(sid==='clientes')cargarClientes();if(sid==='productos')cargarProductos();if(sid==='vendedores')cargarVendedores();if(sid==='pagos')cargarPagos();if(sid==='configuracion')cargarConfig();});});
 function showToast(msg,type){type=type||'success';toast.textContent=msg;toast.style.borderColor=type==='error'?'var(--danger)':'var(--success)';toast.classList.add('show');setTimeout(function(){toast.classList.remove('show');},2500);}
