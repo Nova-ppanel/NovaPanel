@@ -212,8 +212,27 @@ prodImagen.addEventListener('change',function(){
 pagoTipo.addEventListener('change',function(){
     criptoDiv.style.display=this.value==='Criptomoneda'?'block':'none';
 });
-sidebarToggle.addEventListener('click',function(){sidebar.classList.toggle('open');});
-navLinks.forEach(function(link){link.addEventListener('click',function(){sidebar.classList.remove('open');if(window.innerWidth<768){var sid=this.getAttribute('data-section');sections.forEach(function(s){s.classList.remove('active');});document.getElementById(sid+'Section').classList.add('active');if(sid==='ventas')cargarVentas();if(sid==='clientes')cargarClientes();if(sid==='productos')cargarProductos();if(sid==='vendedores')cargarVendedores();if(sid==='pagos')cargarPagos();if(sid==='configuracion')cargarConfig();}});});
+sidebarToggle.addEventListener('click',function(){
+    sidebar.classList.toggle('open');
+});
+
+navLinks.forEach(function(link){
+    link.addEventListener('click',function(e){
+        e.preventDefault();
+        navLinks.forEach(function(l){l.classList.remove('active');});
+        this.classList.add('active');
+        var sid=this.getAttribute('data-section');
+        sections.forEach(function(s){s.classList.remove('active');});
+        document.getElementById(sid+'Section').classList.add('active');
+        sidebar.classList.remove('open');
+        if(sid==='ventas')cargarVentas();
+        if(sid==='clientes')cargarClientes();
+        if(sid==='productos')cargarProductos();
+        if(sid==='vendedores')cargarVendedores();
+        if(sid==='pagos')cargarPagos();
+        if(sid==='configuracion')cargarConfig();
+    });
+});
 
 loginBtn.addEventListener('click',function(){
     var usuario=loginEmail.value.trim();
