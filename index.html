@@ -447,6 +447,7 @@
         function cargarProductosVendedor(){
             vProductosGrid.innerHTML='<div style="text-align:center;padding:2rem;color:var(--text2);grid-column:1/-1;">Cargando productos...</div>';
             db.collection('productos').get().then(function(snap){
+                alert('Cantidad de productos encontrados: '+snap.size);
                 if(snap.empty){
                     vProductosGrid.innerHTML='<div style="text-align:center;padding:2rem;color:var(--text2);grid-column:1/-1;">No hay productos disponibles</div>';
                     vProductosCount.textContent='0';
@@ -456,6 +457,7 @@
                 vProductosGrid.innerHTML='';
                 snap.forEach(function(d){
                     var p=d.data();
+                    alert('Producto: '+(p.nombre||'Sin nombre')+' - Precio: $'+(p.precio||0));
                     var k=Array.isArray(p.keys)?p.keys:(typeof p.keys==='string'?p.keys.split(',').map(function(x){return x.trim();}).filter(function(x){return x;}):[]);
                     var stock=k.filter(function(x){return !x.startsWith('USADA:');}).length;
                     var card=document.createElement('div');
@@ -475,6 +477,7 @@
                     vProductosGrid.appendChild(card);
                 });
             }).catch(function(e){
+                alert('Error al cargar productos: '+e.message);
                 vProductosGrid.innerHTML='<div style="text-align:center;padding:2rem;color:var(--danger);grid-column:1/-1;">Error: '+e.message+'</div>';
             });
         }
