@@ -145,7 +145,7 @@
     <h2>💰 Ventas</h2>
     <div class="table-container">
         <table>
-            <thead><tr><th>ID</th><th>Prod</th><th>Cliente</th><th>Vend</th><th>Key</th><th>Fecha</th><th>Total</th></tr></thead>
+            <thead><tr><th>ID</th><th>Prod</th><th>Cliente</th><th>Vend</th><th>Key</th><th>Fecha</th><th>Costo</th><th>Venta</th><th>Gan.</th></tr></thead>
             <tbody id="ventasTableBody"></tbody>
         </table>
     </div>
@@ -229,17 +229,22 @@
 <div id="vendedorContainer">
     <button id="vendedorLogoutBtn">🚪 Salir</button>
     <h2>Panel de Vendedor</h2>
-    <div class="cards-grid" style="display:flex;gap:1rem;margin-bottom:2rem;">
+    <div class="cards-grid" style="display:flex;gap:1rem;margin-bottom:2rem;flex-wrap:wrap;">
         <div class="card"><div class="label">💰 Mi Saldo</div><div class="value" id="vSaldo">$0</div></div>
-        <div class="card"><div class="label">📊 Ventas</div><div class="value" id="vVentas">0</div></div>
+        <div class="card"><div class="label">📊 Mis Ventas</div><div class="value" id="vVentas">0</div></div>
+        <div class="card"><div class="label">📦 Productos</div><div class="value" id="vProductosCount">0</div></div>
     </div>
-    <div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
+    <div style="display:flex;gap:0.5rem;margin-bottom:1.5rem;flex-wrap:wrap;">
         <button class="btn btn-primary" id="vRetirarBtn">💰 Retirar</button>
         <button class="btn btn-success" id="vRecargarBtn">➕ Recargar</button>
+        <button class="btn btn-outline" id="vRecargarProductosBtn">🔄 Actualizar</button>
     </div>
+    <h2 style="margin-bottom:1rem;">🛒 Comprar Producto</h2>
+    <div class="cards-grid" id="vProductosGrid" style="margin-bottom:2rem;"></div>
+    <h2 style="margin-bottom:1rem;">📋 Historial de Ventas</h2>
     <div class="table-container">
         <table>
-            <thead><tr><th>ID</th><th>Prod</th><th>Key</th><th>Fecha</th><th>Total</th></tr></thead>
+            <thead><tr><th>ID</th><th>Prod</th><th>Key</th><th>Cliente</th><th>Fecha</th><th>Costo</th><th>Venta</th></tr></thead>
             <tbody id="vVentasBody"></tbody>
         </table>
     </div>
@@ -380,6 +385,9 @@
         const vSaldo=document.getElementById('vSaldo');
         const vVentas=document.getElementById('vVentas');
         const vVentasBody=document.getElementById('vVentasBody');
+        const vProductosCount=document.getElementById('vProductosCount');
+        const vProductosGrid=document.getElementById('vProductosGrid');
+        const vRecargarProductosBtn=document.getElementById('vRecargarProductosBtn');
         const vRetirarBtn=document.getElementById('vRetirarBtn');
         const vRecargarBtn=document.getElementById('vRecargarBtn');
         const agregarPagoBtn=document.getElementById('agregarPagoBtn');
@@ -428,6 +436,7 @@
                     vendedorContainer.classList.add('active');
                     vSaldo.textContent='$'+(vendedorActual.saldo||0).toLocaleString('es-AR');
                     cargarVentasVendedor();
+                    cargarProductosVendedor();
                 });
             }).catch(function(e){loginError.textContent='Error: '+e.message;});
         });
@@ -440,7 +449,7 @@ vRetirarBtn.addEventListener('click',function(){
     var msg='*SOLICITUD DE RETIRO*%0A%0A';
     msg+='👤 Vendedor: '+vendedorActual.nombre+'%0A';
     msg+='💰 Monto: $'+m.toLocaleString('es-AR')+'%0A';
-    msg+='💳 Saldo: $'+vendedorActual.saldo.toLocaleString('es-AR')+'%0A';
+    msg+='💳 Saldo actual: $'+vendedorActual.saldo.toLocaleString('es-AR')+'%0A';
     msg+='📅 Fecha: '+new Date().toLocaleDateString('es-AR');
     window.open('https://wa.me/5491154141893?text='+msg,'_blank');
 });
@@ -470,7 +479,7 @@ window.seleccionarMetodo=function(id,nombre,datos,tipo){
             var msg='*SOLICITUD DE RECARGA*%0A%0A';
             msg+='👤 Vendedor: '+vendedorActual.nombre+'%0A';
             msg+='💰 Monto: $'+monto.toLocaleString('es-AR')+'%0A';
-            msg+='💳 Saldo: $'+vendedorActual.saldo.toLocaleString('es-AR')+'%0A';
+            msg+='💳 Saldo actual: $'+vendedorActual.saldo.toLocaleString('es-AR')+'%0A';
             msg+='🏦 Método: '+nombre+' ('+tipo+')%0A';
             msg+='📋 Datos: '+datos+'%0A';
             msg+='📅 Fecha: '+new Date().toLocaleDateString('es-AR');
@@ -480,43 +489,134 @@ window.seleccionarMetodo=function(id,nombre,datos,tipo){
     };input.click();
 };
 
+vRecargarProductosBtn.addEventListener('click',function(){
+    cargarProductosVendedor();
+    cargarVentasVendedor();
+    db.collection('vendedores').doc(vendedorActual.id).get().then(function(doc){
+        if(doc.exists){
+            vendedorActual.saldo = doc.data().saldo || 0;
+            vSaldo.textContent = '$'+(vendedorActual.saldo||0).toLocaleString('es-AR');
+        }
+    });
+});
+
 navLinks.forEach(function(link){link.addEventListener('click',function(e){e.preventDefault();navLinks.forEach(function(l){l.classList.remove('active');});this.classList.add('active');var sid=this.getAttribute('data-section');sections.forEach(function(s){s.classList.remove('active');});document.getElementById(sid+'Section').classList.add('active');if(sid==='ventas')cargarVentas();if(sid==='clientes')cargarClientes();if(sid==='productos')cargarProductos();if(sid==='vendedores')cargarVendedores();if(sid==='pagos')cargarPagos();if(sid==='configuracion')cargarConfig();});});
 function showToast(msg,type){type=type||'success';toast.textContent=msg;toast.style.borderColor=type==='error'?'var(--danger)':'var(--success)';toast.classList.add('show');setTimeout(function(){toast.classList.remove('show');},3000);}
-function cargarVentasVendedor(){vVentasBody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:2rem;">Cargando...</td></tr>';db.collection('ventas').where('vendedor','==',vendedorActual.nombre).orderBy('fecha','desc').limit(50).get().then(function(snap){if(snap.empty){vVentasBody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text2);">Sin ventas</td></tr>';vVentas.textContent='0';return;}vVentas.textContent=snap.size;vVentasBody.innerHTML='';snap.forEach(function(d){var v=d.data(),f=v.fecha?v.fecha.toDate().toLocaleDateString('es-AR'):'N/A';vVentasBody.innerHTML+='<tr><td>'+d.id.slice(-6)+'</td><td>'+(v.producto||'')+'</td><td>'+(v.key||'')+'</td><td>'+f+'</td><td>$'+(v.total||0).toLocaleString('es-AR')+'</td></tr>';});}).catch(function(e){vVentasBody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--danger);">Error</td></tr>';});}
+
+function cargarVentasVendedor(){
+    vVentasBody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2rem;">Cargando...</td></tr>';
+    db.collection('ventas').where('vendedor','==',vendedorActual.nombre).orderBy('fecha','desc').limit(50).get().then(function(snap){
+        if(snap.empty){
+            vVentasBody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text2);">Sin ventas</td></tr>';
+            vVentas.textContent='0';
+            return;
+        }
+        vVentas.textContent=snap.size;
+        vVentasBody.innerHTML='';
+        snap.forEach(function(d){
+            var v=d.data(),f=v.fecha?v.fecha.toDate().toLocaleDateString('es-AR'):'N/A';
+            var costo=v.costo||0,venta=v.precioVenta||v.total||0;
+            vVentasBody.innerHTML+='<tr><td>'+d.id.slice(-6)+'</td><td>'+(v.producto||'')+'</td><td style="font-family:monospace;font-size:0.75rem;">'+(v.key||'')+'</td><td>'+(v.cliente||'')+'</td><td>'+f+'</td><td style="color:var(--danger);">$'+costo.toLocaleString('es-AR')+'</td><td style="color:var(--success);">$'+venta.toLocaleString('es-AR')+'</td></tr>';
+        });
+    }).catch(function(e){
+        vVentasBody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--danger);">Error</td></tr>';
+    });
+}
+
+function cargarProductosVendedor(){
+    vProductosGrid.innerHTML='<div style="text-align:center;padding:2rem;color:var(--text2);grid-column:1/-1;">Cargando...</div>';
+    db.collection('productos').get().then(function(snap){
+        if(snap.empty){
+            vProductosGrid.innerHTML='<div style="text-align:center;padding:2rem;color:var(--text2);grid-column:1/-1;">No hay productos disponibles</div>';
+            vProductosCount.textContent='0';
+            return;
+        }
+        vProductosCount.textContent=snap.size;
+        vProductosGrid.innerHTML='';
+        snap.forEach(function(d){
+            var p=d.data();
+            var k=Array.isArray(p.keys)?p.keys:(typeof p.keys==='string'?p.keys.split(',').map(function(x){return x.trim();}).filter(function(x){return x;}):[]);
+            var stock=k.filter(function(x){return !x.startsWith('USADA:');}).length;
+            var card=document.createElement('div');
+            card.className='card';
+            card.style.cssText='text-align:center;min-width:200px;';
+            card.innerHTML='<div class="label">📦 '+(p.nombre||'')+'</div>'+
+                '<div style="font-size:0.8rem;color:var(--text2);margin:0.3rem 0;">⏳ '+formatearDuracion(p.duracion)+'</div>'+
+                '<div class="value" style="font-size:1.8rem;">$'+(p.precio||0).toLocaleString('es-AR')+'</div>'+
+                '<div style="font-size:0.75rem;color:'+(stock>0?'var(--success)':'var(--danger)')+';margin-top:0.3rem;">🔑 Stock: '+stock+'</div>'+
+                '<button class="btn btn-primary btn-sm" style="margin-top:0.5rem;width:100%;" '+(stock<=0?'disabled':'')+'>🛒 Comprar</button>';
+            card.querySelector('button').addEventListener('click',function(e){
+                e.stopPropagation();
+                comprarProducto(d.id,p.nombre,p.precio,k);
+            });
+            vProductosGrid.appendChild(card);
+        });
+    }).catch(function(e){
+        vProductosGrid.innerHTML='<div style="text-align:center;padding:2rem;color:var(--danger);grid-column:1/-1;">Error al cargar</div>';
+    });
+}
+
+function comprarProducto(prodId,nombre,precio,keys){
+    var disponibles=keys.filter(function(x){return !x.startsWith('USADA:');});
+    if(disponibles.length===0){showToast('Sin stock disponible','error');return;}
+    if(precio>vendedorActual.saldo){showToast('Saldo insuficiente. Recargá primero.','error');return;}
+    var cliente=prompt('Email del cliente:');
+    if(!cliente||cliente.trim()==='')return;
+    cliente=cliente.trim();
+    var precioVenta=parseFloat(prompt('Precio de venta al cliente (tu costo: $'+precio.toLocaleString('es-AR')+'):'));
+    if(!precioVenta||isNaN(precioVenta)||precioVenta<=0)return;
+    var keyEntregada=disponibles[0];
+    var keyIndex=keys.indexOf(keyEntregada);
+    var nuevasKeys=keys.map(function(x,i){return i===keyIndex?'USADA:'+x:x;});
+    db.collection('productos').doc(prodId).update({keys:nuevasKeys,updatedAt:firebase.firestore.FieldValue.serverTimestamp()}).then(function(){
+        var nuevoSaldo=vendedorActual.saldo-precio;
+        var ventaData={
+            producto:nombre,key:keyEntregada,cliente:cliente,vendedor:vendedorActual.nombre,
+            costo:precio,precioVenta:precioVenta,ganancia:precioVenta-precio,
+            fecha:firebase.firestore.FieldValue.serverTimestamp(),createdAt:firebase.firestore.FieldValue.serverTimestamp()
+        };
+        db.collection('ventas').add(ventaData).then(function(){
+            db.collection('vendedores').doc(vendedorActual.id).update({saldo:nuevoSaldo,updatedAt:firebase.firestore.FieldValue.serverTimestamp()}).then(function(){
+                vendedorActual.saldo=nuevoSaldo;
+                vSaldo.textContent='$'+(vendedorActual.saldo||0).toLocaleString('es-AR');
+                db.collection('clientes').where('email','==',cliente).get().then(function(cliSnap){
+                    if(cliSnap.empty){
+                        db.collection('clientes').add({email:cliente,nombre:cliente.split('@')[0],compras:1,totalGastado:precioVenta,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+                    }else{
+                        var cliDoc=cliSnap.docs[0];
+                        db.collection('clientes').doc(cliDoc.id).update({compras:firebase.firestore.FieldValue.increment(1),totalGastado:firebase.firestore.FieldValue.increment(precioVenta),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+                    }
+                });
+                showToast('✅ Compra exitosa - Key: '+keyEntregada+' - Ganancia: $'+(precioVenta-precio).toLocaleString('es-AR'));
+                cargarProductosVendedor();cargarVentasVendedor();
+            });
+        }).catch(function(e){showToast('Error al registrar venta','error');});
+    }).catch(function(e){showToast('Error al actualizar stock','error');});
+}
 
 function cargarDashboard(){
     db.collection('productos').get().then(function(prodSnap){
-        dashProductos.textContent = prodSnap.size;
-        var totalKeys = 0;
+        dashProductos.textContent=prodSnap.size;
+        var totalKeys=0;
         prodSnap.forEach(function(d){
-            var p = d.data();
-            var k = Array.isArray(p.keys) ? p.keys : (typeof p.keys === 'string' ? p.keys.split(',').map(function(x){return x.trim();}).filter(function(x){return x;}) : []);
-            totalKeys += k.filter(function(x){return !x.startsWith('USADA:');}).length;
+            var p=d.data();
+            var k=Array.isArray(p.keys)?p.keys:(typeof p.keys==='string'?p.keys.split(',').map(function(x){return x.trim();}).filter(function(x){return x;}):[]);
+            totalKeys+=k.filter(function(x){return !x.startsWith('USADA:');}).length;
         });
-        dashKeysDisponibles.textContent = totalKeys;
+        dashKeysDisponibles.textContent=totalKeys;
         db.collection('vendedores').get().then(function(vendSnap){
-            dashVendedores.textContent = vendSnap.size;
-            var hoy = new Date();
-            hoy.setHours(0,0,0,0);
+            dashVendedores.textContent=vendSnap.size;
+            var hoy=new Date();hoy.setHours(0,0,0,0);
             db.collection('ventas').where('fecha','>=',hoy).get().then(function(ventasSnap){
-                dashVentasHoy.textContent = ventasSnap.size;
-                var total = 0;
-                ventasSnap.forEach(function(d){ total += d.data().total || 0; });
-                dashIngresos.textContent = '$' + total.toLocaleString('es-AR');
-                db.collection('clientes').get().then(function(cliSnap){
-                    dashClientes.textContent = cliSnap.size;
-                });
+                dashVentasHoy.textContent=ventasSnap.size;
+                var total=0;
+                ventasSnap.forEach(function(d){total+=d.data().precioVenta||d.data().total||0;});
+                dashIngresos.textContent='$'+total.toLocaleString('es-AR');
+                db.collection('clientes').get().then(function(cliSnap){dashClientes.textContent=cliSnap.size;});
                 db.collection('ventas').orderBy('fecha','desc').limit(5).get().then(function(ultimasSnap){
-                    if(ultimasSnap.empty){
-                        dashUltimasVentas.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:1rem;color:var(--text2);">Sin ventas</td></tr>';
-                        return;
-                    }
-                    dashUltimasVentas.innerHTML = '';
-                    ultimasSnap.forEach(function(d){
-                        var v = d.data();
-                        var f = v.fecha ? v.fecha.toDate().toLocaleDateString('es-AR') : 'N/A';
-                        dashUltimasVentas.innerHTML += '<tr><td>'+(v.producto||'')+'</td><td>'+(v.cliente||'')+'</td><td>'+(v.vendedor||'')+'</td><td>'+f+'</td><td>$'+(v.total||0).toLocaleString('es-AR')+'</td></tr>';
-                    });
+                    if(ultimasSnap.empty){dashUltimasVentas.innerHTML='<tr><td colspan="5" style="text-align:center;padding:1rem;color:var(--text2);">Sin ventas</td></tr>';return;}
+                    dashUltimasVentas.innerHTML='';
+                    ultimasSnap.forEach(function(d){var v=d.data(),f=v.fecha?v.fecha.toDate().toLocaleDateString('es-AR'):'N/A';dashUltimasVentas.innerHTML+='<tr><td>'+(v.producto||'')+'</td><td>'+(v.cliente||'')+'</td><td>'+(v.vendedor||'')+'</td><td>'+f+'</td><td>$'+(v.precioVenta||v.total||0).toLocaleString('es-AR')+'</td></tr>';});
                 });
             });
         });
@@ -539,7 +639,7 @@ function cargarDashboard(){
             cargarProductosBtn.addEventListener('click',cargarProductos);
             exportarBtn.addEventListener('click',function(){db.collection('productos').get().then(function(snap){var datos=[];snap.forEach(function(d){datos.push({id:d.id,...d.data()});});var json=JSON.stringify(datos,null,2);var blob=new Blob([json],{type:'application/json'});var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download='productos.json';a.click();URL.revokeObjectURL(url);showToast('Exportado');}).catch(function(e){showToast('Error: '+e.message,'error');});});
             importarBtn.addEventListener('click',function(){var input=document.createElement('input');input.type='file';input.accept='.json';input.onchange=function(e){var file=e.target.files[0];var reader=new FileReader();reader.onload=function(e){try{var datos=JSON.parse(e.target.result);for(var i=0;i<datos.length;i++){var item=datos[i];var id=item.id;delete item.id;if(id){db.collection('productos').doc(id).set(item);}else{db.collection('productos').add(item);}}showToast('Importado');cargarProductos();cargarDashboard();}catch(e){showToast('Error: '+e.message,'error');}};reader.readAsText(file);};input.click();});
-            function cargarVentas(){ventasTableBody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2rem;">Cargando...</td></tr>';db.collection('ventas').orderBy('fecha','desc').limit(50).get().then(function(snap){if(snap.empty){ventasTableBody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text2);">Sin ventas</td></tr>';return;}ventasTableBody.innerHTML='';snap.forEach(function(d){var v=d.data(),f=v.fecha?v.fecha.toDate().toLocaleDateString('es-AR'):'N/A';ventasTableBody.innerHTML+='<tr><td>'+d.id.slice(-6)+'</td><td>'+(v.producto||'')+'</td><td>'+(v.cliente||'')+'</td><td>'+(v.vendedor||'')+'</td><td style="font-family:monospace;font-size:0.75rem;">'+(v.key||'')+'</td><td>'+f+'</td><td>$'+(v.total||0).toLocaleString('es-AR')+'</td></tr>';});}).catch(function(e){ventasTableBody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--danger);">Error</td></tr>';});}
+            function cargarVentas(){ventasTableBody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:2rem;">Cargando...</td></tr>';db.collection('ventas').orderBy('fecha','desc').limit(50).get().then(function(snap){if(snap.empty){ventasTableBody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--text2);">Sin ventas</td></tr>';return;}ventasTableBody.innerHTML='';snap.forEach(function(d){var v=d.data(),f=v.fecha?v.fecha.toDate().toLocaleDateString('es-AR'):'N/A';var costo=v.costo||0,venta=v.precioVenta||v.total||0,ganancia=v.ganancia||(venta-costo);ventasTableBody.innerHTML+='<tr><td>'+d.id.slice(-6)+'</td><td>'+(v.producto||'')+'</td><td>'+(v.cliente||'')+'</td><td>'+(v.vendedor||'')+'</td><td style="font-family:monospace;font-size:0.75rem;">'+(v.key||'')+'</td><td>'+f+'</td><td>$'+costo.toLocaleString('es-AR')+'</td><td>$'+venta.toLocaleString('es-AR')+'</td><td style="color:'+(ganancia>=0?'var(--success)':'var(--danger)')+';">$'+ganancia.toLocaleString('es-AR')+'</td></tr>';});}).catch(function(e){ventasTableBody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--danger);">Error</td></tr>';});}
             function cargarClientes(){clientesTableBody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:2rem;">Cargando...</td></tr>';db.collection('clientes').orderBy('totalGastado','desc').get().then(function(snap){if(snap.empty){clientesTableBody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text2);">Sin clientes</td></tr>';return;}clientesTableBody.innerHTML='';snap.forEach(function(d){var c=d.data();clientesTableBody.innerHTML+='<tr><td>'+(c.email||'')+'</td><td>'+(c.nombre||'')+'</td><td>'+(c.compras||0)+'</td><td>$'+(c.totalGastado||0).toLocaleString('es-AR')+'</td></tr>';});}).catch(function(e){clientesTableBody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--danger);">Error</td></tr>';});}
             function cargarVendedores(){vendedoresTableBody.innerHTML='<tr><td colspan="3" style="text-align:center;padding:2rem;">Cargando...</td></tr>';db.collection('vendedores').get().then(function(snap){if(snap.empty){vendedoresTableBody.innerHTML='<tr><td colspan="3" style="text-align:center;padding:2rem;color:var(--text2);">Sin vendedores</td></tr>';return;}vendedoresTableBody.innerHTML='';snap.forEach(function(d){var v=d.data();if(v.nombre==='test')return;vendedoresTableBody.innerHTML+='<tr><td>'+(v.nombre||'')+'</td><td>$'+(v.saldo||0).toLocaleString('es-AR')+'</td><td><button class="btn btn-outline btn-sm" onclick="acreditarSaldo(\''+d.id+'\')">💵</button> <button class="btn btn-danger btn-sm" onclick="eliminarVendedor(\''+d.id+'\')">🗑️</button></td></tr>';});}).catch(function(e){vendedoresTableBody.innerHTML='<tr><td colspan="3" style="text-align:center;padding:2rem;color:var(--danger);">Error</td></tr>';});}
             agregarVendedorBtn.addEventListener('click',function(){vendedorModalTitle.textContent='Agregar Vendedor';vendNombre.value='';vendPassword.value='';vendSaldo.value='';vendedorModalOverlay.classList.add('active');});
@@ -563,6 +663,7 @@ function cargarDashboard(){
             window.eliminarProducto=eliminarProducto;
             window.acreditarSaldo=acreditarSaldo;
             window.eliminarVendedor=eliminarVendedor;
+            window.comprarProducto=comprarProducto;
         };
     </script>
 </body>
