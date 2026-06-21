@@ -297,31 +297,41 @@
             var password=loginPassword.value.trim();
             loginError.textContent='';
             if(!usuario||!password){loginError.textContent='Completá todos los campos.';return;}
-            if(usuario==='admin'){
-                auth.signInWithEmailAndPassword('admin@admin.com',password).then(function(userCred){
-                    currentUser=userCred.user;
-                    loginContainer.style.display='none';
-                    adminContainer.classList.add('active');
-                    cargarDashboard();cargarProductos();cargarVentas();cargarClientes();cargarVendedores();cargarPagos();cargarConfig();
-                }).catch(function(e){loginError.textContent='Error: '+e.message;});
-                return;
-            }
-            auth.signInWithEmailAndPassword(usuario+'@nova.com',password).then(function(userCred){
-                db.collection('vendedores').where('userId','==',userCred.user.uid).get().then(function(snap){
-                    if(snap.empty){loginError.textContent='Vendedor no encontrado';auth.signOut();return;}
-                    var vend=snap.docs[0].data();
-                    vendedorActual={id:snap.docs[0].id,...vend,userId:userCred.user.uid};
-                    loginContainer.style.display='none';
-                    vendedorContainer.classList.add('active');
-                    vSaldo.textContent='$'+(vendedorActual.saldo||0).toLocaleString('es-AR');
-                    cargarVentasVendedor();
-                    cargarProductosVendedor();
-                }).catch(function(e){loginError.textContent='Error: '+e.message;auth.signOut();});
-            }).catch(function(e){loginError.textContent='Error: '+e.message;});
+            loginBtn.disabled=true;
+            loginBtn.textContent='Accediendo...';
+            function restoreBtn(){loginBtn.disabled=false;loginBtn.textContent='Acceder';}
+            auth.signOut().then(function(){
+                if(usuario==='admin'){
+                    auth.signInWithEmailAndPassword('admin@admin.com',password).then(function(userCred){
+                        currentUser=userCred.user;
+                        loginContainer.style.display='none';
+                        adminContainer.classList.add('active');
+                        cargarDashboard();cargarProductos();cargarVentas();cargarClientes();cargarVendedores();cargarPagos();cargarConfig();
+                        restoreBtn();
+                    }).catch(function(e){
+                        loginError.textContent='Contraseña incorrecta.';
+                        restoreBtn();
+                    });
+                    return;
+                }
+                auth.signInWithEmailAndPassword(usuario+'@nova.com',password).then(function(userCred){
+                    db.collection('vendedores').where('userId','==',userCred.user.uid).get().then(function(snap){
+                        if(snap.empty){loginError.textContent='Vendedor no encontrado.';auth.signOut();restoreBtn();return;}
+                        var vend=snap.docs[0].data();
+                        vendedorActual={id:snap.docs[0].id,...vend,userId:userCred.user.uid};
+                        loginContainer.style.display='none';
+                        vendedorContainer.classList.add('active');
+                        vSaldo.textContent='$'+(vendedorActual.saldo||0).toLocaleString('es-AR');
+                        cargarProductosVendedor();
+                        cargarVentasVendedor();
+                        restoreBtn();
+                    }).catch(function(e){loginError.textContent='Error al cargar vendedor.';auth.signOut();restoreBtn();});
+                }).catch(function(e){loginError.textContent='Usuario o contraseña incorrectos.';restoreBtn();});
+            });
         });
 
         logoutBtn.addEventListener('click',function(){auth.signOut();currentUser=null;adminContainer.classList.remove('active');loginContainer.style.display='';loginEmail.value='';loginPassword.value='';});
-        vendedorLogoutBtn.addEventListener('click',function(){vendedorActual=null;vendedorContainer.classList.remove('active');loginContainer.style.display='';loginEmail.value='';loginPassword.value='';});
+        vendedorLogoutBtn.addEventListener('click',function(){auth.signOut().then(function(){vendedorActual=null;vendedorContainer.classList.remove('active');loginContainer.style.display='';loginEmail.value='';loginPassword.value='';});});
         navLinks.forEach(function(link){link.addEventListener('click',function(e){e.preventDefault();navLinks.forEach(function(l){l.classList.remove('active');});this.classList.add('active');var sid=this.getAttribute('data-section');sections.forEach(function(s){s.classList.remove('active');});document.getElementById(sid+'Section').classList.add('active');if(sid==='ventas')cargarVentas();if(sid==='clientes')cargarClientes();if(sid==='productos')cargarProductos();if(sid==='vendedores')cargarVendedores();if(sid==='pagos')cargarPagos();if(sid==='configuracion')cargarConfig();});});
 function showToast(msg,type){type=type||'success';toast.textContent=msg;toast.style.borderColor=type==='error'?'var(--danger)':'var(--success)';toast.classList.add('show');setTimeout(function(){toast.classList.remove('show');},3000);}
 function formatearDuracion(d){return{'1dia':'1 Día','3dias':'3 Días','7dias':'7 Días'}[d]||d||'N/A';}
@@ -383,8 +393,8 @@ saveMPBtn.addEventListener('click',function(){db.collection('config').doc('pagos
 savePPBtn.addEventListener('click',function(){db.collection('config').doc('pagos').set({ppClient:ppClient.value.trim(),ppSecret:ppSecret.value.trim()},{merge:true}).then(function(){showToast('PayPal guardado');});});
             function cargarProductosVendedor(){
                 vProductosGrid.innerHTML='<div style="text-align:center;padding:2rem;color:var(--text2);grid-column:1/-1;">Cargando productos...</div>';
-                db.collection('productos').get().then(function(snap){
-                    if(snap.empty){vProductosGrid.innerHTML='<div style="text-align:center;padding:2rem;color:var(--text2);grid-column:1/-1;">No hay productos</div>';vProductosCount.textContent='0';return;}
+                db.collection('productos').orderBy('nombre').get().then(function(snap){
+                    if(snap.empty){vProductosGrid.innerHTML='<div style="text-align:center;padding:2rem;color:var(--text2);grid-column:1/-1;">No hay productos disponibles</div>';vProductosCount.textContent='0';return;}
                     vProductosCount.textContent=snap.size;vProductosGrid.innerHTML='';
                     snap.forEach(function(d){
                         var p=d.data();
@@ -392,10 +402,13 @@ savePPBtn.addEventListener('click',function(){db.collection('config').doc('pagos
                         var stock=k.filter(function(x){return !x.startsWith('USADA:');}).length;
                         var card=document.createElement('div');card.className='card';card.style.cssText='text-align:center;min-width:200px;';
                         card.innerHTML='<div class="label">📦 '+(p.nombre||'Sin nombre')+'</div><div style="font-size:0.8rem;color:var(--text2);margin:0.3rem 0;">⏳ '+formatearDuracion(p.duracion)+'</div><div class="value" style="font-size:1.8rem;">$'+(p.precio||0).toLocaleString('es-AR')+'</div><div style="font-size:0.75rem;color:'+(stock>0?'var(--success)':'var(--danger)')+';margin-top:0.3rem;">🔑 Stock: '+stock+'</div><button class="btn btn-primary btn-sm" style="margin-top:0.5rem;width:100%;" '+(stock<=0?'disabled':'')+'>🛒 Comprar</button>';
-                        if(stock>0){card.querySelector('button').addEventListener('click',function(e){e.stopPropagation();comprarProducto(d.id,p.nombre,p.precio,k);});}
+                        if(stock>0){(function(docId,nombre,precio,keys){card.querySelector('button').addEventListener('click',function(e){e.stopPropagation();comprarProducto(docId,nombre,precio,keys);});})(d.id,p.nombre,p.precio,k);}
                         vProductosGrid.appendChild(card);
                     });
-                }).catch(function(e){vProductosGrid.innerHTML='<div style="text-align:center;padding:2rem;color:var(--danger);grid-column:1/-1;">Error: '+e.message+'</div>';});
+                }).catch(function(e){
+                    vProductosGrid.innerHTML='<div style="text-align:center;padding:2rem;color:var(--danger);grid-column:1/-1;">Error al cargar productos: '+e.message+'<br><small>Verificá los permisos de Firestore.</small></div>';
+                    console.error('cargarProductosVendedor error:',e);
+                });
             }
 
             function comprarProducto(prodId,nombre,precio,keys){
