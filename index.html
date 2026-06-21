@@ -304,8 +304,7 @@ function cargarProductosVendedor(){
             var p=d.data();
             var k=Array.isArray(p.keys)?p.keys:(typeof p.keys==='string'?p.keys.split(',').map(function(x){return x.trim();}).filter(function(x){return x;}):[]);
             var stock=k.filter(function(x){return !x.startsWith('USADA:');}).length;
-            var card=document.createElement('div');
-            card.className='card';card.style.cssText='text-align:center;min-width:200px;';
+            var card=document.createElement('div');card.className='card';card.style.cssText='text-align:center;min-width:200px;';
             card.innerHTML='<div class="label">📦 '+(p.nombre||'Sin nombre')+'</div><div style="font-size:0.8rem;color:var(--text2);margin:0.3rem 0;">⏳ '+formatearDuracion(p.duracion)+'</div><div class="value" style="font-size:1.8rem;">$'+(p.precio||0).toLocaleString('es-AR')+'</div><div style="font-size:0.75rem;color:'+(stock>0?'var(--success)':'var(--danger)')+';margin-top:0.3rem;">🔑 Stock: '+stock+'</div><button class="btn btn-primary btn-sm" style="margin-top:0.5rem;width:100%;" '+(stock<=0?'disabled':'')+'>🛒 Comprar</button>';
             if(stock>0){card.querySelector('button').addEventListener('click',function(e){e.stopPropagation();comprarProducto(d.id,p.nombre,p.precio,k);});}
             vProductosGrid.appendChild(card);
@@ -349,7 +348,7 @@ function cargarVentasVendedor(){
 vRetirarBtn.addEventListener('click',function(){
     var m=parseFloat(prompt('Monto a retirar:'));if(!m||m<=0||isNaN(m))return;
     if(m>vendedorActual.saldo){showToast('Saldo insuficiente','error');return;}
-    window.open('https://wa.me/5491154141893?text=*SOLICITUD DE RETIRO*%0A%0A👤 '+vendedorActual.nombre+'%0A💰 Monto: $'+m.toLocaleString('es-AR')+'%0A💳 Saldo: $'+vendedorActual.saldo.toLocaleString('es-AR')+'%0A📅 '+new Date().toLocaleDateString('es-AR'),'_blank');
+    window.open('https://wa.me/5491154141893?text=*RETIRO*%0A👤 '+vendedorActual.nombre+'%0A💰 $'+m.toLocaleString('es-AR')+'%0A💳 Saldo: $'+vendedorActual.saldo.toLocaleString('es-AR'),'_blank');
 });
 
 vRecargarBtn.addEventListener('click',function(){
@@ -393,13 +392,21 @@ loginBtn.addEventListener('click',function(){
     }
     auth.signInWithEmailAndPassword(usuario+'@nova.com',password).then(function(userCred){
         db.collection('vendedores').where('userId','==',userCred.user.uid).get().then(function(snap){
-            var vend=snap.empty?{saldo:0,nombre:usuario}:snap.docs[0].data();
-            vendedorActual={id:snap.empty?'':snap.docs[0].id,...vend,userId:userCred.user.uid};
+            if(snap.empty){
+                loginError.textContent='Vendedor no encontrado';
+                auth.signOut();
+                return;
+            }
+            var vend=snap.docs[0].data();
+            vendedorActual={id:snap.docs[0].id,...vend,userId:userCred.user.uid};
             loginContainer.style.display='none';
             vendedorContainer.classList.add('active');
             vSaldo.textContent='$'+(vendedorActual.saldo||0).toLocaleString('es-AR');
             cargarVentasVendedor();
             cargarProductosVendedor();
+        }).catch(function(e){
+            loginError.textContent='Error: '+e.message;
+            auth.signOut();
         });
     }).catch(function(e){loginError.textContent='Error: '+e.message;});
 });
