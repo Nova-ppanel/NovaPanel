@@ -393,19 +393,20 @@ loginBtn.addEventListener('click',function(){
     }
     auth.signInWithEmailAndPassword(usuario+'@nova.com',password).then(function(userCred){
         db.collection('vendedores').where('userId','==',userCred.user.uid).get().then(function(snap){
-            if(snap.empty){loginError.textContent='Vendedor no encontrado';auth.signOut();return;}
-            var vend=snap.docs[0].data();
-            vendedorActual={id:snap.docs[0].id,...vend,userId:userCred.user.uid};
+            var vend=snap.empty?{saldo:0,nombre:usuario}:snap.docs[0].data();
+            vendedorActual={id:snap.empty?'':snap.docs[0].id,...vend,userId:userCred.user.uid};
             loginContainer.style.display='none';
             vendedorContainer.classList.add('active');
             vSaldo.textContent='$'+(vendedorActual.saldo||0).toLocaleString('es-AR');
-            cargarVentasVendedor();cargarProductosVendedor();
-        }).catch(function(e){loginError.textContent='Error: '+e.message;auth.signOut();});
+            cargarVentasVendedor();
+            cargarProductosVendedor();
+        });
     }).catch(function(e){loginError.textContent='Error: '+e.message;});
 });
 
 logoutBtn.addEventListener('click',function(){auth.signOut();currentUser=null;adminContainer.classList.remove('active');loginContainer.style.display='';loginEmail.value='';loginPassword.value='';});
 vendedorLogoutBtn.addEventListener('click',function(){vendedorActual=null;vendedorContainer.classList.remove('active');loginContainer.style.display='';loginEmail.value='';loginPassword.value='';});
+
 navLinks.forEach(function(link){link.addEventListener('click',function(e){e.preventDefault();navLinks.forEach(function(l){l.classList.remove('active');});this.classList.add('active');var sid=this.getAttribute('data-section');sections.forEach(function(s){s.classList.remove('active');});document.getElementById(sid+'Section').classList.add('active');if(sid==='ventas')cargarVentas();if(sid==='clientes')cargarClientes();if(sid==='productos')cargarProductos();if(sid==='vendedores')cargarVendedores();if(sid==='pagos')cargarPagos();if(sid==='configuracion')cargarConfig();});});
 function cargarDashboard(){
     db.collection('productos').get().then(function(prodSnap){
