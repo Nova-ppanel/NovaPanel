@@ -382,14 +382,18 @@ loginBtn.addEventListener('click',function(){
     loginError.textContent='';
     if(!usuario||!password){loginError.textContent='Completá todos los campos.';return;}
     if(usuario==='admin'){
-        auth.signInWithEmailAndPassword('admin@admin.com',password).then(function(userCred){
-            currentUser=userCred.user;
-            loginContainer.style.display='none';
-            adminContainer.classList.add('active');
-            cargarDashboard();cargarProductos();cargarVentas();cargarClientes();cargarVendedores();cargarPagos();cargarConfig();
-        }).catch(function(e){loginError.textContent='Error: '+e.message;});
-        return;
-    }
+    auth.signInWithEmailAndPassword('admin@admin.com',password).then(function(userCred){
+        alert('Login admin OK');
+        currentUser=userCred.user;
+        loginContainer.style.display='none';
+        adminContainer.classList.add('active');
+        cargarDashboard();cargarProductos();cargarVentas();cargarClientes();cargarVendedores();cargarPagos();cargarConfig();
+    }).catch(function(e){
+        alert('Error admin: '+e.message);
+        loginError.textContent='Error: '+e.message;
+    });
+    return;
+}
     auth.signInWithEmailAndPassword(usuario+'@nova.com',password).then(function(userCred){
         db.collection('vendedores').where('userId','==',userCred.user.uid).get().then(function(snap){
             if(snap.empty){
