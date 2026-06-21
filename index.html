@@ -292,7 +292,7 @@
         if(prodImagen){prodImagen.addEventListener('change',function(){var file=this.files[0];if(file){var reader=new FileReader();reader.onload=function(e){imgPreviewSrc.src=e.target.result;imgPreview.style.display='block';};reader.readAsDataURL(file);}});}
         if(pagoTipo){pagoTipo.addEventListener('change',function(){if(criptoDiv)criptoDiv.style.display=this.value==='Criptomoneda'?'block':'none';});}
 
-        loginBtn.addEventListener('click',function(){
+        function intentarLogin(){
             var usuario=loginEmail.value.trim();
             var password=loginPassword.value.trim();
             loginError.textContent='';
@@ -300,35 +300,42 @@
             loginBtn.disabled=true;
             loginBtn.textContent='Accediendo...';
             function restoreBtn(){loginBtn.disabled=false;loginBtn.textContent='Acceder';}
-            auth.signOut().then(function(){
-                if(usuario==='admin'){
-                    auth.signInWithEmailAndPassword('admin@admin.com',password).then(function(userCred){
-                        currentUser=userCred.user;
-                        loginContainer.style.display='none';
-                        adminContainer.classList.add('active');
-                        cargarDashboard();cargarProductos();cargarVentas();cargarClientes();cargarVendedores();cargarPagos();cargarConfig();
-                        restoreBtn();
-                    }).catch(function(e){
-                        loginError.textContent='Contraseña incorrecta.';
-                        restoreBtn();
-                    });
-                    return;
-                }
-                auth.signInWithEmailAndPassword(usuario+'@nova.com',password).then(function(userCred){
-                    db.collection('vendedores').where('userId','==',userCred.user.uid).get().then(function(snap){
-                        if(snap.empty){loginError.textContent='Vendedor no encontrado.';auth.signOut();restoreBtn();return;}
+            function mostrarError(msg){loginError.textContent=msg;restoreBtn();}
+            function entrarComoAdmin(pass){
+                auth.signInWithEmailAndPassword('admin@admin.com',pass).then(function(cred){
+                    currentUser=cred.user;
+                    loginContainer.style.display='none';
+                    adminContainer.classList.add('active');
+                    cargarDashboard();cargarProductos();cargarVentas();cargarClientes();cargarVendedores();cargarPagos();cargarConfig();
+                    restoreBtn();
+                }).catch(function(e){mostrarError('Contraseña incorrecta.');});
+            }
+            function entrarComoVendedor(user,pass){
+                auth.signInWithEmailAndPassword(user+'@nova.com',pass).then(function(cred){
+                    db.collection('vendedores').where('userId','==',cred.user.uid).get().then(function(snap){
+                        if(snap.empty){mostrarError('Vendedor no encontrado.');auth.signOut();return;}
                         var vend=snap.docs[0].data();
-                        vendedorActual={id:snap.docs[0].id,...vend,userId:userCred.user.uid};
+                        vendedorActual={id:snap.docs[0].id,...vend,userId:cred.user.uid};
                         loginContainer.style.display='none';
                         vendedorContainer.classList.add('active');
                         vSaldo.textContent='$'+(vendedorActual.saldo||0).toLocaleString('es-AR');
                         cargarProductosVendedor();
                         cargarVentasVendedor();
                         restoreBtn();
-                    }).catch(function(e){loginError.textContent='Error al cargar vendedor.';auth.signOut();restoreBtn();});
-                }).catch(function(e){loginError.textContent='Usuario o contraseña incorrectos.';restoreBtn();});
+                    }).catch(function(e){mostrarError('Error al cargar datos.');auth.signOut();});
+                }).catch(function(e){mostrarError('Usuario o contraseña incorrectos.');});
+            }
+            auth.signOut().then(function(){
+                if(usuario==='admin'){entrarComoAdmin(password);}
+                else{entrarComoVendedor(usuario,password);}
+            }).catch(function(){
+                if(usuario==='admin'){entrarComoAdmin(password);}
+                else{entrarComoVendedor(usuario,password);}
             });
-        });
+        }
+        loginBtn.addEventListener('click',intentarLogin);
+        loginPassword.addEventListener('keydown',function(e){if(e.key==='Enter')intentarLogin();});
+        loginEmail.addEventListener('keydown',function(e){if(e.key==='Enter')intentarLogin();});
 
         logoutBtn.addEventListener('click',function(){auth.signOut();currentUser=null;adminContainer.classList.remove('active');loginContainer.style.display='';loginEmail.value='';loginPassword.value='';});
         vendedorLogoutBtn.addEventListener('click',function(){auth.signOut().then(function(){vendedorActual=null;vendedorContainer.classList.remove('active');loginContainer.style.display='';loginEmail.value='';loginPassword.value='';});});
