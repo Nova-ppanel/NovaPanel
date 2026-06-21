@@ -447,7 +447,6 @@
         function cargarProductosVendedor(){
             vProductosGrid.innerHTML='<div style="text-align:center;padding:2rem;color:var(--text2);grid-column:1/-1;">Cargando productos...</div>';
             db.collection('productos').get().then(function(snap){
-                console.log('Productos encontrados:', snap.size);
                 if(snap.empty){
                     vProductosGrid.innerHTML='<div style="text-align:center;padding:2rem;color:var(--text2);grid-column:1/-1;">No hay productos disponibles</div>';
                     vProductosCount.textContent='0';
@@ -457,7 +456,6 @@
                 vProductosGrid.innerHTML='';
                 snap.forEach(function(d){
                     var p=d.data();
-                    console.log('Producto:', p.nombre, 'Precio:', p.precio);
                     var k=Array.isArray(p.keys)?p.keys:(typeof p.keys==='string'?p.keys.split(',').map(function(x){return x.trim();}).filter(function(x){return x;}):[]);
                     var stock=k.filter(function(x){return !x.startsWith('USADA:');}).length;
                     var card=document.createElement('div');
@@ -477,8 +475,7 @@
                     vProductosGrid.appendChild(card);
                 });
             }).catch(function(e){
-                console.error('Error al cargar productos:', e);
-                vProductosGrid.innerHTML='<div style="text-align:center;padding:2rem;color:var(--danger);grid-column:1/-1;">Error al cargar: '+e.message+'</div>';
+                vProductosGrid.innerHTML='<div style="text-align:center;padding:2rem;color:var(--danger);grid-column:1/-1;">Error: '+e.message+'</div>';
             });
         }
 vRetirarBtn.addEventListener('click',function(){
@@ -640,27 +637,20 @@ function cargarDashboard(){
             cancelProductoBtn.addEventListener('click',function(){productoModalOverlay.classList.remove('active');editProductoId=null;});
             productoModalOverlay.addEventListener('click',function(e){if(e.target===productoModalOverlay){productoModalOverlay.classList.remove('active');editProductoId=null;}});
             saveProductoBtn.addEventListener('click',function(){
-                console.log('Botón guardar presionado');
                 var n=prodNombre.value.trim(),d=prodDuracion.value,p=parseFloat(prodPrecio.value),kr=prodKeys.value.trim();
-                console.log('Datos:',{nombre:n,duracion:d,precio:p,keys:kr});
                 if(!n||!d||isNaN(p)||!kr){showToast('Completá todos los campos','error');return;}
                 var ka=kr.split(',').map(function(x){return x.trim();}).filter(function(x){return x;});
-                console.log('Keys procesadas:',ka);
-                var data={nombre:n,duracion:d,precio:p,keys:ka,updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
+                var data={nombre:n,duracion:d,precio:p,keys:ka};
                 if(imgPreviewSrc&&imgPreviewSrc.src&&imgPreviewSrc.src!=''){data.imagen=imgPreviewSrc.src;}
                 if(editProductoId){
-                    console.log('Actualizando producto:',editProductoId);
                     db.collection('productos').doc(editProductoId).update(data).then(function(){
-                        console.log('Producto actualizado OK');
                         showToast('Actualizado ✅');productoModalOverlay.classList.remove('active');editProductoId=null;cargarProductos();cargarDashboard();
-                    }).catch(function(e){console.error('Error al actualizar:',e);showToast('Error: '+e.message,'error');});
+                    }).catch(function(e){alert('Error al actualizar: '+e.message);});
                 }else{
-                    console.log('Creando nuevo producto');
-                    data.createdAt=firebase.firestore.FieldValue.serverTimestamp();
-                    db.collection('productos').add(data).then(function(){
-                        console.log('Producto creado OK');
+                    db.collection('productos').add(data).then(function(doc){
+                        alert('✅ Producto guardado: '+doc.id);
                         showToast('Agregado ✅');productoModalOverlay.classList.remove('active');editProductoId=null;cargarProductos();cargarDashboard();
-                    }).catch(function(e){console.error('Error al crear:',e);showToast('Error: '+e.message,'error');});
+                    }).catch(function(e){alert('❌ Error al guardar: '+e.message);});
                 }
             });
             function eliminarProducto(id){if(!confirm('¿Eliminar?'))return;db.collection('productos').doc(id).delete().then(function(){showToast('Eliminado ✅');cargarProductos();cargarDashboard();}).catch(function(e){showToast('Error: '+e.message,'error');});}
