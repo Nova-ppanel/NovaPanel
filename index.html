@@ -249,7 +249,6 @@
         </table>
     </div>
 </div>
-
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
@@ -444,6 +443,39 @@
 
         logoutBtn.addEventListener('click',function(){auth.signOut();currentUser=null;adminContainer.classList.remove('active');loginContainer.style.display='';loginEmail.value='';loginPassword.value='';});
         vendedorLogoutBtn.addEventListener('click',function(){vendedorActual=null;vendedorContainer.classList.remove('active');loginContainer.style.display='';loginEmail.value='';loginPassword.value='';});
+
+        function cargarProductosVendedor(){
+            vProductosGrid.innerHTML='<div style="text-align:center;padding:2rem;color:var(--text2);grid-column:1/-1;">Cargando...</div>';
+            db.collection('productos').get().then(function(snap){
+                if(snap.empty){
+                    vProductosGrid.innerHTML='<div style="text-align:center;padding:2rem;color:var(--text2);grid-column:1/-1;">No hay productos disponibles</div>';
+                    vProductosCount.textContent='0';
+                    return;
+                }
+                vProductosCount.textContent=snap.size;
+                vProductosGrid.innerHTML='';
+                snap.forEach(function(d){
+                    var p=d.data();
+                    var k=Array.isArray(p.keys)?p.keys:(typeof p.keys==='string'?p.keys.split(',').map(function(x){return x.trim();}).filter(function(x){return x;}):[]);
+                    var stock=k.filter(function(x){return !x.startsWith('USADA:');}).length;
+                    var card=document.createElement('div');
+                    card.className='card';
+                    card.style.cssText='text-align:center;min-width:200px;';
+                    card.innerHTML='<div class="label">📦 '+(p.nombre||'')+'</div>'+
+                        '<div style="font-size:0.8rem;color:var(--text2);margin:0.3rem 0;">⏳ '+(p.duracion||'')+'</div>'+
+                        '<div class="value" style="font-size:1.8rem;">$'+(p.precio||0).toLocaleString('es-AR')+'</div>'+
+                        '<div style="font-size:0.75rem;color:'+(stock>0?'var(--success)':'var(--danger)')+';margin-top:0.3rem;">🔑 Stock: '+stock+'</div>'+
+                        '<button class="btn btn-primary btn-sm" style="margin-top:0.5rem;width:100%;" '+(stock<=0?'disabled':'')+'>🛒 Comprar</button>';
+                    card.querySelector('button').addEventListener('click',function(e){
+                        e.stopPropagation();
+                        comprarProducto(d.id,p.nombre,p.precio,k);
+                    });
+                    vProductosGrid.appendChild(card);
+                });
+            }).catch(function(e){
+                vProductosGrid.innerHTML='<div style="text-align:center;padding:2rem;color:var(--danger);grid-column:1/-1;">Error al cargar</div>';
+            });
+        }
 vRetirarBtn.addEventListener('click',function(){
     var m=parseFloat(prompt('Monto a retirar:'));if(!m||m<=0||isNaN(m))return;
     if(m>vendedorActual.saldo){showToast('Saldo insuficiente','error');return;}
@@ -525,39 +557,6 @@ function cargarVentasVendedor(){
     });
 }
 
-function cargarProductosVendedor(){
-    vProductosGrid.innerHTML='<div style="text-align:center;padding:2rem;color:var(--text2);grid-column:1/-1;">Cargando...</div>';
-    db.collection('productos').get().then(function(snap){
-        if(snap.empty){
-            vProductosGrid.innerHTML='<div style="text-align:center;padding:2rem;color:var(--text2);grid-column:1/-1;">No hay productos disponibles</div>';
-            vProductosCount.textContent='0';
-            return;
-        }
-        vProductosCount.textContent=snap.size;
-        vProductosGrid.innerHTML='';
-        snap.forEach(function(d){
-            var p=d.data();
-            var k=Array.isArray(p.keys)?p.keys:(typeof p.keys==='string'?p.keys.split(',').map(function(x){return x.trim();}).filter(function(x){return x;}):[]);
-            var stock=k.filter(function(x){return !x.startsWith('USADA:');}).length;
-            var card=document.createElement('div');
-            card.className='card';
-            card.style.cssText='text-align:center;min-width:200px;';
-            card.innerHTML='<div class="label">📦 '+(p.nombre||'')+'</div>'+
-                '<div style="font-size:0.8rem;color:var(--text2);margin:0.3rem 0;">⏳ '+formatearDuracion(p.duracion)+'</div>'+
-                '<div class="value" style="font-size:1.8rem;">$'+(p.precio||0).toLocaleString('es-AR')+'</div>'+
-                '<div style="font-size:0.75rem;color:'+(stock>0?'var(--success)':'var(--danger)')+';margin-top:0.3rem;">🔑 Stock: '+stock+'</div>'+
-                '<button class="btn btn-primary btn-sm" style="margin-top:0.5rem;width:100%;" '+(stock<=0?'disabled':'')+'>🛒 Comprar</button>';
-            card.querySelector('button').addEventListener('click',function(e){
-                e.stopPropagation();
-                comprarProducto(d.id,p.nombre,p.precio,k);
-            });
-            vProductosGrid.appendChild(card);
-        });
-    }).catch(function(e){
-        vProductosGrid.innerHTML='<div style="text-align:center;padding:2rem;color:var(--danger);grid-column:1/-1;">Error al cargar</div>';
-    });
-}
-
 function comprarProducto(prodId,nombre,precio,keys){
     var disponibles=keys.filter(function(x){return !x.startsWith('USADA:');});
     if(disponibles.length===0){showToast('Sin stock disponible','error');return;}
@@ -623,8 +622,7 @@ function cargarDashboard(){
             });
         });
     });
-}
-            function cargarProductos(){productosTableBody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;">Cargando...</td></tr>';db.collection('productos').get().then(function(snap){productosCache=[];snap.forEach(function(d){productosCache.push({id:d.id,...d.data()});});renderProductos();}).catch(function(e){productosTableBody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--danger);">Error</td></tr>';});}
+}            function cargarProductos(){productosTableBody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;">Cargando...</td></tr>';db.collection('productos').get().then(function(snap){productosCache=[];snap.forEach(function(d){productosCache.push({id:d.id,...d.data()});});renderProductos();}).catch(function(e){productosTableBody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--danger);">Error</td></tr>';});}
             function renderProductos(){var lista=productosCache;if(filtroDur!=='todas'){lista=productosCache.filter(function(p){return p.duracion===filtroDur;});}if(lista.length===0){productosTableBody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text2);">No hay productos</td></tr>';return;}var html='';lista.forEach(function(p){var k=Array.isArray(p.keys)?p.keys:(typeof p.keys==='string'?p.keys.split(',').map(function(x){return x.trim();}).filter(function(x){return x;}):[]);var stock=k.filter(function(x){return !x.startsWith('USADA:');}).length;html+='<tr><td>'+(p.nombre||'')+'</td><td>'+formatearDuracion(p.duracion)+'</td><td>$'+(p.precio||0).toLocaleString('es-AR')+'</td><td>'+stock+'</td><td>'+k.length+'</td><td><button class="btn btn-outline btn-sm" onclick="verKeys(\''+p.id+'\')">🔑</button> <button class="btn btn-outline btn-sm" onclick="editarProducto(\''+p.id+'\')">✏️</button> <button class="btn btn-danger btn-sm" onclick="eliminarProducto(\''+p.id+'\')">🗑️</button></td></tr>';});productosTableBody.innerHTML=html;}
             document.querySelectorAll('#filtroBar .filter-chip').forEach(function(c){c.addEventListener('click',function(){document.querySelectorAll('#filtroBar .filter-chip').forEach(function(x){x.classList.remove('active');});this.classList.add('active');filtroDur=this.getAttribute('data-filtro')||'todas';renderProductos();});});
             function verKeys(pid){keysList.innerHTML='Cargando...';keysModalOverlay.classList.add('active');db.collection('productos').doc(pid).get().then(function(doc){if(!doc.exists){keysList.innerHTML='<p style="color:var(--danger);">No encontrado.</p>';return;}var k=Array.isArray(doc.data().keys)?doc.data().keys:(typeof doc.data().keys==='string'?doc.data().keys.split(',').map(function(x){return x.trim();}).filter(function(x){return x;}):[]);if(!k.length){keysList.innerHTML='<p style="color:var(--text2);">Sin keys.</p>';return;}keysList.innerHTML=k.map(function(x,i){return'<div style="padding:0.4rem 0;border-bottom:1px solid var(--border);color:'+(x.startsWith('USADA:')?'var(--danger)':'var(--success)')+';">'+(i+1)+'. '+x+'</div>';}).join('');}).catch(function(e){keysList.innerHTML='<p style="color:var(--danger);">Error.</p>';});}
