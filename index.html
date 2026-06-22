@@ -191,309 +191,495 @@
         appId: "1:317388043186:web:3fc4f4c8d63b1c92e5e1ab"
     };
     firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
+    var auth = firebase.auth();
+    var db = firebase.firestore();
+    var productosCache = [];
+    var editProductoId = null;
+    var filtroDur = 'todas';
+    var vendedorActual = null;
+    var currentUser = null;
 
+    // ─── UTILIDADES ───────────────────────────────────────────────
+    function $(id){ return document.getElementById(id); }
+    function showToast(msg, tipo){
+        var t = $('toast');
+        t.textContent = msg;
+        t.style.borderColor = tipo === 'error' ? 'var(--danger)' : 'var(--success)';
+        t.classList.add('show');
+        setTimeout(function(){ t.classList.remove('show'); }, 3000);
+    }
+    function formatearDuracion(d){
+        return {'1dia':'1 Día','3dias':'3 Días','7dias':'7 Días'}[d] || d || 'N/A';
+    }
+
+    // ─── LOGIN ────────────────────────────────────────────────────
+    function doLogin(){
+        var usuario   = $('loginEmail').value.trim();
+        var password  = $('loginPassword').value.trim();
+        var errorEl   = $('loginError');
+        var btn       = $('loginBtn');
+        errorEl.textContent = '';
+        if(!usuario || !password){ errorEl.textContent = 'Completá todos los campos.'; return; }
+        btn.disabled = true;
+        btn.textContent = 'Accediendo...';
+        function ok(){ btn.disabled = false; btn.textContent = 'Acceder'; }
+        function err(msg){ errorEl.textContent = msg; ok(); }
+
+        if(usuario === 'admin'){
+            auth.signInWithEmailAndPassword('admin@admin.com', password)
+            .then(function(c){
+                currentUser = c.user;
+                $('loginContainer').style.display = 'none';
+                $('adminContainer').classList.add('active');
+                cargarDashboard(); cargarProductos(); cargarVentas();
+                cargarClientes(); cargarVendedores(); cargarPagos(); cargarConfig();
+                ok();
+            })
+            .catch(function(){ err('Contraseña incorrecta.'); });
+        } else {
+            auth.signInWithEmailAndPassword(usuario + '@nova.com', password)
+            .then(function(c){
+                db.collection('vendedores').where('userId','==',c.user.uid).get()
+                .then(function(snap){
+                    if(snap.empty){ err('Vendedor no encontrado.'); auth.signOut(); return; }
+                    vendedorActual = Object.assign({id: snap.docs[0].id, userId: c.user.uid}, snap.docs[0].data());
+                    $('loginContainer').style.display = 'none';
+                    $('vendedorContainer').classList.add('active');
+                    $('vSaldo').textContent = '$' + (vendedorActual.saldo||0).toLocaleString('es-AR');
+                    cargarProductosVendedor();
+                    cargarVentasVendedor();
+                    ok();
+                })
+                .catch(function(){ err('Error al cargar datos.'); auth.signOut(); });
+            })
+            .catch(function(){ err('Usuario o contraseña incorrectos.'); });
+        }
+    }
+
+    // ─── LOGOUT ───────────────────────────────────────────────────
+    function doLogout(){
+        auth.signOut();
+        currentUser = null;
+        $('adminContainer').classList.remove('active');
+        $('loginContainer').style.display = '';
+        $('loginEmail').value = '';
+        $('loginPassword').value = '';
+    }
+    function doLogoutVendedor(){
+        auth.signOut().then(function(){
+            vendedorActual = null;
+            $('vendedorContainer').classList.remove('active');
+            $('loginContainer').style.display = '';
+            $('loginEmail').value = '';
+            $('loginPassword').value = '';
+        });
+    }
+
+    // ─── DASHBOARD ────────────────────────────────────────────────
+    function cargarDashboard(){
+        db.collection('productos').get().then(function(s){
+            $('dashProductos').textContent = s.size;
+            var totalKeys = 0;
+            s.forEach(function(d){ var k=getKeys(d.data()); totalKeys+=k.filter(function(x){return !x.startsWith('USADA:');}).length; });
+            $('dashKeysDisponibles').textContent = totalKeys;
+        });
+        db.collection('vendedores').get().then(function(s){ $('dashVendedores').textContent = s.size; });
+        db.collection('clientes').get().then(function(s){ $('dashClientes').textContent = s.size; });
+        var hoy = new Date(); hoy.setHours(0,0,0,0);
+        db.collection('ventas').where('fecha','>=',hoy).get().then(function(s){
+            $('dashVentasHoy').textContent = s.size;
+            var total = 0; s.forEach(function(d){ total += d.data().precioVenta||d.data().total||0; });
+            $('dashIngresos').textContent = '$' + total.toLocaleString('es-AR');
+        });
+        db.collection('ventas').orderBy('fecha','desc').limit(5).get().then(function(s){
+            if(s.empty){ $('dashUltimasVentas').innerHTML='<tr><td colspan="5">Sin ventas</td></tr>'; return; }
+            $('dashUltimasVentas').innerHTML = '';
+            s.forEach(function(d){
+                var v=d.data(), f=v.fecha?v.fecha.toDate().toLocaleDateString('es-AR'):'N/A';
+                $('dashUltimasVentas').innerHTML += '<tr><td>'+(v.producto||'')+'</td><td>'+(v.cliente||'')+'</td><td>'+(v.vendedor||'')+'</td><td>'+f+'</td><td>$'+(v.precioVenta||v.total||0).toLocaleString('es-AR')+'</td></tr>';
+            });
+        });
+    }
+
+    // ─── HELPERS ──────────────────────────────────────────────────
+    function getKeys(p){
+        return Array.isArray(p.keys) ? p.keys :
+               (typeof p.keys==='string' ? p.keys.split(',').map(function(x){return x.trim();}).filter(Boolean) : []);
+    }
+
+    // ─── PRODUCTOS (ADMIN) ────────────────────────────────────────
+    function cargarProductos(){
+        $('productosTableBody').innerHTML = '<tr><td colspan="6">Cargando...</td></tr>';
+        db.collection('productos').get().then(function(snap){
+            productosCache = [];
+            snap.forEach(function(d){ productosCache.push(Object.assign({id:d.id}, d.data())); });
+            renderProductos();
+        }).catch(function(){ $('productosTableBody').innerHTML = '<tr><td colspan="6">Error</td></tr>'; });
+    }
+    function renderProductos(){
+        var lista = filtroDur === 'todas' ? productosCache : productosCache.filter(function(p){return p.duracion===filtroDur;});
+        if(!lista.length){ $('productosTableBody').innerHTML = '<tr><td colspan="6">No hay productos</td></tr>'; return; }
+        var html = '';
+        lista.forEach(function(p){
+            var k = getKeys(p), stock = k.filter(function(x){return !x.startsWith('USADA:');}).length;
+            html += '<tr><td>'+(p.nombre||'')+'</td><td>'+formatearDuracion(p.duracion)+'</td><td>$'+(p.precio||0).toLocaleString('es-AR')+'</td><td>'+stock+'</td><td>'+k.length+'</td><td>'
+                  + '<button class="btn btn-outline btn-sm" onclick="verKeys(''+p.id+'')">🔑</button> '
+                  + '<button class="btn btn-outline btn-sm" onclick="editarProducto(''+p.id+'')">✏️</button> '
+                  + '<button class="btn btn-danger btn-sm" onclick="eliminarProducto(''+p.id+'')">🗑️</button></td></tr>';
+        });
+        $('productosTableBody').innerHTML = html;
+    }
+    function verKeys(pid){
+        $('keysList').innerHTML = 'Cargando...';
+        $('keysModalOverlay').classList.add('active');
+        db.collection('productos').doc(pid).get().then(function(doc){
+            if(!doc.exists){ $('keysList').innerHTML = '<p>No encontrado.</p>'; return; }
+            var k = getKeys(doc.data());
+            if(!k.length){ $('keysList').innerHTML = '<p>Sin keys.</p>'; return; }
+            $('keysList').innerHTML = k.map(function(x,i){
+                return '<div style="padding:0.4rem 0;border-bottom:1px solid var(--border);color:'+(x.startsWith('USADA:')? 'var(--danger)':'var(--success)')+';">'+(i+1)+'. '+x+'</div>';
+            }).join('');
+        });
+    }
+    function editarProducto(id){
+        db.collection('productos').doc(id).get().then(function(doc){
+            if(!doc.exists) return;
+            var d = doc.data();
+            editProductoId = id;
+            $('productoModalTitle').textContent = 'Editar Producto';
+            $('prodNombre').value = d.nombre||'';
+            $('prodDuracion').value = d.duracion||'1dia';
+            $('prodPrecio').value = d.precio||'';
+            $('prodKeys').value = getKeys(d).join(', ');
+            if(d.imagen && $('imgPreviewSrc')){ $('imgPreviewSrc').src=d.imagen; $('imgPreview').style.display='block'; }
+            else if($('imgPreview')){ $('imgPreview').style.display='none'; }
+            $('productoModalOverlay').classList.add('active');
+        });
+    }
+    function eliminarProducto(id){
+        if(!confirm('¿Eliminar?')) return;
+        db.collection('productos').doc(id).delete().then(function(){ showToast('Eliminado ✅'); cargarProductos(); cargarDashboard(); });
+    }
+
+    // ─── VENTAS / CLIENTES ────────────────────────────────────────
+    function cargarVentas(){
+        $('ventasTableBody').innerHTML = '<tr><td colspan="9">Cargando...</td></tr>';
+        db.collection('ventas').orderBy('fecha','desc').limit(50).get().then(function(snap){
+            if(snap.empty){ $('ventasTableBody').innerHTML='<tr><td colspan="9">Sin ventas</td></tr>'; return; }
+            $('ventasTableBody').innerHTML = '';
+            snap.forEach(function(d){
+                var v=d.data(),f=v.fecha?v.fecha.toDate().toLocaleDateString('es-AR'):'N/A';
+                var costo=v.costo||0, venta=v.precioVenta||v.total||0, gan=v.ganancia||(venta-costo);
+                $('ventasTableBody').innerHTML += '<tr><td>'+d.id.slice(-6)+'</td><td>'+(v.producto||'')+'</td><td>'+(v.cliente||'')+'</td><td>'+(v.vendedor||'')+'</td><td style="font-family:monospace;font-size:0.75rem;">'+(v.key||'')+'</td><td>'+f+'</td><td>$'+costo.toLocaleString('es-AR')+'</td><td>$'+venta.toLocaleString('es-AR')+'</td><td style="color:'+(gan>=0?'var(--success)':'var(--danger)')+';">$'+gan.toLocaleString('es-AR')+'</td></tr>';
+            });
+        });
+    }
+    function cargarClientes(){
+        $('clientesTableBody').innerHTML = '<tr><td colspan="4">Cargando...</td></tr>';
+        db.collection('clientes').orderBy('totalGastado','desc').get().then(function(snap){
+            if(snap.empty){ $('clientesTableBody').innerHTML='<tr><td colspan="4">Sin clientes</td></tr>'; return; }
+            $('clientesTableBody').innerHTML = '';
+            snap.forEach(function(d){ var c=d.data(); $('clientesTableBody').innerHTML += '<tr><td>'+(c.email||'')+'</td><td>'+(c.nombre||'')+'</td><td>'+(c.compras||0)+'</td><td>$'+(c.totalGastado||0).toLocaleString('es-AR')+'</td></tr>'; });
+        });
+    }
+
+    // ─── VENDEDORES (ADMIN) ───────────────────────────────────────
+    function cargarVendedores(){
+        $('vendedoresTableBody').innerHTML = '<tr><td colspan="3">Cargando...</td></tr>';
+        db.collection('vendedores').get().then(function(snap){
+            if(snap.empty){ $('vendedoresTableBody').innerHTML='<tr><td colspan="3">Sin vendedores</td></tr>'; return; }
+            $('vendedoresTableBody').innerHTML = '';
+            snap.forEach(function(d){
+                var v=d.data(); if(v.nombre==='test') return;
+                $('vendedoresTableBody').innerHTML += '<tr><td>'+(v.nombre||'')+'</td><td>$'+(v.saldo||0).toLocaleString('es-AR')+'</td><td>'
+                    +'<button class="btn btn-outline btn-sm" onclick="acreditarSaldo(''+d.id+'')">💵</button> '
+                    +'<button class="btn btn-danger btn-sm" onclick="eliminarVendedor(''+d.id+'')">🗑️</button></td></tr>';
+            });
+        });
+    }
+    function acreditarSaldo(id){
+        var monto = prompt('Monto (+):'); if(monto===null) return;
+        var cantidad = parseFloat(monto); if(isNaN(cantidad)){ showToast('Inválido','error'); return; }
+        db.collection('vendedores').doc(id).get().then(function(doc){
+            if(!doc.exists){ showToast('No encontrado','error'); return; }
+            db.collection('vendedores').doc(id).update({saldo:(doc.data().saldo||0)+cantidad, updatedAt:firebase.firestore.FieldValue.serverTimestamp()})
+            .then(function(){ showToast('Saldo actualizado'); cargarVendedores(); });
+        });
+    }
+    function eliminarVendedor(id){
+        if(!confirm('¿Eliminar?')) return;
+        db.collection('vendedores').doc(id).delete().then(function(){ showToast('Eliminado'); cargarVendedores(); });
+    }
+
+    // ─── PAGOS ────────────────────────────────────────────────────
+    function cargarPagos(){
+        $('pagosTableBody').innerHTML = '<tr><td colspan="4">Cargando...</td></tr>';
+        db.collection('metodos_pago').get().then(function(snap){
+            if(snap.empty){ $('pagosTableBody').innerHTML='<tr><td colspan="4">Sin métodos</td></tr>'; return; }
+            $('pagosTableBody').innerHTML = '';
+            snap.forEach(function(d){ var p=d.data(); $('pagosTableBody').innerHTML += '<tr><td>'+(p.nombre||'')+'</td><td>'+(p.tipo||'')+'</td><td>'+(p.datos||'')+'</td><td><button class="btn btn-danger btn-sm" onclick="eliminarPago(''+d.id+'')">🗑️</button></td></tr>'; });
+        });
+    }
+    function eliminarPago(id){
+        if(!confirm('¿Eliminar?')) return;
+        db.collection('metodos_pago').doc(id).delete().then(function(){ showToast('Eliminado'); cargarPagos(); });
+    }
+
+    // ─── CONFIG ───────────────────────────────────────────────────
+    function cargarConfig(){
+        db.collection('config').doc('pagos').get().then(function(doc){
+            if(doc.exists){ var d=doc.data(); if(d.mpToken)$('mpToken').value=d.mpToken; if(d.ppClient)$('ppClient').value=d.ppClient; if(d.ppSecret)$('ppSecret').value=d.ppSecret; }
+        });
+    }
+
+    // ─── VENDEDOR: PRODUCTOS ──────────────────────────────────────
+    function cargarProductosVendedor(){
+        $('vProductosGrid').innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text2);grid-column:1/-1;">Cargando productos...</div>';
+        db.collection('productos').get().then(function(snap){
+            if(snap.empty){ $('vProductosGrid').innerHTML='<div style="text-align:center;padding:2rem;color:var(--text2);grid-column:1/-1;">No hay productos</div>'; $('vProductosCount').textContent='0'; return; }
+            $('vProductosCount').textContent = snap.size;
+            $('vProductosGrid').innerHTML = '';
+            snap.forEach(function(d){
+                var p = d.data();
+                var k = getKeys(p);
+                var stock = k.filter(function(x){return !x.startsWith('USADA:');}).length;
+                var card = document.createElement('div');
+                card.className = 'card';
+                card.style.cssText = 'text-align:center;min-width:200px;';
+                card.innerHTML = '<div class="label">📦 '+(p.nombre||'Sin nombre')+'</div>'
+                    + '<div style="font-size:0.8rem;color:var(--text2);margin:0.3rem 0;">⏳ '+formatearDuracion(p.duracion)+'</div>'
+                    + '<div class="value" style="font-size:1.8rem;">$'+(p.precio||0).toLocaleString('es-AR')+'</div>'
+                    + '<div style="font-size:0.75rem;color:'+(stock>0?'var(--success)':'var(--danger)')+';margin-top:0.3rem;">🔑 Stock: '+stock+'</div>'
+                    + '<button class="btn btn-primary btn-sm" style="margin-top:0.5rem;width:100%;" '+(stock<=0?'disabled':'')+'>🛒 Comprar</button>';
+                if(stock > 0){
+                    (function(docId, nombre, precio, keys){
+                        card.querySelector('button').addEventListener('click', function(e){
+                            e.stopPropagation();
+                            comprarProducto(docId, nombre, precio, keys);
+                        });
+                    })(d.id, p.nombre, p.precio, k);
+                }
+                $('vProductosGrid').appendChild(card);
+            });
+        }).catch(function(e){
+            $('vProductosGrid').innerHTML = '<div style="text-align:center;padding:2rem;color:var(--danger);grid-column:1/-1;">Error: '+e.message+'</div>';
+        });
+    }
+
+    function comprarProducto(prodId, nombre, precio, keys){
+        var disponibles = keys.filter(function(x){return !x.startsWith('USADA:');});
+        if(!disponibles.length){ showToast('Sin stock','error'); return; }
+        if(precio > vendedorActual.saldo){ showToast('Saldo insuficiente','error'); return; }
+        var cliente = prompt('Email del cliente:'); if(!cliente||!cliente.trim()) return; cliente = cliente.trim();
+        var precioVenta = parseFloat(prompt('Precio de venta (costo: $'+precio.toLocaleString('es-AR')+'):'));
+        if(!precioVenta||isNaN(precioVenta)||precioVenta<=0) return;
+        var keyEntregada = disponibles[0];
+        var nuevasKeys = keys.map(function(x){ return x===keyEntregada ? 'USADA:'+x : x; });
+        db.collection('productos').doc(prodId).update({keys:nuevasKeys, updatedAt:firebase.firestore.FieldValue.serverTimestamp()}).then(function(){
+            var nuevoSaldo = vendedorActual.saldo - precio;
+            db.collection('ventas').add({producto:nombre, key:keyEntregada, cliente:cliente, vendedor:vendedorActual.nombre, costo:precio, precioVenta:precioVenta, ganancia:precioVenta-precio, fecha:firebase.firestore.FieldValue.serverTimestamp(), createdAt:firebase.firestore.FieldValue.serverTimestamp()}).then(function(){
+                db.collection('vendedores').doc(vendedorActual.id).update({saldo:nuevoSaldo, updatedAt:firebase.firestore.FieldValue.serverTimestamp()}).then(function(){
+                    vendedorActual.saldo = nuevoSaldo;
+                    $('vSaldo').textContent = '$'+nuevoSaldo.toLocaleString('es-AR');
+                    db.collection('clientes').where('email','==',cliente).get().then(function(cs){
+                        if(cs.empty){ db.collection('clientes').add({email:cliente, nombre:cliente.split('@')[0], compras:1, totalGastado:precioVenta, createdAt:firebase.firestore.FieldValue.serverTimestamp()}); }
+                        else{ db.collection('clientes').doc(cs.docs[0].id).update({compras:firebase.firestore.FieldValue.increment(1), totalGastado:firebase.firestore.FieldValue.increment(precioVenta), updatedAt:firebase.firestore.FieldValue.serverTimestamp()}); }
+                    });
+                    showToast('✅ Venta realizada - Key: '+keyEntregada);
+                    cargarProductosVendedor(); cargarVentasVendedor();
+                });
+            });
+        });
+    }
+
+    function cargarVentasVendedor(){
+        $('vVentasBody').innerHTML = '<tr><td colspan="7">Cargando...</td></tr>';
+        db.collection('ventas').where('vendedor','==',vendedorActual.nombre).orderBy('fecha','desc').limit(50).get().then(function(snap){
+            if(snap.empty){ $('vVentasBody').innerHTML='<tr><td colspan="7">Sin ventas</td></tr>'; $('vVentas').textContent='0'; return; }
+            $('vVentas').textContent = snap.size; $('vVentasBody').innerHTML = '';
+            snap.forEach(function(d){ var v=d.data(),f=v.fecha?v.fecha.toDate().toLocaleDateString('es-AR'):'N/A'; $('vVentasBody').innerHTML+='<tr><td>'+d.id.slice(-6)+'</td><td>'+(v.producto||'')+'</td><td style="font-family:monospace;font-size:0.75rem;">'+(v.key||'')+'</td><td>'+(v.cliente||'')+'</td><td>'+f+'</td><td style="color:var(--danger);">$'+(v.costo||0).toLocaleString('es-AR')+'</td><td style="color:var(--success);">$'+(v.precioVenta||v.total||0).toLocaleString('es-AR')+'</td></tr>'; });
+        });
+    }
+
+    // ─── INIT (cuando carga el DOM) ───────────────────────────────
     document.addEventListener('DOMContentLoaded', function(){
-        var loginBtn = document.getElementById('loginBtn');
-        var loginEmail = document.getElementById('loginEmail');
-        var loginPassword = document.getElementById('loginPassword');
-        var loginError = document.getElementById('loginError');
-        var loginContainer = document.getElementById('loginContainer');
-        var adminContainer = document.getElementById('adminContainer');
-        var vendedorContainer = document.getElementById('vendedorContainer');
 
-        function restoreBtn(){loginBtn.disabled=false;loginBtn.textContent='Acceder';}
-        function mostrarError(msg){loginError.textContent=msg;restoreBtn();}
-
-        function doLogin(){
-            var usuario = loginEmail.value.trim();
-            var password = loginPassword.value.trim();
-            loginError.textContent='';
-            if(!usuario||!password){loginError.textContent='Completá todos los campos.';return;}
-            loginBtn.disabled=true;
-            loginBtn.textContent='Accediendo...';
-            if(usuario==='admin'){
-                auth.signInWithEmailAndPassword('admin@admin.com', password)
-                .then(function(cred){
-                    loginContainer.style.display='none';
-                    adminContainer.classList.add('active');
-                    cargarDashboard();cargarProductos();cargarVentas();cargarClientes();cargarVendedores();cargarPagos();cargarConfig();
-                    restoreBtn();
-                })
-                .catch(function(e){mostrarError('Contraseña incorrecta.');});
-            } else {
-                auth.signInWithEmailAndPassword(usuario+'@nova.com', password)
-                .then(function(cred){
-                    db.collection('vendedores').where('userId','==',cred.user.uid).get()
-                    .then(function(snap){
-                        if(snap.empty){mostrarError('Vendedor no encontrado.');auth.signOut();return;}
-                        var vend=snap.docs[0].data();
-                        window.vendedorActual={id:snap.docs[0].id,...vend,userId:cred.user.uid};
-                        loginContainer.style.display='none';
-                        vendedorContainer.classList.add('active');
-                        document.getElementById('vSaldo').textContent='$'+(window.vendedorActual.saldo||0).toLocaleString('es-AR');
-                        cargarProductosVendedor();
-                        cargarVentasVendedor();
-                        restoreBtn();
-                    })
-                    .catch(function(e){mostrarError('Error al cargar datos.');auth.signOut();});
-                })
-                .catch(function(e){mostrarError('Usuario o contraseña incorrectos.');});
-            }
-        }
-
-        loginBtn.addEventListener('click', doLogin);
-        loginEmail.addEventListener('keydown', function(e){if(e.key==='Enter')doLogin();});
-        loginPassword.addEventListener('keydown', function(e){if(e.key==='Enter')doLogin();});
-    });
-
-    window.onload = function(){
-        const canvas = document.getElementById('particlesCanvas');
-        const ctx = canvas.getContext('2d');
-        let particles = [];
-        function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        // Partículas
+        var canvas = $('particlesCanvas');
+        var ctx = canvas.getContext('2d');
+        var particles = [];
+        function resizeCanvas(){ canvas.width=window.innerWidth; canvas.height=window.innerHeight; }
         resizeCanvas(); window.addEventListener('resize', resizeCanvas);
-        class Particle {
-            constructor() { this.x = Math.random()*canvas.width; this.y = Math.random()*canvas.height; this.size = Math.random()*2+0.5; this.speedY = Math.random()*0.5+0.2; this.speedX = Math.random()*0.3-0.15; this.opacity = Math.random()*0.5+0.2; }
-            update() { this.y -= this.speedY; this.x += this.speedX; if(this.y<-10){this.y=canvas.height+10;this.x=Math.random()*canvas.width;} if(this.x<-10)this.x=canvas.width+10; if(this.x>canvas.width+10)this.x=-10; }
-            draw() { ctx.beginPath(); ctx.arc(this.x,this.y,this.size,0,Math.PI*2); ctx.fillStyle='rgba(168,85,247,'+this.opacity+')'; ctx.fill(); }
-        }
-        for(let i=0;i<80;i++){let p=new Particle();p.y=Math.random()*canvas.height;particles.push(p);}
-        function animate(){ctx.clearRect(0,0,canvas.width,canvas.height);particles.forEach(function(p){p.update();p.draw();});requestAnimationFrame(animate);}
+        function Particle(){ this.x=Math.random()*canvas.width; this.y=Math.random()*canvas.height; this.size=Math.random()*2+0.5; this.speedY=Math.random()*0.5+0.2; this.speedX=Math.random()*0.3-0.15; this.opacity=Math.random()*0.5+0.2; }
+        Particle.prototype.update=function(){ this.y-=this.speedY; this.x+=this.speedX; if(this.y<-10){this.y=canvas.height+10;this.x=Math.random()*canvas.width;} if(this.x<-10)this.x=canvas.width+10; if(this.x>canvas.width+10)this.x=-10; };
+        Particle.prototype.draw=function(){ ctx.beginPath(); ctx.arc(this.x,this.y,this.size,0,Math.PI*2); ctx.fillStyle='rgba(168,85,247,'+this.opacity+')'; ctx.fill(); };
+        for(var i=0;i<80;i++){ var p=new Particle(); p.y=Math.random()*canvas.height; particles.push(p); }
+        function animate(){ ctx.clearRect(0,0,canvas.width,canvas.height); particles.forEach(function(p){p.update();p.draw();}); requestAnimationFrame(animate); }
         animate();
 
-        const navLinks=document.querySelectorAll('#sidebar nav a');
-        const sections=document.querySelectorAll('.section');
-        const dashProductos=document.getElementById('dashProductos');
-        const dashVentasHoy=document.getElementById('dashVentasHoy');
-        const dashClientes=document.getElementById('dashClientes');
-        const dashIngresos=document.getElementById('dashIngresos');
-        const dashKeysDisponibles=document.getElementById('dashKeysDisponibles');
-        const dashVendedores=document.getElementById('dashVendedores');
-        const dashUltimasVentas=document.getElementById('dashUltimasVentas');
-        const cargarProductosBtn=document.getElementById('cargarProductosBtn');
-        const verTodasKeysBtn=document.getElementById('verTodasKeysBtn');
-        const agregarProductoBtn=document.getElementById('agregarProductoBtn');
-        const exportarBtn=document.getElementById('exportarBtn');
-        const importarBtn=document.getElementById('importarBtn');
-        const productosTableBody=document.getElementById('productosTableBody');
-        const productoModalOverlay=document.getElementById('productoModalOverlay');
-        const productoModalTitle=document.getElementById('productoModalTitle');
-        const prodNombre=document.getElementById('prodNombre');
-        const prodDuracion=document.getElementById('prodDuracion');
-        const prodPrecio=document.getElementById('prodPrecio');
-        const prodKeys=document.getElementById('prodKeys');
-        const prodImagen=document.getElementById('prodImagen');
-        const imgPreview=document.getElementById('imgPreview');
-        const imgPreviewSrc=document.getElementById('imgPreviewSrc');
-        const cancelProductoBtn=document.getElementById('cancelProductoBtn');
-        const saveProductoBtn=document.getElementById('saveProductoBtn');
-        const keysModalOverlay=document.getElementById('keysModalOverlay');
-        const keysList=document.getElementById('keysList');
-        const closeKeysBtn=document.getElementById('closeKeysBtn');
-        const toast=document.getElementById('toast');
-        const ventasTableBody=document.getElementById('ventasTableBody');
-        const clientesTableBody=document.getElementById('clientesTableBody');
-        const sidebarToggle=document.getElementById('sidebarToggle');
-        const sidebar=document.getElementById('sidebar');
-        const agregarVendedorBtn=document.getElementById('agregarVendedorBtn');
-        const vendedorModalOverlay=document.getElementById('vendedorModalOverlay');
-        const vendedorModalTitle=document.getElementById('vendedorModalTitle');
-        const vendNombre=document.getElementById('vendNombre');
-        const vendPassword=document.getElementById('vendPassword');
-        const vendSaldo=document.getElementById('vendSaldo');
-        const cancelVendedorBtn=document.getElementById('cancelVendedorBtn');
-        const saveVendedorBtn=document.getElementById('saveVendedorBtn');
-        const vendedoresTableBody=document.getElementById('vendedoresTableBody');
-        const vSaldo=document.getElementById('vSaldo');
-        const vVentas=document.getElementById('vVentas');
-        const vVentasBody=document.getElementById('vVentasBody');
-        const vProductosCount=document.getElementById('vProductosCount');
-        const vProductosGrid=document.getElementById('vProductosGrid');
-        const vRecargarProductosBtn=document.getElementById('vRecargarProductosBtn');
-        const vRetirarBtn=document.getElementById('vRetirarBtn');
-        const vRecargarBtn=document.getElementById('vRecargarBtn');
-        const agregarPagoBtn=document.getElementById('agregarPagoBtn');
-        const pagoModalOverlay=document.getElementById('pagoModalOverlay');
-        const pagoModalTitle=document.getElementById('pagoModalTitle');
-        const pagoNombre=document.getElementById('pagoNombre');
-        const pagoTipo=document.getElementById('pagoTipo');
-        const pagoDatos=document.getElementById('pagoDatos');
-        const criptoDiv=document.getElementById('criptoDiv');
-        const pagoRed=document.getElementById('pagoRed');
-        const cancelPagoBtn=document.getElementById('cancelPagoBtn');
-        const savePagoBtn=document.getElementById('savePagoBtn');
-        const pagosTableBody=document.getElementById('pagosTableBody');
-        const mpToken=document.getElementById('mpToken');
-        const saveMPBtn=document.getElementById('saveMPBtn');
-        const ppClient=document.getElementById('ppClient');
-        const ppSecret=document.getElementById('ppSecret');
-        const savePPBtn=document.getElementById('savePPBtn');
-        let currentUser=null,productosCache=[],editProductoId=null,filtroDur='todas',vendedorActual=null;
+        // Login
+        $('loginBtn').addEventListener('click', doLogin);
+        $('loginPassword').addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
+        $('loginEmail').addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
 
-        sidebarToggle.addEventListener('click',function(){sidebar.classList.toggle('closed');sidebarToggle.textContent=sidebar.classList.contains('closed')?'☰':'✕';});
-        navLinks.forEach(function(link){link.addEventListener('click',function(){if(window.innerWidth<=768){sidebar.classList.add('closed');sidebarToggle.textContent='☰';}});});
-        if(prodImagen){prodImagen.addEventListener('change',function(){var file=this.files[0];if(file){var reader=new FileReader();reader.onload=function(e){imgPreviewSrc.src=e.target.result;imgPreview.style.display='block';};reader.readAsDataURL(file);}});}
-        if(pagoTipo){pagoTipo.addEventListener('change',function(){if(criptoDiv)criptoDiv.style.display=this.value==='Criptomoneda'?'block':'none';});}
+        // Logout
+        $('logoutBtn').addEventListener('click', doLogout);
+        $('vendedorLogoutBtn').addEventListener('click', doLogoutVendedor);
 
-        loginPassword.addEventListener('keydown',function(e){if(e.key==='Enter')intentarLogin();});
-        loginEmail.addEventListener('keydown',function(e){if(e.key==='Enter')intentarLogin();});
+        // Sidebar
+        var sidebar = $('sidebar');
+        var sidebarToggle = $('sidebarToggle');
+        sidebarToggle.addEventListener('click', function(){
+            sidebar.classList.toggle('closed');
+            sidebarToggle.textContent = sidebar.classList.contains('closed') ? '☰' : '✕';
+        });
 
-        document.getElementById('logoutBtn').addEventListener('click',function(){auth.signOut();currentUser=null;document.getElementById('adminContainer').classList.remove('active');document.getElementById('loginContainer').style.display='';document.getElementById('loginEmail').value='';document.getElementById('loginPassword').value='';});
-        document.getElementById('vendedorLogoutBtn').addEventListener('click',function(){auth.signOut().then(function(){vendedorActual=null;document.getElementById('vendedorContainer').classList.remove('active');document.getElementById('loginContainer').style.display='';document.getElementById('loginEmail').value='';document.getElementById('loginPassword').value='';});});
-        navLinks.forEach(function(link){link.addEventListener('click',function(e){e.preventDefault();navLinks.forEach(function(l){l.classList.remove('active');});this.classList.add('active');var sid=this.getAttribute('data-section');sections.forEach(function(s){s.classList.remove('active');});document.getElementById(sid+'Section').classList.add('active');if(sid==='ventas')cargarVentas();if(sid==='clientes')cargarClientes();if(sid==='productos')cargarProductos();if(sid==='vendedores')cargarVendedores();if(sid==='pagos')cargarPagos();if(sid==='configuracion')cargarConfig();});});
-function showToast(msg,type){type=type||'success';toast.textContent=msg;toast.style.borderColor=type==='error'?'var(--danger)':'var(--success)';toast.classList.add('show');setTimeout(function(){toast.classList.remove('show');},3000);}
-function formatearDuracion(d){return{'1dia':'1 Día','3dias':'3 Días','7dias':'7 Días'}[d]||d||'N/A';}
+        // Navegación
+        var navLinks = document.querySelectorAll('#sidebar nav a');
+        navLinks.forEach(function(link){
+            link.addEventListener('click', function(e){
+                e.preventDefault();
+                navLinks.forEach(function(l){ l.classList.remove('active'); });
+                this.classList.add('active');
+                var sid = this.getAttribute('data-section');
+                document.querySelectorAll('.section').forEach(function(s){ s.classList.remove('active'); });
+                document.getElementById(sid+'Section').classList.add('active');
+                if(sid==='ventas') cargarVentas();
+                if(sid==='clientes') cargarClientes();
+                if(sid==='productos') cargarProductos();
+                if(sid==='vendedores') cargarVendedores();
+                if(sid==='pagos') cargarPagos();
+                if(sid==='configuracion') cargarConfig();
+                if(window.innerWidth<=768){ sidebar.classList.add('closed'); sidebarToggle.textContent='☰'; }
+            });
+        });
 
-function cargarDashboard(){
-    db.collection('productos').get().then(function(prodSnap){
-        dashProductos.textContent=prodSnap.size;var totalKeys=0;
-        prodSnap.forEach(function(d){var p=d.data();var k=Array.isArray(p.keys)?p.keys:(typeof p.keys==='string'?p.keys.split(',').map(function(x){return x.trim();}).filter(function(x){return x;}):[]);totalKeys+=k.filter(function(x){return !x.startsWith('USADA:');}).length;});
-        dashKeysDisponibles.textContent=totalKeys;
-        db.collection('vendedores').get().then(function(vendSnap){dashVendedores.textContent=vendSnap.size;});
-        var hoy=new Date();hoy.setHours(0,0,0,0);
-        db.collection('ventas').where('fecha','>=',hoy).get().then(function(ventasSnap){dashVentasHoy.textContent=ventasSnap.size;var total=0;ventasSnap.forEach(function(d){total+=d.data().precioVenta||d.data().total||0;});dashIngresos.textContent='$'+total.toLocaleString('es-AR');});
-        db.collection('clientes').get().then(function(cliSnap){dashClientes.textContent=cliSnap.size;});
-        db.collection('ventas').orderBy('fecha','desc').limit(5).get().then(function(ultimasSnap){if(ultimasSnap.empty){dashUltimasVentas.innerHTML='<tr><td colspan="5">Sin ventas</td></tr>';return;}dashUltimasVentas.innerHTML='';ultimasSnap.forEach(function(d){var v=d.data(),f=v.fecha?v.fecha.toDate().toLocaleDateString('es-AR'):'N/A';dashUltimasVentas.innerHTML+='<tr><td>'+(v.producto||'')+'</td><td>'+(v.cliente||'')+'</td><td>'+(v.vendedor||'')+'</td><td>'+f+'</td><td>$'+(v.precioVenta||v.total||0).toLocaleString('es-AR')+'</td></tr>';});});
+        // Filtros productos
+        document.querySelectorAll('#filtroBar .filter-chip').forEach(function(c){
+            c.addEventListener('click', function(){
+                document.querySelectorAll('#filtroBar .filter-chip').forEach(function(x){ x.classList.remove('active'); });
+                this.classList.add('active');
+                filtroDur = this.getAttribute('data-filtro') || 'todas';
+                renderProductos();
+            });
+        });
+
+        // Modal Producto
+        $('agregarProductoBtn').addEventListener('click', function(){
+            editProductoId=null; $('productoModalTitle').textContent='Agregar Producto';
+            $('prodNombre').value=''; $('prodDuracion').value='1dia'; $('prodPrecio').value=''; $('prodKeys').value='';
+            if($('prodImagen')) $('prodImagen').value='';
+            if($('imgPreview')) $('imgPreview').style.display='none';
+            $('productoModalOverlay').classList.add('active');
+        });
+        $('cancelProductoBtn').addEventListener('click', function(){ $('productoModalOverlay').classList.remove('active'); editProductoId=null; });
+        $('productoModalOverlay').addEventListener('click', function(e){ if(e.target===$('productoModalOverlay')){ $('productoModalOverlay').classList.remove('active'); editProductoId=null; } });
+        if($('prodImagen')){ $('prodImagen').addEventListener('change', function(){ var file=this.files[0]; if(file){ var r=new FileReader(); r.onload=function(e){ $('imgPreviewSrc').src=e.target.result; $('imgPreview').style.display='block'; }; r.readAsDataURL(file); } }); }
+        $('saveProductoBtn').addEventListener('click', function(){
+            var n=$('prodNombre').value.trim(), d=$('prodDuracion').value, p=parseFloat($('prodPrecio').value), kr=$('prodKeys').value.trim();
+            if(!n||!d||isNaN(p)||!kr){ showToast('Completá todos los campos','error'); return; }
+            var ka=kr.split(',').map(function(x){return x.trim();}).filter(Boolean);
+            var data={nombre:n,duracion:d,precio:p,keys:ka};
+            if($('imgPreviewSrc')&&$('imgPreviewSrc').src&&$('imgPreviewSrc').src!==window.location.href) data.imagen=$('imgPreviewSrc').src;
+            if(editProductoId){
+                data.updatedAt=firebase.firestore.FieldValue.serverTimestamp();
+                db.collection('productos').doc(editProductoId).update(data).then(function(){ showToast('Actualizado ✅'); $('productoModalOverlay').classList.remove('active'); editProductoId=null; cargarProductos(); cargarDashboard(); }).catch(function(e){ showToast('Error: '+e.message,'error'); });
+            } else {
+                data.createdAt=firebase.firestore.FieldValue.serverTimestamp();
+                db.collection('productos').add(data).then(function(){ showToast('Agregado ✅'); $('productoModalOverlay').classList.remove('active'); cargarProductos(); cargarDashboard(); }).catch(function(e){ showToast('Error: '+e.message,'error'); });
+            }
+        });
+
+        // Ver todas las keys
+        $('cargarProductosBtn').addEventListener('click', cargarProductos);
+        $('closeKeysBtn').addEventListener('click', function(){ $('keysModalOverlay').classList.remove('active'); });
+        $('keysModalOverlay').addEventListener('click', function(e){ if(e.target===$('keysModalOverlay')) $('keysModalOverlay').classList.remove('active'); });
+        $('verTodasKeysBtn').addEventListener('click', function(){
+            $('keysModalOverlay').classList.add('active'); $('keysList').innerHTML='';
+            if(!productosCache.length){ $('keysList').innerHTML='<p>No hay productos.</p>'; return; }
+            var html='', totalKeys=0;
+            productosCache.forEach(function(p){ var k=getKeys(p); totalKeys+=k.length; html+='<div style="margin-bottom:1rem;border-bottom:2px solid var(--accent);"><strong>📦 '+(p.nombre||'')+'</strong> ('+formatearDuracion(p.duracion)+') - '+k.length+' keys</div>'; k.forEach(function(x,i){html+='<div style="padding:0.3rem 0;margin-left:1rem;border-bottom:1px solid var(--border);color:'+(x.startsWith('USADA:')?'var(--danger)':'var(--success)')+';font-size:0.8rem;">'+(i+1)+'. '+x+'</div>';}); });
+            html+='<div style="margin-top:1rem;text-align:center;">📊 Total: '+totalKeys+' keys</div>';
+            $('keysList').innerHTML = html;
+        });
+
+        // Exportar / Importar
+        $('exportarBtn').addEventListener('click', function(){
+            db.collection('productos').get().then(function(snap){ var datos=[]; snap.forEach(function(d){ datos.push(Object.assign({id:d.id},d.data())); }); var blob=new Blob([JSON.stringify(datos,null,2)],{type:'application/json'}); var url=URL.createObjectURL(blob); var a=document.createElement('a'); a.href=url; a.download='productos.json'; a.click(); URL.revokeObjectURL(url); showToast('Exportado'); });
+        });
+        $('importarBtn').addEventListener('click', function(){
+            var input=document.createElement('input'); input.type='file'; input.accept='.json';
+            input.onchange=function(e){ var file=e.target.files[0]; var r=new FileReader(); r.onload=function(e){ try{ var datos=JSON.parse(e.target.result); datos.forEach(function(item){ var id=item.id; delete item.id; if(id){db.collection('productos').doc(id).set(item);}else{db.collection('productos').add(item);} }); showToast('Importado'); cargarProductos(); cargarDashboard(); }catch(e){showToast('Error: '+e.message,'error');} }; r.readAsText(file); };
+            input.click();
+        });
+
+        // Modal Vendedor
+        $('agregarVendedorBtn').addEventListener('click', function(){ $('vendedorModalTitle').textContent='Agregar Vendedor'; $('vendNombre').value=''; $('vendPassword').value=''; $('vendSaldo').value=''; $('vendedorModalOverlay').classList.add('active'); });
+        $('cancelVendedorBtn').addEventListener('click', function(){ $('vendedorModalOverlay').classList.remove('active'); });
+        $('vendedorModalOverlay').addEventListener('click', function(e){ if(e.target===$('vendedorModalOverlay')) $('vendedorModalOverlay').classList.remove('active'); });
+        $('saveVendedorBtn').addEventListener('click', function(){
+            var nombre=$('vendNombre').value.trim(), pass=$('vendPassword').value.trim(), saldo=parseFloat($('vendSaldo').value);
+            if(!nombre||!pass||isNaN(saldo)){ showToast('Completá todos los campos','error'); return; }
+            auth.createUserWithEmailAndPassword(nombre+'@nova.com', pass).then(function(c){
+                db.collection('vendedores').doc(c.user.uid).set({nombre:nombre,password:pass,saldo:saldo,userId:c.user.uid,createdAt:firebase.firestore.FieldValue.serverTimestamp()}).then(function(){ showToast('Vendedor agregado'); $('vendedorModalOverlay').classList.remove('active'); cargarVendedores(); });
+            }).catch(function(e){ showToast('Error: '+e.message,'error'); });
+        });
+
+        // Modal Pago
+        $('agregarPagoBtn').addEventListener('click', function(){ $('pagoModalTitle').textContent='Agregar Método'; $('pagoNombre').value=''; $('pagoTipo').value='Mercado Pago'; $('pagoDatos').value=''; if($('pagoRed'))$('pagoRed').value=''; $('criptoDiv').style.display='none'; $('pagoModalOverlay').classList.add('active'); });
+        $('cancelPagoBtn').addEventListener('click', function(){ $('pagoModalOverlay').classList.remove('active'); });
+        $('pagoModalOverlay').addEventListener('click', function(e){ if(e.target===$('pagoModalOverlay')) $('pagoModalOverlay').classList.remove('active'); });
+        $('pagoTipo').addEventListener('change', function(){ $('criptoDiv').style.display=this.value==='Criptomoneda'?'block':'none'; });
+        $('savePagoBtn').addEventListener('click', function(){
+            var nombre=$('pagoNombre').value.trim(), tipo=$('pagoTipo').value, datos=$('pagoDatos').value.trim(), red=$('pagoRed')?$('pagoRed').value.trim():'';
+            if(!nombre||!datos){ showToast('Completá todos los campos','error'); return; }
+            var data={nombre:nombre,tipo:tipo,datos:datos,createdAt:firebase.firestore.FieldValue.serverTimestamp()};
+            if(tipo==='Criptomoneda'&&red){ data.red=red; data.datos=red+': '+datos; }
+            db.collection('metodos_pago').add(data).then(function(){ showToast('Método agregado'); $('pagoModalOverlay').classList.remove('active'); cargarPagos(); }).catch(function(e){ showToast('Error: '+e.message,'error'); });
+        });
+
+        // Config
+        $('saveMPBtn').addEventListener('click', function(){ db.collection('config').doc('pagos').set({mpToken:$('mpToken').value.trim()},{merge:true}).then(function(){ showToast('Mercado Pago guardado'); }); });
+        $('savePPBtn').addEventListener('click', function(){ db.collection('config').doc('pagos').set({ppClient:$('ppClient').value.trim(),ppSecret:$('ppSecret').value.trim()},{merge:true}).then(function(){ showToast('PayPal guardado'); }); });
+
+        // Vendedor: botones
+        $('vRetirarBtn').addEventListener('click', function(){
+            var m=parseFloat(prompt('Monto a retirar:')); if(!m||m<=0||isNaN(m)) return;
+            if(m>vendedorActual.saldo){ showToast('Saldo insuficiente','error'); return; }
+            window.open('https://wa.me/5491154141893?text=*RETIRO*%0A👤 '+vendedorActual.nombre+'%0A💰 $'+m.toLocaleString('es-AR')+'%0A💳 Saldo: $'+vendedorActual.saldo.toLocaleString('es-AR'),'_blank');
+        });
+        $('vRecargarBtn').addEventListener('click', function(){
+            db.collection('metodos_pago').get().then(function(snap){
+                var html='<div style="background:rgba(10,10,28,0.98);padding:1rem;border-radius:8px;max-width:400px;width:90%;"><h3>Métodos de Pago</h3>';
+                if(snap.empty){ html+='<p>No hay métodos.</p>'; }
+                else{ snap.forEach(function(d){ var p=d.data(); html+='<div style="padding:0.5rem;border:1px solid var(--border);border-radius:6px;margin-bottom:0.4rem;cursor:pointer;background:rgba(168,85,247,0.05);" onclick="seleccionarMetodo(''+d.id+'',''+encodeURIComponent(p.nombre||'')+'',''+encodeURIComponent(p.datos||'')+'',''+encodeURIComponent(p.tipo||'')+'')"><strong>'+(p.nombre||'')+'</strong> ('+(p.tipo||'')+')<br><small>'+(p.datos||'')+'</small></div>'; }); }
+                html+='<button class="btn btn-outline btn-sm" style="margin-top:0.5rem;width:100%;" onclick="document.getElementById('metodoOverlay').remove()">Cancelar</button></div>';
+                var div=document.createElement('div'); div.innerHTML=html;
+                div.style.cssText='position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;';
+                div.id='metodoOverlay'; document.body.appendChild(div);
+            });
+        });
+        $('vRecargarProductosBtn').addEventListener('click', function(){
+            cargarProductosVendedor(); cargarVentasVendedor();
+            db.collection('vendedores').doc(vendedorActual.id).get().then(function(doc){ if(doc.exists){ vendedorActual.saldo=doc.data().saldo||0; $('vSaldo').textContent='$'+vendedorActual.saldo.toLocaleString('es-AR'); } });
+        });
     });
-}
 
-function cargarProductos(){productosTableBody.innerHTML='<tr><td colspan="6">Cargando...</td></tr>';db.collection('productos').get().then(function(snap){productosCache=[];snap.forEach(function(d){productosCache.push({id:d.id,...d.data()});});renderProductos();}).catch(function(e){productosTableBody.innerHTML='<tr><td colspan="6">Error</td></tr>';});}
-function renderProductos(){var lista=productosCache;if(filtroDur!=='todas'){lista=productosCache.filter(function(p){return p.duracion===filtroDur;});}if(lista.length===0){productosTableBody.innerHTML='<tr><td colspan="6">No hay productos</td></tr>';return;}var html='';lista.forEach(function(p){var k=Array.isArray(p.keys)?p.keys:(typeof p.keys==='string'?p.keys.split(',').map(function(x){return x.trim();}).filter(function(x){return x;}):[]);var stock=k.filter(function(x){return !x.startsWith('USADA:');}).length;html+='<tr><td>'+(p.nombre||'')+'</td><td>'+formatearDuracion(p.duracion)+'</td><td>$'+(p.precio||0).toLocaleString('es-AR')+'</td><td>'+stock+'</td><td>'+k.length+'</td><td><button class="btn btn-outline btn-sm" onclick="verKeys(\''+p.id+'\')">🔑</button> <button class="btn btn-outline btn-sm" onclick="editarProducto(\''+p.id+'\')">✏️</button> <button class="btn btn-danger btn-sm" onclick="eliminarProducto(\''+p.id+'\')">🗑️</button></td></tr>';});productosTableBody.innerHTML=html;}
-document.querySelectorAll('#filtroBar .filter-chip').forEach(function(c){c.addEventListener('click',function(){document.querySelectorAll('#filtroBar .filter-chip').forEach(function(x){x.classList.remove('active');});this.classList.add('active');filtroDur=this.getAttribute('data-filtro')||'todas';renderProductos();});});
-function verKeys(pid){keysList.innerHTML='Cargando...';keysModalOverlay.classList.add('active');db.collection('productos').doc(pid).get().then(function(doc){if(!doc.exists){keysList.innerHTML='<p>No encontrado.</p>';return;}var k=Array.isArray(doc.data().keys)?doc.data().keys:(typeof doc.data().keys==='string'?doc.data().keys.split(',').map(function(x){return x.trim();}).filter(function(x){return x;}):[]);if(!k.length){keysList.innerHTML='<p>Sin keys.</p>';return;}keysList.innerHTML=k.map(function(x,i){return'<div style="padding:0.4rem 0;border-bottom:1px solid var(--border);color:'+(x.startsWith('USADA:')?'var(--danger)':'var(--success)')+';">'+(i+1)+'. '+x+'</div>';}).join('');});}
-verTodasKeysBtn.addEventListener('click',function(){keysModalOverlay.classList.add('active');keysList.innerHTML='';var lista=productosCache;if(!lista.length){keysList.innerHTML='<p>No hay productos.</p>';return;}var html='',totalKeys=0;lista.forEach(function(p){var k=Array.isArray(p.keys)?p.keys:(typeof p.keys==='string'?p.keys.split(',').map(function(x){return x.trim();}).filter(function(x){return x;}):[]);totalKeys+=k.length;html+='<div style="margin-bottom:1rem;border-bottom:2px solid var(--accent);"><strong>📦 '+(p.nombre||'')+'</strong> ('+formatearDuracion(p.duracion)+') - '+k.length+' keys</div>';if(!k.length)html+='<p style="margin-left:1rem;">Sin keys.</p>';else k.forEach(function(x,i){html+='<div style="padding:0.3rem 0;margin-left:1rem;border-bottom:1px solid var(--border);color:'+(x.startsWith('USADA:')?'var(--danger)':'var(--success)')+';font-size:0.8rem;">'+(i+1)+'. '+x+'</div>';});});html+='<div style="margin-top:1rem;text-align:center;">📊 Total: '+totalKeys+' keys</div>';keysList.innerHTML=html;});
-closeKeysBtn.addEventListener('click',function(){keysModalOverlay.classList.remove('active');});
-keysModalOverlay.addEventListener('click',function(e){if(e.target===keysModalOverlay)keysModalOverlay.classList.remove('active');});
-agregarProductoBtn.addEventListener('click',function(){editProductoId=null;productoModalTitle.textContent='Agregar Producto';prodNombre.value='';prodDuracion.value='1dia';prodPrecio.value='';prodKeys.value='';if(prodImagen)prodImagen.value='';if(imgPreview)imgPreview.style.display='none';if(imgPreviewSrc)imgPreviewSrc.src='';productoModalOverlay.classList.add('active');});
-function editarProducto(id){db.collection('productos').doc(id).get().then(function(doc){if(!doc.exists)return;var d=doc.data();editProductoId=id;productoModalTitle.textContent='Editar Producto';prodNombre.value=d.nombre||'';prodDuracion.value=d.duracion||'1dia';prodPrecio.value=d.precio||'';prodKeys.value=Array.isArray(d.keys)?d.keys.join(', '):(typeof d.keys==='string'?d.keys:'');if(d.imagen&&imgPreviewSrc){imgPreviewSrc.src=d.imagen;imgPreview.style.display='block';}else if(imgPreview){imgPreview.style.display='none';}productoModalOverlay.classList.add('active');});}
-cancelProductoBtn.addEventListener('click',function(){productoModalOverlay.classList.remove('active');editProductoId=null;});
-productoModalOverlay.addEventListener('click',function(e){if(e.target===productoModalOverlay){productoModalOverlay.classList.remove('active');editProductoId=null;}});
-saveProductoBtn.addEventListener('click',function(){
-    var n=prodNombre.value.trim(),d=prodDuracion.value,p=parseFloat(prodPrecio.value),kr=prodKeys.value.trim();
-    if(!n||!d||isNaN(p)||!kr){showToast('Completá todos los campos','error');return;}
-    var ka=kr.split(',').map(function(x){return x.trim();}).filter(function(x){return x;});
-    var data={nombre:n,duracion:d,precio:p,keys:ka};
-    if(imgPreviewSrc&&imgPreviewSrc.src&&imgPreviewSrc.src!=''){data.imagen=imgPreviewSrc.src;}
-    if(editProductoId){data.updatedAt=firebase.firestore.FieldValue.serverTimestamp();db.collection('productos').doc(editProductoId).update(data).then(function(){showToast('Actualizado ✅');productoModalOverlay.classList.remove('active');editProductoId=null;cargarProductos();cargarDashboard();}).catch(function(e){showToast('Error: '+e.message,'error');});}
-    else{data.createdAt=firebase.firestore.FieldValue.serverTimestamp();db.collection('productos').add(data).then(function(){showToast('Agregado ✅');productoModalOverlay.classList.remove('active');cargarProductos();cargarDashboard();}).catch(function(e){showToast('Error: '+e.message,'error');});}
-});
-function eliminarProducto(id){if(!confirm('¿Eliminar?'))return;db.collection('productos').doc(id).delete().then(function(){showToast('Eliminado ✅');cargarProductos();cargarDashboard();});}
-cargarProductosBtn.addEventListener('click',cargarProductos);
-exportarBtn.addEventListener('click',function(){db.collection('productos').get().then(function(snap){var datos=[];snap.forEach(function(d){datos.push({id:d.id,...d.data()});});var json=JSON.stringify(datos,null,2);var blob=new Blob([json],{type:'application/json'});var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download='productos.json';a.click();URL.revokeObjectURL(url);showToast('Exportado');});});
-importarBtn.addEventListener('click',function(){var input=document.createElement('input');input.type='file';input.accept='.json';input.onchange=function(e){var file=e.target.files[0];var reader=new FileReader();reader.onload=function(e){try{var datos=JSON.parse(e.target.result);for(var i=0;i<datos.length;i++){var item=datos[i];var id=item.id;delete item.id;if(id){db.collection('productos').doc(id).set(item);}else{db.collection('productos').add(item);}}showToast('Importado');cargarProductos();cargarDashboard();}catch(e){showToast('Error: '+e.message,'error');}};reader.readAsText(file);};input.click();});
-function cargarVentas(){ventasTableBody.innerHTML='<tr><td colspan="9">Cargando...</td></tr>';db.collection('ventas').orderBy('fecha','desc').limit(50).get().then(function(snap){if(snap.empty){ventasTableBody.innerHTML='<tr><td colspan="9">Sin ventas</td></tr>';return;}ventasTableBody.innerHTML='';snap.forEach(function(d){var v=d.data(),f=v.fecha?v.fecha.toDate().toLocaleDateString('es-AR'):'N/A';var costo=v.costo||0,venta=v.precioVenta||v.total||0,ganancia=v.ganancia||(venta-costo);ventasTableBody.innerHTML+='<tr><td>'+d.id.slice(-6)+'</td><td>'+(v.producto||'')+'</td><td>'+(v.cliente||'')+'</td><td>'+(v.vendedor||'')+'</td><td style="font-family:monospace;font-size:0.75rem;">'+(v.key||'')+'</td><td>'+f+'</td><td>$'+costo.toLocaleString('es-AR')+'</td><td>$'+venta.toLocaleString('es-AR')+'</td><td style="color:'+(ganancia>=0?'var(--success)':'var(--danger)')+';">$'+ganancia.toLocaleString('es-AR')+'</td></tr>';});});}
-function cargarClientes(){clientesTableBody.innerHTML='<tr><td colspan="4">Cargando...</td></tr>';db.collection('clientes').orderBy('totalGastado','desc').get().then(function(snap){if(snap.empty){clientesTableBody.innerHTML='<tr><td colspan="4">Sin clientes</td></tr>';return;}clientesTableBody.innerHTML='';snap.forEach(function(d){var c=d.data();clientesTableBody.innerHTML+='<tr><td>'+(c.email||'')+'</td><td>'+(c.nombre||'')+'</td><td>'+(c.compras||0)+'</td><td>$'+(c.totalGastado||0).toLocaleString('es-AR')+'</td></tr>';});});}
-function cargarVendedores(){vendedoresTableBody.innerHTML='<tr><td colspan="3">Cargando...</td></tr>';db.collection('vendedores').get().then(function(snap){if(snap.empty){vendedoresTableBody.innerHTML='<tr><td colspan="3">Sin vendedores</td></tr>';return;}vendedoresTableBody.innerHTML='';snap.forEach(function(d){var v=d.data();if(v.nombre==='test')return;vendedoresTableBody.innerHTML+='<tr><td>'+(v.nombre||'')+'</td><td>$'+(v.saldo||0).toLocaleString('es-AR')+'</td><td><button class="btn btn-outline btn-sm" onclick="acreditarSaldo(\''+d.id+'\')">💵</button> <button class="btn btn-danger btn-sm" onclick="eliminarVendedor(\''+d.id+'\')">🗑️</button></td></tr>';});});}
-agregarVendedorBtn.addEventListener('click',function(){vendedorModalTitle.textContent='Agregar Vendedor';vendNombre.value='';vendPassword.value='';vendSaldo.value='';vendedorModalOverlay.classList.add('active');});
-cancelVendedorBtn.addEventListener('click',function(){vendedorModalOverlay.classList.remove('active');});
-vendedorModalOverlay.addEventListener('click',function(e){if(e.target===vendedorModalOverlay)vendedorModalOverlay.classList.remove('active');});
-saveVendedorBtn.addEventListener('click',function(){var nombre=vendNombre.value.trim(),pass=vendPassword.value.trim(),saldo=parseFloat(vendSaldo.value);if(!nombre||!pass||isNaN(saldo)){showToast('Completá todos los campos','error');return;}auth.createUserWithEmailAndPassword(nombre+'@nova.com',pass).then(function(userCred){db.collection('vendedores').doc(userCred.user.uid).set({nombre:nombre,password:pass,saldo:saldo,userId:userCred.user.uid,createdAt:firebase.firestore.FieldValue.serverTimestamp()}).then(function(){showToast('Vendedor agregado');vendedorModalOverlay.classList.remove('active');cargarVendedores();});}).catch(function(e){showToast('Error: '+e.message,'error');});});
-function acreditarSaldo(id){var monto=prompt('Monto (+):');if(monto===null)return;var cantidad=parseFloat(monto);if(isNaN(cantidad)){showToast('Inválido','error');return;}db.collection('vendedores').doc(id).get().then(function(doc){if(!doc.exists){showToast('No encontrado','error');return;}db.collection('vendedores').doc(id).update({saldo:(doc.data().saldo||0)+cantidad,updatedAt:firebase.firestore.FieldValue.serverTimestamp()}).then(function(){showToast('Saldo actualizado');cargarVendedores();});}).catch(function(e){showToast('Error: '+e.message,'error');});}
-function eliminarVendedor(id){if(!confirm('¿Eliminar?'))return;db.collection('vendedores').doc(id).delete().then(function(){showToast('Eliminado');cargarVendedores();});}
-function cargarPagos(){pagosTableBody.innerHTML='<tr><td colspan="4">Cargando...</td></tr>';db.collection('metodos_pago').get().then(function(snap){if(snap.empty){pagosTableBody.innerHTML='<tr><td colspan="4">Sin métodos</td></tr>';return;}pagosTableBody.innerHTML='';snap.forEach(function(d){var p=d.data();pagosTableBody.innerHTML+='<tr><td>'+(p.nombre||'')+'</td><td>'+(p.tipo||'')+'</td><td>'+(p.datos||'')+'</td><td><button class="btn btn-danger btn-sm" onclick="eliminarPago(\''+d.id+'\')">🗑️</button></td></tr>';});});}
-agregarPagoBtn.addEventListener('click',function(){pagoModalTitle.textContent='Agregar Método';pagoNombre.value='';pagoTipo.value='Mercado Pago';pagoDatos.value='';if(pagoRed)pagoRed.value='';if(criptoDiv)criptoDiv.style.display='none';pagoModalOverlay.classList.add('active');});
-cancelPagoBtn.addEventListener('click',function(){pagoModalOverlay.classList.remove('active');});
-pagoModalOverlay.addEventListener('click',function(e){if(e.target===pagoModalOverlay)pagoModalOverlay.classList.remove('active');});
-savePagoBtn.addEventListener('click',function(){var nombre=pagoNombre.value.trim(),tipo=pagoTipo.value,datos=pagoDatos.value.trim();var red=pagoRed?pagoRed.value.trim():'';if(!nombre||!datos){showToast('Completá todos los campos','error');return;}var data={nombre:nombre,tipo:tipo,datos:datos,createdAt:firebase.firestore.FieldValue.serverTimestamp()};if(tipo==='Criptomoneda'&&red){data.red=red;data.datos=red+': '+datos;}db.collection('metodos_pago').add(data).then(function(){showToast('Método agregado');pagoModalOverlay.classList.remove('active');cargarPagos();}).catch(function(e){showToast('Error: '+e.message,'error');});});
-function eliminarPago(id){if(!confirm('¿Eliminar?'))return;db.collection('metodos_pago').doc(id).delete().then(function(){showToast('Eliminado');cargarPagos();});}
-function cargarConfig(){db.collection('config').doc('pagos').get().then(function(doc){if(doc.exists){var d=doc.data();if(d.mpToken)mpToken.value=d.mpToken;if(d.ppClient)ppClient.value=d.ppClient;if(d.ppSecret)ppSecret.value=d.ppSecret;}});}
-saveMPBtn.addEventListener('click',function(){db.collection('config').doc('pagos').set({mpToken:mpToken.value.trim()},{merge:true}).then(function(){showToast('Mercado Pago guardado');});});
-savePPBtn.addEventListener('click',function(){db.collection('config').doc('pagos').set({ppClient:ppClient.value.trim(),ppSecret:ppSecret.value.trim()},{merge:true}).then(function(){showToast('PayPal guardado');});});
-            function cargarProductosVendedor(){
-                vProductosGrid.innerHTML='<div style="text-align:center;padding:2rem;color:var(--text2);grid-column:1/-1;">Cargando productos...</div>';
-                db.collection('productos').orderBy('nombre').get().then(function(snap){
-                    if(snap.empty){vProductosGrid.innerHTML='<div style="text-align:center;padding:2rem;color:var(--text2);grid-column:1/-1;">No hay productos disponibles</div>';vProductosCount.textContent='0';return;}
-                    vProductosCount.textContent=snap.size;vProductosGrid.innerHTML='';
-                    snap.forEach(function(d){
-                        var p=d.data();
-                        var k=Array.isArray(p.keys)?p.keys:(typeof p.keys==='string'?p.keys.split(',').map(function(x){return x.trim();}).filter(function(x){return x;}):[]);
-                        var stock=k.filter(function(x){return !x.startsWith('USADA:');}).length;
-                        var card=document.createElement('div');card.className='card';card.style.cssText='text-align:center;min-width:200px;';
-                        card.innerHTML='<div class="label">📦 '+(p.nombre||'Sin nombre')+'</div><div style="font-size:0.8rem;color:var(--text2);margin:0.3rem 0;">⏳ '+formatearDuracion(p.duracion)+'</div><div class="value" style="font-size:1.8rem;">$'+(p.precio||0).toLocaleString('es-AR')+'</div><div style="font-size:0.75rem;color:'+(stock>0?'var(--success)':'var(--danger)')+';margin-top:0.3rem;">🔑 Stock: '+stock+'</div><button class="btn btn-primary btn-sm" style="margin-top:0.5rem;width:100%;" '+(stock<=0?'disabled':'')+'>🛒 Comprar</button>';
-                        if(stock>0){(function(docId,nombre,precio,keys){card.querySelector('button').addEventListener('click',function(e){e.stopPropagation();comprarProducto(docId,nombre,precio,keys);});})(d.id,p.nombre,p.precio,k);}
-                        vProductosGrid.appendChild(card);
-                    });
-                }).catch(function(e){
-                    vProductosGrid.innerHTML='<div style="text-align:center;padding:2rem;color:var(--danger);grid-column:1/-1;">Error al cargar productos: '+e.message+'<br><small>Verificá los permisos de Firestore.</small></div>';
-                    console.error('cargarProductosVendedor error:',e);
-                });
-            }
-
-            function comprarProducto(prodId,nombre,precio,keys){
-                var disponibles=keys.filter(function(x){return !x.startsWith('USADA:');});
-                if(disponibles.length===0){showToast('Sin stock','error');return;}
-                if(precio>vendedorActual.saldo){showToast('Saldo insuficiente','error');return;}
-                var cliente=prompt('Email del cliente:');if(!cliente||cliente.trim()==='')return;cliente=cliente.trim();
-                var precioVenta=parseFloat(prompt('Precio de venta (costo: $'+precio.toLocaleString('es-AR')+'):'));
-                if(!precioVenta||isNaN(precioVenta)||precioVenta<=0)return;
-                var keyEntregada=disponibles[0];
-                var nuevasKeys=keys.map(function(x,i){return i===keys.indexOf(keyEntregada)?'USADA:'+x:x;});
-                db.collection('productos').doc(prodId).update({keys:nuevasKeys,updatedAt:firebase.firestore.FieldValue.serverTimestamp()}).then(function(){
-                    var nuevoSaldo=vendedorActual.saldo-precio;
-                    db.collection('ventas').add({producto:nombre,key:keyEntregada,cliente:cliente,vendedor:vendedorActual.nombre,costo:precio,precioVenta:precioVenta,ganancia:precioVenta-precio,fecha:firebase.firestore.FieldValue.serverTimestamp(),createdAt:firebase.firestore.FieldValue.serverTimestamp()}).then(function(){
-                        db.collection('vendedores').doc(vendedorActual.id).update({saldo:nuevoSaldo,updatedAt:firebase.firestore.FieldValue.serverTimestamp()}).then(function(){
-                            vendedorActual.saldo=nuevoSaldo;vSaldo.textContent='$'+nuevoSaldo.toLocaleString('es-AR');
-                            db.collection('clientes').where('email','==',cliente).get().then(function(cliSnap){
-                                if(cliSnap.empty){db.collection('clientes').add({email:cliente,nombre:cliente.split('@')[0],compras:1,totalGastado:precioVenta,createdAt:firebase.firestore.FieldValue.serverTimestamp()});}
-                                else{db.collection('clientes').doc(cliSnap.docs[0].id).update({compras:firebase.firestore.FieldValue.increment(1),totalGastado:firebase.firestore.FieldValue.increment(precioVenta),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});}
-                            });
-                            showToast('✅ Venta realizada - Key: '+keyEntregada);cargarProductosVendedor();cargarVentasVendedor();
-                        });
-                    });
-                });
-            }
-
-            function cargarVentasVendedor(){
-                vVentasBody.innerHTML='<tr><td colspan="7">Cargando...</td></tr>';
-                db.collection('ventas').where('vendedor','==',vendedorActual.nombre).orderBy('fecha','desc').limit(50).get().then(function(snap){
-                    if(snap.empty){vVentasBody.innerHTML='<tr><td colspan="7">Sin ventas</td></tr>';vVentas.textContent='0';return;}
-                    vVentas.textContent=snap.size;vVentasBody.innerHTML='';
-                    snap.forEach(function(d){var v=d.data(),f=v.fecha?v.fecha.toDate().toLocaleDateString('es-AR'):'N/A';vVentasBody.innerHTML+='<tr><td>'+d.id.slice(-6)+'</td><td>'+(v.producto||'')+'</td><td style="font-family:monospace;font-size:0.75rem;">'+(v.key||'')+'</td><td>'+(v.cliente||'')+'</td><td>'+f+'</td><td style="color:var(--danger);">$'+(v.costo||0).toLocaleString('es-AR')+'</td><td style="color:var(--success);">$'+(v.precioVenta||v.total||0).toLocaleString('es-AR')+'</td></tr>';});
-                });
-            }
-
-            vRetirarBtn.addEventListener('click',function(){
-                var m=parseFloat(prompt('Monto a retirar:'));if(!m||m<=0||isNaN(m))return;
-                if(m>vendedorActual.saldo){showToast('Saldo insuficiente','error');return;}
-                window.open('https://wa.me/5491154141893?text=*RETIRO*%0A👤 '+vendedorActual.nombre+'%0A💰 $'+m.toLocaleString('es-AR')+'%0A💳 Saldo: $'+vendedorActual.saldo.toLocaleString('es-AR'),'_blank');
-            });
-
-            vRecargarBtn.addEventListener('click',function(){
-                db.collection('metodos_pago').get().then(function(snap){
-                    var html='<div style="background:rgba(10,10,28,0.98);padding:1rem;border-radius:8px;max-width:400px;width:90%;"><h3>Métodos de Pago</h3>';
-                    if(snap.empty){html+='<p>No hay métodos.</p>';}
-                    else{snap.forEach(function(d){var p=d.data();html+='<div style="padding:0.5rem;border:1px solid var(--border);border-radius:6px;margin-bottom:0.4rem;cursor:pointer;background:rgba(168,85,247,0.05);" onclick="seleccionarMetodo(\''+d.id+'\',\''+(p.nombre||'').replace(/'/g,\"\\'\")+'\',\''+(p.datos||'').replace(/'/g,\"\\'\")+'\',\''+(p.tipo||'').replace(/'/g,\"\\'\")+'\')"><strong>'+(p.nombre||'')+'</strong> ('+(p.tipo||'')+')<br><small>'+(p.datos||'')+'</small></div>';});}
-                    html+='<button class="btn btn-outline btn-sm" style="margin-top:0.5rem;width:100%;" onclick="document.getElementById(\'metodoOverlay\').remove()">Cancelar</button></div>';
-                    var div=document.createElement('div');div.innerHTML=html;
-                    div.style.cssText='position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;';
-                    div.id='metodoOverlay';document.body.appendChild(div);
-                });
-            });
-
-            window.seleccionarMetodo=function(id,nombre,datos,tipo){
-                document.getElementById('metodoOverlay').remove();
-                var monto=parseFloat(prompt('Monto ('+nombre+'):'));if(!monto||monto<=0||isNaN(monto))return;
-                var input=document.createElement('input');input.type='file';input.accept='image/*';
-                input.onchange=function(e){var file=e.target.files[0];if(!file)return;var reader=new FileReader();
-                    reader.onload=function(e){window.open('https://wa.me/5491154141893?text=*RECARGA*%0A👤 '+vendedorActual.nombre+'%0A💰 $'+monto.toLocaleString('es-AR')+'%0A🏦 '+nombre+' ('+tipo+')%0A📋 '+datos,'_blank');showToast('Solicitud enviada');};reader.readAsDataURL(file);};
-                input.click();
-            };
-
-            vRecargarProductosBtn.addEventListener('click',function(){
-                cargarProductosVendedor();cargarVentasVendedor();
-                db.collection('vendedores').doc(vendedorActual.id).get().then(function(doc){if(doc.exists){vendedorActual.saldo=doc.data().saldo||0;vSaldo.textContent='$'+(vendedorActual.saldo||0).toLocaleString('es-AR');}});
-            });
-
-            window.verKeys=verKeys;
-            window.editarProducto=editarProducto;
-            window.eliminarProducto=eliminarProducto;
-            window.acreditarSaldo=acreditarSaldo;
-            window.eliminarVendedor=eliminarVendedor;
-            window.eliminarPago=eliminarPago;
-            window.comprarProducto=comprarProducto;
-        };
-    </script>
+    // Funciones globales para onclick inline
+    window.verKeys = verKeys;
+    window.editarProducto = editarProducto;
+    window.eliminarProducto = eliminarProducto;
+    window.acreditarSaldo = acreditarSaldo;
+    window.eliminarVendedor = eliminarVendedor;
+    window.eliminarPago = eliminarPago;
+    window.seleccionarMetodo = function(id, nombre, datos, tipo){
+        nombre=decodeURIComponent(nombre); datos=decodeURIComponent(datos); tipo=decodeURIComponent(tipo);
+        document.getElementById('metodoOverlay').remove();
+        var monto=parseFloat(prompt('Monto ('+nombre+'):')); if(!monto||monto<=0||isNaN(monto)) return;
+        var input=document.createElement('input'); input.type='file'; input.accept='image/*';
+        input.onchange=function(e){ var file=e.target.files[0]; if(!file) return; var r=new FileReader(); r.onload=function(){ window.open('https://wa.me/5491154141893?text=*RECARGA*%0A👤 '+vendedorActual.nombre+'%0A💰 $'+monto.toLocaleString('es-AR')+'%0A🏦 '+nombre+' ('+tipo+')%0A📋 '+datos,'_blank'); showToast('Solicitud enviada'); }; r.readAsDataURL(file); };
+        input.click();
+    };
+</script>
 </body>
 </html>
