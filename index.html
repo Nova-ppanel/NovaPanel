@@ -98,7 +98,7 @@
         <input type="text" id="loginEmail" placeholder="Usuario">
         <label>Contraseña</label>
         <input type="password" id="loginPassword" placeholder="••••••••">
-        <button id="loginBtn" onclick="intentarLogin()">Acceder</button>
+        <button id="loginBtn">Acceder</button>
         <p class="login-error" id="loginError"></p>
     </div>
 <div id="adminContainer">
@@ -194,51 +194,59 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    function intentarLogin(){
-        var usuario=document.getElementById('loginEmail').value.trim();
-        var password=document.getElementById('loginPassword').value.trim();
-        var loginError=document.getElementById('loginError');
-        var loginBtn=document.getElementById('loginBtn');
-        var loginContainer=document.getElementById('loginContainer');
-        var adminContainer=document.getElementById('adminContainer');
-        var vendedorContainer=document.getElementById('vendedorContainer');
-        loginError.textContent='';
-        if(!usuario||!password){loginError.textContent='Completá todos los campos.';return;}
-        loginBtn.disabled=true;loginBtn.textContent='Accediendo...';
+    document.addEventListener('DOMContentLoaded', function(){
+        var loginBtn = document.getElementById('loginBtn');
+        var loginEmail = document.getElementById('loginEmail');
+        var loginPassword = document.getElementById('loginPassword');
+        var loginError = document.getElementById('loginError');
+        var loginContainer = document.getElementById('loginContainer');
+        var adminContainer = document.getElementById('adminContainer');
+        var vendedorContainer = document.getElementById('vendedorContainer');
+
         function restoreBtn(){loginBtn.disabled=false;loginBtn.textContent='Acceder';}
         function mostrarError(msg){loginError.textContent=msg;restoreBtn();}
-        function entrarComoAdmin(pass){
-            auth.signInWithEmailAndPassword('admin@admin.com',pass).then(function(cred){
-                loginContainer.style.display='none';
-                adminContainer.classList.add('active');
-                cargarDashboard();cargarProductos();cargarVentas();cargarClientes();cargarVendedores();cargarPagos();cargarConfig();
-                restoreBtn();
-            }).catch(function(e){mostrarError('Contraseña incorrecta.');});
-        }
-        function entrarComoVendedor(user,pass){
-            auth.signInWithEmailAndPassword(user+'@nova.com',pass).then(function(cred){
-                db.collection('vendedores').where('userId','==',cred.user.uid).get().then(function(snap){
-                    if(snap.empty){mostrarError('Vendedor no encontrado.');auth.signOut();return;}
-                    var vend=snap.docs[0].data();
-                    window.vendedorActual={id:snap.docs[0].id,...vend,userId:cred.user.uid};
+
+        function doLogin(){
+            var usuario = loginEmail.value.trim();
+            var password = loginPassword.value.trim();
+            loginError.textContent='';
+            if(!usuario||!password){loginError.textContent='Completá todos los campos.';return;}
+            loginBtn.disabled=true;
+            loginBtn.textContent='Accediendo...';
+            if(usuario==='admin'){
+                auth.signInWithEmailAndPassword('admin@admin.com', password)
+                .then(function(cred){
                     loginContainer.style.display='none';
-                    vendedorContainer.classList.add('active');
-                    document.getElementById('vSaldo').textContent='$'+(window.vendedorActual.saldo||0).toLocaleString('es-AR');
-                    cargarProductosVendedor();
-                    cargarVentasVendedor();
+                    adminContainer.classList.add('active');
+                    cargarDashboard();cargarProductos();cargarVentas();cargarClientes();cargarVendedores();cargarPagos();cargarConfig();
                     restoreBtn();
-                }).catch(function(e){mostrarError('Error al cargar datos.');auth.signOut();});
-            }).catch(function(e){mostrarError('Usuario o contraseña incorrectos.');});
+                })
+                .catch(function(e){mostrarError('Contraseña incorrecta.');});
+            } else {
+                auth.signInWithEmailAndPassword(usuario+'@nova.com', password)
+                .then(function(cred){
+                    db.collection('vendedores').where('userId','==',cred.user.uid).get()
+                    .then(function(snap){
+                        if(snap.empty){mostrarError('Vendedor no encontrado.');auth.signOut();return;}
+                        var vend=snap.docs[0].data();
+                        window.vendedorActual={id:snap.docs[0].id,...vend,userId:cred.user.uid};
+                        loginContainer.style.display='none';
+                        vendedorContainer.classList.add('active');
+                        document.getElementById('vSaldo').textContent='$'+(window.vendedorActual.saldo||0).toLocaleString('es-AR');
+                        cargarProductosVendedor();
+                        cargarVentasVendedor();
+                        restoreBtn();
+                    })
+                    .catch(function(e){mostrarError('Error al cargar datos.');auth.signOut();});
+                })
+                .catch(function(e){mostrarError('Usuario o contraseña incorrectos.');});
+            }
         }
-        auth.signOut().then(function(){
-            if(usuario==='admin'){entrarComoAdmin(password);}
-            else{entrarComoVendedor(usuario,password);}
-        }).catch(function(){
-            if(usuario==='admin'){entrarComoAdmin(password);}
-            else{entrarComoVendedor(usuario,password);}
-        });
-    }
-    window.intentarLogin=intentarLogin;
+
+        loginBtn.addEventListener('click', doLogin);
+        loginEmail.addEventListener('keydown', function(e){if(e.key==='Enter')doLogin();});
+        loginPassword.addEventListener('keydown', function(e){if(e.key==='Enter')doLogin();});
+    });
 
     window.onload = function(){
         const canvas = document.getElementById('particlesCanvas');
@@ -255,15 +263,6 @@
         function animate(){ctx.clearRect(0,0,canvas.width,canvas.height);particles.forEach(function(p){p.update();p.draw();});requestAnimationFrame(animate);}
         animate();
 
-        const loginContainer=document.getElementById('loginContainer');
-        const adminContainer=document.getElementById('adminContainer');
-        const vendedorContainer=document.getElementById('vendedorContainer');
-        const loginBtn=document.getElementById('loginBtn');
-        const loginEmail=document.getElementById('loginEmail');
-        const loginPassword=document.getElementById('loginPassword');
-        const loginError=document.getElementById('loginError');
-        const logoutBtn=document.getElementById('logoutBtn');
-        const vendedorLogoutBtn=document.getElementById('vendedorLogoutBtn');
         const navLinks=document.querySelectorAll('#sidebar nav a');
         const sections=document.querySelectorAll('.section');
         const dashProductos=document.getElementById('dashProductos');
@@ -341,8 +340,8 @@
         loginPassword.addEventListener('keydown',function(e){if(e.key==='Enter')intentarLogin();});
         loginEmail.addEventListener('keydown',function(e){if(e.key==='Enter')intentarLogin();});
 
-        logoutBtn.addEventListener('click',function(){auth.signOut();currentUser=null;adminContainer.classList.remove('active');loginContainer.style.display='';loginEmail.value='';loginPassword.value='';});
-        vendedorLogoutBtn.addEventListener('click',function(){auth.signOut().then(function(){vendedorActual=null;vendedorContainer.classList.remove('active');loginContainer.style.display='';loginEmail.value='';loginPassword.value='';});});
+        document.getElementById('logoutBtn').addEventListener('click',function(){auth.signOut();currentUser=null;document.getElementById('adminContainer').classList.remove('active');document.getElementById('loginContainer').style.display='';document.getElementById('loginEmail').value='';document.getElementById('loginPassword').value='';});
+        document.getElementById('vendedorLogoutBtn').addEventListener('click',function(){auth.signOut().then(function(){vendedorActual=null;document.getElementById('vendedorContainer').classList.remove('active');document.getElementById('loginContainer').style.display='';document.getElementById('loginEmail').value='';document.getElementById('loginPassword').value='';});});
         navLinks.forEach(function(link){link.addEventListener('click',function(e){e.preventDefault();navLinks.forEach(function(l){l.classList.remove('active');});this.classList.add('active');var sid=this.getAttribute('data-section');sections.forEach(function(s){s.classList.remove('active');});document.getElementById(sid+'Section').classList.add('active');if(sid==='ventas')cargarVentas();if(sid==='clientes')cargarClientes();if(sid==='productos')cargarProductos();if(sid==='vendedores')cargarVendedores();if(sid==='pagos')cargarPagos();if(sid==='configuracion')cargarConfig();});});
 function showToast(msg,type){type=type||'success';toast.textContent=msg;toast.style.borderColor=type==='error'?'var(--danger)':'var(--success)';toast.classList.add('show');setTimeout(function(){toast.classList.remove('show');},3000);}
 function formatearDuracion(d){return{'1dia':'1 Día','3dias':'3 Días','7dias':'7 Días'}[d]||d||'N/A';}
